@@ -7,7 +7,7 @@ from PIL import Image
 
 class LoginFormWindow:
     def __init__(self, master):
-        self.file_path = r"/projects/Python_projects/login_data.xlsx"
+        self.file_path = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\login_data.xlsx"
         self.master = master
         self.canvas = ctk.CTkFrame(self.master, fg_color="gray20")
         self.canvas.pack()
