@@ -1,12 +1,12 @@
 from typing import List
 
 
-def merge(nums1: List[int], m: int, nums2: List[int], n: int) -> None:
+def merge(nums1: List[int], m: int, nums2: List[int], n: int) -> list[int]:
     first = nums1[0: m]
     second = nums2[0: n]
     index = 0
     while index < m + n:
-        if second != []:
+        if second:
             if index < len(first) and first[index] <= second[0]:
                 index += 1
             else:
