@@ -7,6 +7,7 @@ class ClimateVisualisation:
         self.window = tk.Frame(master)
 
 
+
 root = tk.Tk()
 ClimateVisualisation(root)
 root.mainloop()
