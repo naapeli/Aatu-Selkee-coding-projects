@@ -4,9 +4,9 @@ import math
 
 months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
           "December"]
-one_radius = 200
-zero_radius = 100
-width = 500
+one_radius = 300
+zero_radius = 150
+width = 800
 height = width
 
 
