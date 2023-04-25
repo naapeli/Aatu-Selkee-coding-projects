@@ -6,9 +6,10 @@ from tkinter import messagebox
 
 class LoginFormWindow:
     def __init__(self, master):
+        ctk.set_appearance_mode("dark")
         self.file_path = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\login system\login_data.xlsx"
         self.master = master
-        self.canvas = ctk.CTkFrame(self.master, fg_color="gray20")
+        self.canvas = ctk.CTkFrame(self.master, fg_color="gray20", )
         self.canvas.pack()
         window = ctk.CTkFrame(self.canvas, fg_color="gray20")
         window.grid(row=1, column=0)
