@@ -90,12 +90,10 @@ class ClimateVisualisation:
             green_blue = max(min(round(-200 * radius / (one_radius - zero_radius) +
                                        (255 * one_radius - 55 * zero_radius) / (one_radius - zero_radius)), 255), 0)
             rgb = (255, green_blue, green_blue)
-            print(rgb)
             return self.hex_from_rgb(self, rgb)
         else:
             red_green = max(min(round(255 * radius / zero_radius), 255), 0)
             rgb = (red_green, red_green, 255)
-            print(rgb)
             return self.hex_from_rgb(self, rgb)
 
     @staticmethod
