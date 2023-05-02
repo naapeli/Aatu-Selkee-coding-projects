@@ -11,6 +11,9 @@ width_height = 32
 
 class GUI:
     def __init__(self, master):
+        # machine learning model
+        self.model = MLmodel.Model()
+        # GUI
         self.window = master
         self.window.title("Digit recognition software")
         self.canvas = tk.Canvas(self.window, width=width_height, height=width_height, highlightthickness=1,
@@ -18,6 +21,7 @@ class GUI:
         self.canvas.grid(row=0, column=0)
         self.canvas.bind("<B1-Motion>", self.paint)
         self.image = tk.PhotoImage(width=width_height, height=width_height)
+        self.image.put("#000000", to=(0, 0, width_height, width_height))
         self.canvas.create_image((width_height / 2, width_height / 2), image=self.image, state="normal")
         frame = tk.Frame(self.window)
         frame.grid(row=1, column=0)
@@ -36,13 +40,14 @@ class GUI:
 
     def paint(self, event):
         x, y = max(min(event.x, width_height - 1), 1), max(min(event.y, width_height - 1), 1)
-        self.image.put("#000000", (x, y))
+        self.image.put("#FFFFFF", (x, y))
 
     def clear_canvas(self):
         self.canvas.destroy()
         self.canvas = tk.Canvas(self.window, width=width_height, height=width_height, highlightthickness=1,
                                 highlightbackground="black")
         self.image = tk.PhotoImage(width=width_height, height=width_height)
+        self.image.put("#000000", to=(0, 0, width_height, width_height))
         self.canvas.create_image((width_height / 2, width_height / 2), image=self.image, state="normal")
         self.canvas.bind("<B1-Motion>", self.paint)
         self.canvas.grid(row=0, column=0)
@@ -50,15 +55,15 @@ class GUI:
     def determine_number(self):
         image = ImageTk.getimage(self.image)
         self.clear_canvas()
-        model = MLmodel.Model()
-        number = model.predict(image)
+        number = self.model.predict(image)
+        self.result_label.destroy()
         self.result_label = tk.Label(self.window, text=str(number))
         self.result_label.grid(row=4, column=0)
 
     def save_image(self):
         image = self.image
         file_name = self.file_name_entry.get()
-        image.write(file_name + ".jpg", format="jpg")
+        image.write(file_name + ".jpg", format="png")
         self.clear_canvas()
 
 
