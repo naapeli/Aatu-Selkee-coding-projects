@@ -49,8 +49,9 @@ class ClimateVisualisation:
         self.current_cell = 1
 
     def run(self):
-        file_path = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\climate data " \
+        file_path = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\climate data " \
                     r"visualisation\climate data.xlsx"
+        # C:\Users\aatus\PycharmProjects\Python_projects\projects\climate data visualisation
         workbook = openpyxl.load_workbook(file_path)
         sheet = workbook.active
         self.draw(self.current_cell, sheet, self.current_row)
