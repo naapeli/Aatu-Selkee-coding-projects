@@ -12,7 +12,7 @@ class Model:
         self.train()
 
     def train(self):
-        directory = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine " \
+        directory = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine " \
                     r"learning digit recognition software\data"
         for filename in os.listdir(directory):
             file = os.path.join(directory, filename)
@@ -28,3 +28,6 @@ class Model:
         predict_x = predict_x.reshape(1, 1024) / 255
         number = self.knn_model.predict(predict_x).item()
         return number
+
+
+malli = Model()
