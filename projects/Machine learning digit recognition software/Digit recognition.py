@@ -1,8 +1,7 @@
 import tkinter as tk
-import numpy as np
-import pandas as pd
 import MLmodel
-from PIL import Image, ImageTk
+import NNmodel
+from PIL import ImageTk
 
 
 # constants
@@ -12,7 +11,7 @@ width_height = 32
 class GUI:
     def __init__(self, master):
         # machine learning model
-        self.model = MLmodel.Model()
+        self.model = NNmodel.Model()
         # GUI
         self.window = master
         self.window.title("Digit recognition software")
@@ -56,6 +55,7 @@ class GUI:
         image = ImageTk.getimage(self.image)
         self.clear_canvas()
         number = self.model.predict(image)
+        print(number)
         self.result_label.destroy()
         self.result_label = tk.Label(self.window, text=str(number))
         self.result_label.grid(row=4, column=0)

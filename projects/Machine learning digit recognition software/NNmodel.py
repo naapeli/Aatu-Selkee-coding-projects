@@ -1,83 +1,54 @@
 import tensorflow as tf
-import pandas as pd
 import numpy as np
 from PIL import Image
 import os
-import openpyxl
 import matplotlib.pyplot as plt
 
 
 class Model:
     def __init__(self):
-        self.data_file_path = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine " \
-                    r"learning digit recognition software\input_data.xlsx"
-        self.data = pd.read_excel(self.data_file_path)
-        self.data = pd.read_excel(self.data_file_path)
-        self.x_data = self.data[self.data.columns[:-1]].values
-        self.y_data = self.data[self.data.columns[-1]].values
-        self.validation_data = pd.read_excel(r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine learning digit recognition software\validation_data.xlsx")
-        self.x_validation_data = self.validation_data[self.validation_data.columns[:-1]].values
-        self.y_validation_data = self.validation_data[self.validation_data.columns[-1]].values
         self.nn_model = tf.keras.Sequential([
             tf.keras.layers.Dense(32, activation='relu', input_shape=(1024,)),
             tf.keras.layers.Dense(32, activation='relu'),
-            tf.keras.layers.Dense(1, activation='sigmoid')
+            tf.keras.layers.Dense(10, activation='softmax')
         ])
-        self.nn_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+        self.nn_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        self.nn_model.save_weights("nn_weights.h5")
+        self.nn_model.load_weights("nn_weights.h5")
 
-    def save_validation_data(self):
-        directory = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine " \
-                    r"learning digit recognition software\validation data"
-        file_path = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine " \
-                    r"learning digit recognition software\validation_data.xlsx"
-        workbook = openpyxl.load_workbook(file_path)
-        sheet = workbook.active
-        for filename in os.listdir(directory):
-            file = os.path.join(directory, filename)
-            image = Image.open(file)
-            pixels = image.load()
-            picture_array = []
-            for y in range(32):
-                for x in range(32):
-                    r, g, b, a = pixels[x, y]
-                    picture_array.append(int(a / 255))
-            picture_array.append(filename[0])
-            sheet.append(picture_array)
-            workbook.save(file_path)
-            self.data = pd.read_excel(file_path)
-            self.x_data = self.data[self.data.columns[:-1]].values
-            self.y_data = self.data[self.data.columns[-1]].values
+    @staticmethod
+    def save_train_data(self, number_of_each_digit):
+        x_data = np.zeros((1, 1024))
+        y_data = np.zeros((1, 1))
+        directory = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine " \
+                    r"learning digit recognition software\data\train"
+        for digit_name in os.listdir(directory):
+            i = 0
+            for filename in os.listdir(os.path.join(directory, digit_name)):
+                i += 1
+                print(digit_name, i)
+                if i <= number_of_each_digit:
+                    file = os.path.join(directory, digit_name, filename)
+                    image = Image.open(file)
+                    image = image.convert("1")
+                    pixels = np.asarray(image)
+                    pixels = pixels.reshape(1, 1024)
+                    x_data = np.vstack([x_data, pixels])
+                    y_data = np.vstack([y_data, int(digit_name)])
+        data = np.concatenate((x_data, y_data.reshape(-1, 1)), axis=1)
+        data = data[np.random.permutation(data.shape[0])]
+        return data[:, :-1], data[:, -1].reshape(-1, 1)
 
-    def save_training_data(self):
-        directory = r"C:\Users\aatus\PycharmProjects\pythonProject\projects\Python_projects\projects\Machine learning digit recognition software\data"
-        file_path = self.data_file_path
-        workbook = openpyxl.load_workbook(file_path)
-        sheet = workbook.active
-        for filename in os.listdir(directory):
-            file = os.path.join(directory, filename)
-            image = Image.open(file)
-            pixels = image.load()
-            picture_array = []
-            for y in range(32):
-                for x in range(32):
-                    r, g, b, a = pixels[x, y]
-                    picture_array.append(int(a / 255))
-            picture_array.append(filename[0])
-            sheet.append(picture_array)
-            workbook.save(file_path)
-            self.data = pd.read_excel(file_path)
-            self.x_data = self.data[self.data.columns[:-1]].values
-            self.y_data = self.data[self.data.columns[-1]].values
-
-    def train(self):
-        history = self.nn_model.fit(self.x_data, self.y_data, epochs=1000, batch_size=100,
-                                    validation_data=(self.x_validation_data, self.y_validation_data), verbose=0)
+    def train(self, iterations, number_of_each_digit):
+        x_data, y_data = self.save_train_data(number_of_each_digit)
+        history = self.nn_model.fit(x_data[1:, :], y_data[1:, :], epochs=iterations, validation_split=0.7)
+        self.nn_model.save_weights("nn_weights.h5")
 
         def plot_loss(history):
             plt.plot(history.history['loss'], label='loss')
             plt.plot(history.history['val_loss'], label='val_loss')
             plt.xlabel('Epoch')
-            plt.ylabel('Binary crossentropy')
+            plt.ylabel('sparse_categorical_crossentropy')
             plt.legend()
             plt.grid(True)
             plt.show()
@@ -97,16 +68,12 @@ class Model:
         plot_accuracy(history)
 
     def predict(self, picture):
-        pixels = picture.load()
-        picture_array = []
-        for y in range(32):
-            for x in range(32):
-                r, g, b, a = pixels[x, y]
-                picture_array.append(int(a / 255))
-        predict_x = np.array(picture_array).reshape(1, -1)
-        number = self.knn_model.predict(predict_x).item()
+        picture = picture.convert("1")
+        predict_x = np.asarray(picture).reshape(1, 1024)
+        output = self.nn_model.predict(predict_x)
+        number = np.argmax(output)
         return number
 
 
 malli = Model()
-malli.train()
+malli.train(iterations=500, number_of_each_digit=10000)
