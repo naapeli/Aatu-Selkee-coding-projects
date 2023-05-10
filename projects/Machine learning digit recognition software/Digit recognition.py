@@ -55,7 +55,6 @@ class GUI:
         image = ImageTk.getimage(self.image)
         self.clear_canvas()
         number = self.model.predict(image)
-        print(number)
         self.result_label.destroy()
         self.result_label = tk.Label(self.window, text=str(number))
         self.result_label.grid(row=4, column=0)

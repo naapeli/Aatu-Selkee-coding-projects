@@ -13,11 +13,10 @@ class Model:
             tf.keras.layers.Dense(10, activation='softmax')
         ])
         self.nn_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-        self.nn_model.save_weights("nn_weights.h5")
         self.nn_model.load_weights("nn_weights.h5")
 
     @staticmethod
-    def save_train_data(self, number_of_each_digit):
+    def save_train_data(number_of_each_digit):
         x_data = np.zeros((1, 1024))
         y_data = np.zeros((1, 1))
         directory = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine " \
@@ -41,7 +40,7 @@ class Model:
 
     def train(self, iterations, number_of_each_digit):
         x_data, y_data = self.save_train_data(number_of_each_digit)
-        history = self.nn_model.fit(x_data[1:, :], y_data[1:, :], epochs=iterations, validation_split=0.7)
+        history = self.nn_model.fit(x_data[1:, :], y_data[1:, :], epochs=iterations, validation_split=0.2)
         self.nn_model.save_weights("nn_weights.h5")
 
         def plot_loss(history):
@@ -73,7 +72,3 @@ class Model:
         output = self.nn_model.predict(predict_x)
         number = np.argmax(output)
         return number
-
-
-malli = Model()
-malli.train(iterations=500, number_of_each_digit=10000)
