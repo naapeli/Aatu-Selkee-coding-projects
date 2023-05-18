@@ -14,7 +14,7 @@ for i in range(11):
     plt.plot(i, largest_eigenvalue-mu, marker='.', color='blue')
     xi = (A@xi)/(np.linalg.norm(A@xi))
     mu = (xi.T @ A @ xi) / (xi.T @ xi)
-    print(mu)
+    print(mu, xi)
 
 plt.title('error of the algorithm')
 plt.gca().set_xlabel('iteration')
