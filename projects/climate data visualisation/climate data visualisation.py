@@ -1,6 +1,7 @@
 import tkinter as tk
 import math
 import openpyxl
+import os
 
 
 months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
@@ -49,8 +50,7 @@ class ClimateVisualisation:
         self.current_cell = 1
 
     def run(self):
-        file_path = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\climate data " \
-                    r"visualisation\climate data.xlsx"
+        file_path = os.getcwd() + "\climate data.xlsx"
         # C:\Users\aatus\PycharmProjects\Python_projects\projects\climate data visualisation
         workbook = openpyxl.load_workbook(file_path)
         sheet = workbook.active
