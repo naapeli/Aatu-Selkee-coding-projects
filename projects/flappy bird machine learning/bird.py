@@ -1,4 +1,5 @@
-from constants import *
+import helper as h
+import pygame
 
 
 class Bird:
@@ -8,12 +9,12 @@ class Bird:
         self.vel = 0
         self.acceleration = 0.1
         self.tick_count = 0
-        self.terminal_velocity = 2
-        self.img = BIRD_IMG
+        self.terminal_velocity = 0.5
+        self.img = h.BIRD_IMG
         self.tilt = 0
 
     def jump(self):
-        self.vel = -6
+        self.vel = -5
         self.tick_count = 0
 
     def move(self):
@@ -21,6 +22,7 @@ class Bird:
         self.vel = min(self.vel + self.acceleration * self.tick_count, self.terminal_velocity)
         d = self.vel * self.tick_count
         self.y += d
+
 
     def draw(self, win):
         rotated_img = pygame.transform.rotate(self.img, -2*self.vel)

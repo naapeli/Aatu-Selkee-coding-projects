@@ -1,19 +1,20 @@
-from constants import *
+import helper as h
 import random
+import pygame
 
 
 class Pipe:
     def __init__(self, x):
         self.x = x
-        self.img_bottom = PIPE_IMG_BOTTOM
-        self.img_top = PIPE_IMG_TOP
-        self.bottom_y = random.randrange(GAP + 100, SCREEN_HEIGHT - 100)
-        self.top_y = self.bottom_y - GAP
+        self.img_bottom = h.PIPE_IMG_BOTTOM
+        self.img_top = h.PIPE_IMG_TOP
+        self.bottom_y = random.randrange(h.GAP + 100, h.SCREEN_HEIGHT - 100)
+        self.top_y = self.bottom_y - h.GAP
         self.top_y_draw = self.top_y - self.img_top.get_height()
         self.passed = False
 
     def move(self):
-        self.x -= PIPE_VEL
+        self.x -= h.PIPE_VEL
 
     def draw(self, win):
         win.blit(self.img_top, (self.x, self.top_y_draw))
@@ -32,5 +33,5 @@ class Pipe:
         return bottom_point or top_point
 
     def passed_bird(self, bird):
-        return bird.x > self.x
+        return bird.x > self.x + self.img_bottom.get_width()
 
