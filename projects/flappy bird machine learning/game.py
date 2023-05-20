@@ -3,9 +3,6 @@ from constants import *
 from bird import Bird
 from pipe import Pipe
 
-pygame.init()
-pygame.font.init()
-
 
 def draw_window(win, bird, pipes):
 	win.blit(bg, (0, 0))
@@ -18,7 +15,6 @@ def draw_window(win, bird, pipes):
 
 
 if __name__ == "__main__":
-	screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 	pygame.display.set_caption("flappy bird")
 	clock = pygame.time.Clock()
 
