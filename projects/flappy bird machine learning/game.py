@@ -23,8 +23,6 @@ def main(genomes, config):
 	score = 0
 	h.generation += 1
 
-	bg = pygame.transform.scale(pygame.image.load(r"pictures\background.jpg"), (h.BG_SIZE, h.BG_SIZE))
-
 	while True:
 		h.detect_event(birds)
 
@@ -74,7 +72,7 @@ def main(genomes, config):
 
 		birds, nets, ge = h.remove_birds(ge, birds, nets, removable_birds)
 
-		h.draw_window(h.screen, birds, pipes, bg, score, h.generation)
+		h.draw_window(h.screen, birds, pipes, h.bg, score, h.generation)
 
 		clock.tick(60)
 
