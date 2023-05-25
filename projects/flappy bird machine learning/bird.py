@@ -7,14 +7,14 @@ class Bird:
         self.x = x
         self.y = y
         self.vel = 0
-        self.acceleration = 0.1
+        self.acceleration = 0.05
         self.tick_count = 0
         self.terminal_velocity = 0.5
         self.img = h.BIRD_IMG
         self.tilt = 0
 
     def jump(self):
-        self.vel = -5
+        self.vel = -3
         self.tick_count = 0
 
     def move(self):
