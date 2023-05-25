@@ -1,4 +1,4 @@
 website
 chess engine
-a* algorithm path finding solver
+3d a* algorithm path finding solver
 sudoku solver
