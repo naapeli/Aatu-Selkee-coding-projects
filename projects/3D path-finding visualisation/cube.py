@@ -30,6 +30,7 @@ class cell:
 
 		# drawing
 		self.show_wall = self.is_wall
+		self.drawn = False
 
 		# pathfinding A*
 		self.is_start = False
@@ -50,7 +51,7 @@ class cell:
 	def draw_cell(self, screen, show_centers, color):
 		if show_centers:
 			self.draw_center(screen)
-		if self.show_wall or self.is_start or self.is_end or self.is_path:
+		if self.show_wall or self.is_start or self.is_end or self.is_path or self.drawn:
 			for point_1 in self.corners.T[1:]:
 				for point_2 in self.corners.T[1:]:
 					if np.linalg.norm(point_2 - point_1) <= self.cell_size and np.linalg.norm(point_2 - point_1, ord=1) > 0:

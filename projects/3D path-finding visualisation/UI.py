@@ -66,3 +66,10 @@ def draw_ui(screen):
 	text5rect = text5.get_rect()
 	text5rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 310)
 	screen.blit(text5, text5rect)
+
+	# run Dijkstra's
+	h.button_8 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 330, UI_LEFT - 30, 30))
+	text8 = h.UI_FONT.render("Run Dijkstra's", True, (255, 255, 255, 0.5))
+	text8rect = text8.get_rect()
+	text8rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 345)
+	screen.blit(text8, text8rect)

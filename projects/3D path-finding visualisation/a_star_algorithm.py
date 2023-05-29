@@ -1,6 +1,7 @@
 import helper as h
 import numpy as np
 from tkinter import messagebox
+import time
 
 
 def run(screen, rows, columns, depth):
@@ -13,10 +14,6 @@ def run(screen, rows, columns, depth):
 		for j in range(1, columns + 1):
 			for k in range(1, depth + 1):
 				cube = h.cubes[i][j][k]
-				cube.in_closed = False
-				cube.in_open = False
-				cube.in_closed = False
-				cube.in_open = False
 				cube.f = 0
 				cube.g = 0
 				cube.h = 0
@@ -45,7 +42,6 @@ def run(screen, rows, columns, depth):
 			while temp is not None:
 				path.append(temp)
 				temp = temp.came_from
-			path.append(start)
 			return path
 
 		# transfer current from open_set to closed_set
@@ -60,28 +56,27 @@ def run(screen, rows, columns, depth):
 				if neighbour in open_set:
 					if potential_g < neighbour.g:
 						neighbour.g = potential_g
+						neighbour.came_from = current
 				else:
 					neighbour.g = potential_g
 					open_set.append(neighbour)
-					neighbour.in_open = True
-				neighbour.h = np.linalg.norm(neighbour.corners.T[0] - end.corners.T[0], ord=1)
+					neighbour.came_from = current
+				# l1 norm between point indeces used as the heuristic
+				# neighbour.h = np.linalg.norm(neighbour.corners.T[0] - end.corners.T[0], ord=1) / h.scale
+				neighbour.h = abs(neighbour.i - end.i) + abs(neighbour.j - end.j) + abs(neighbour.k - end.k)
 				neighbour.f = neighbour.g + neighbour.h
-				neighbour.came_from = current
+
+	messagebox.showwarning(title="Warning", message="No solution exists!")
+	return []
 
 		# drawing open and closed sets
-		for cell in open_set:
-			if not cell.is_end and not cell.is_start:
-				cell.draw_cell(screen, h.show_centers, h.colors[3])
-		for cell in closed_set:
-			if not cell.is_end and not cell.is_start:
-				cell.draw_cell(screen, h.show_centers, h.colors[2])
-
-		# drawing path
-		# path = []
-		# temp = current
-		# while temp.came_from is not None:
-		# 	path.append(temp)
-		# 	temp = temp.came_from
-		# for cell in path:
+		# for cell in open_set:
 		# 	if not cell.is_end and not cell.is_start:
-		# 		cell.draw_cell(screen, h.show_centers, h.colors[6])
+		# 		cell.drawn = True
+		# 		cell.draw_cell(screen, h.show_centers, h.colors[3])
+		# 		cell.drawn = False
+		# for cell in closed_set:
+		# 	if not cell.is_end and not cell.is_start:
+		# 		cell.drawn = True
+		# 		cell.draw_cell(screen, h.show_centers, h.colors[2])
+		# 		cell.drawn = False

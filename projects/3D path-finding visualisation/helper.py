@@ -5,6 +5,7 @@ from math import floor
 from cube import cell
 from random import random
 import a_star_algorithm as a_star
+import dijkstras_algorithm as dijkstras
 
 pygame.init()
 pygame.font.init()
@@ -18,12 +19,13 @@ button_4 = None
 button_5 = None
 button_6 = None
 button_7 = None
+button_8 = None
 
 # Constants
 SCREEN_HEIGHT = 800
 SCREEN_WIDTH = 1200
-height = 150
-square = 300
+height = 300
+square = 600
 scale = 50
 rows = round(square / scale)
 columns = round(square / scale)
@@ -134,11 +136,12 @@ def detect_event(screen):
 				select_end = True
 				show_centers = True
 			if button_4.collidepoint(mouse_pos):
+				path = []
 				for i in range(1, rows + 1):
 					for j in range(1, columns + 1):
 						for k in range(1, depth + 1):
 							if not cubes[i][j][k].is_start and not cubes[i][j][k].is_end:
-								cubes[i][j][k].is_wall = random() > 0.8
+								cubes[i][j][k].is_wall = random() > 0.5
 								cubes[i][j][k].show_wall = cubes[i][j][k].is_wall
 			if button_5.collidepoint(mouse_pos):
 				path = a_star.run(screen, rows, columns, depth)
@@ -149,6 +152,9 @@ def detect_event(screen):
 							cubes[i][j][k].show_wall = not cubes[i][j][k].show_wall
 			if button_7.collidepoint(mouse_pos):
 				path = []
+			if button_8.collidepoint(mouse_pos):
+				path = dijkstras.run(screen, rows, columns, depth)
+
 				
 
 def draw_all(screen):
