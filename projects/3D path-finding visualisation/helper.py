@@ -17,6 +17,7 @@ button_3 = None
 button_4 = None
 button_5 = None
 button_6 = None
+button_7 = None
 
 # Constants
 SCREEN_HEIGHT = 800
@@ -146,6 +147,8 @@ def detect_event(screen):
 					for j in range(1, columns + 1):
 						for k in range(1, depth + 1):
 							cubes[i][j][k].show_wall = not cubes[i][j][k].show_wall
+			if button_7.collidepoint(mouse_pos):
+				path = []
 				
 
 def draw_all(screen):

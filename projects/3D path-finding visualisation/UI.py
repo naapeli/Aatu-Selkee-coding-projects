@@ -9,7 +9,7 @@ def draw_ui(screen):
 	optionsrect = options.get_rect()
 	optionsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 13)
 	screen.blit(options, optionsrect)
-	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 30, UI_LEFT - 10, 190), width=2)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 30, UI_LEFT - 10, 225), width=2)
 	
 	# Toggle walls-button
 	h.button_1 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 40, UI_LEFT - 30, 30))
@@ -46,16 +46,23 @@ def draw_ui(screen):
 	text6rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 195)
 	screen.blit(text6, text6rect)
 
+	# hide path
+	h.button_7 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 215, UI_LEFT - 30, 30))
+	text7 = h.UI_FONT.render('Hide path', True, (255, 255, 255, 0.5))
+	text7rect = text7.get_rect()
+	text7rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 230)
+	screen.blit(text7, text7rect)
+
 	# algorithms
 	algorithms = h.UI_FONT.render('Run algorithms', True, (0, 0, 0))
 	algorithmsrect = algorithms.get_rect()
-	algorithmsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 233)
+	algorithmsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 268)
 	screen.blit(algorithms, algorithmsrect)
-	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 250, UI_LEFT - 10, 120), width=2)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 285, UI_LEFT - 10, 120), width=2)
 
 	# run A* algorithm
-	h.button_5 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 260, UI_LEFT - 30, 30))
+	h.button_5 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 295, UI_LEFT - 30, 30))
 	text5 = h.UI_FONT.render('Run A-star', True, (255, 255, 255, 0.5))
 	text5rect = text5.get_rect()
-	text5rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 275)
+	text5rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 310)
 	screen.blit(text5, text5rect)

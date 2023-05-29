@@ -4,6 +4,11 @@ from tkinter import messagebox
 
 
 def run(screen, rows, columns, depth):
+	open_set = []
+	closed_set = []
+	start = None
+	end = None
+
 	for i in range(1, rows + 1):
 		for j in range(1, columns + 1):
 			for k in range(1, depth + 1):
@@ -16,25 +21,10 @@ def run(screen, rows, columns, depth):
 				cube.g = 0
 				cube.h = 0
 				cube.came_from = None
-
-	open_set = []
-	closed_set = []
-	start = None
-	end = None
-
-	for i in range(1, rows + 1):
-		for j in range(1, columns + 1):
-			for k in range(1, depth + 1):
-				if h.cubes[i][j][k].is_start:
-					start = h.cubes[i][j][k]
-				if h.cubes[i][j][k].is_end:
-					end = h.cubes[i][j][k]
-				if start is not None and end is not None:
-					break
-			if start is not None and end is not None:
-				break
-		if start is not None and end is not None:
-			break
+				if cube.is_start:
+					start = cube
+				if cube.is_end:
+					end = cube
 
 	open_set.append(start)
 

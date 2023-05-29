@@ -5,9 +5,12 @@ from random import random
 
 class cell:
 	def __init__(self, x, y, z, cell_size, i, j, k):
+		# indeces in 3d-array
 		self.i = i
 		self.j = j
 		self.k = k
+
+		# coordinates of center and corners
 		self.offset = round(cell_size / 2 - 6)
 		self.cell_size = cell_size
 		self.coordinates = [[x, y, z],
@@ -21,7 +24,11 @@ class cell:
 		[x + self.offset, y + self.offset, z + self.offset]]
 		self.corners = np.array(self.coordinates).T
 		self.shift = np.array([2 * h.SCREEN_WIDTH / 5, h.SCREEN_HEIGHT / 2])
+
+		# wall
 		self.is_wall = random() > 0.8
+
+		# drawing
 		self.show_wall = self.is_wall
 
 		# pathfinding A*
