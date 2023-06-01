@@ -141,7 +141,7 @@ def detect_event(screen):
 					for j in range(1, columns + 1):
 						for k in range(1, depth + 1):
 							if not cubes[i][j][k].is_start and not cubes[i][j][k].is_end:
-								cubes[i][j][k].is_wall = random() > 0.5
+								cubes[i][j][k].is_wall = random() > 0.8
 								cubes[i][j][k].show_wall = cubes[i][j][k].is_wall
 			if button_5.collidepoint(mouse_pos):
 				path = a_star.run(screen, rows, columns, depth)
