@@ -2,9 +2,11 @@ import helper as h
 import numpy as np
 from tkinter import messagebox
 import time
+import pygame
+import UI
 
 
-def run(screen, rows, columns, depth):
+def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 	open_set = []
 	closed_set = []
 	start = None
@@ -66,17 +68,38 @@ def run(screen, rows, columns, depth):
 				neighbour.h = abs(neighbour.i - end.i) + abs(neighbour.j - end.j) + abs(neighbour.k - end.k)
 				neighbour.f = neighbour.g + neighbour.h
 
-	messagebox.showwarning(title="Warning", message="No solution exists!")
-	return []
+		# drawing
+		if draw_open or draw_closed or draw_path:
+			screen.fill((255, 255, 255))
+			UI.draw_ui(screen)
+			if h.layer <= 0 or h.layer >= h.depth + 1:
+				h.draw_all(screen)
+			else:
+				h.draw_layer(screen)
 
 		# drawing open and closed sets
-		# for cell in open_set:
-		# 	if not cell.is_end and not cell.is_start:
-		# 		cell.drawn = True
-		# 		cell.draw_cell(screen, h.show_centers, h.colors[3])
-		# 		cell.drawn = False
-		# for cell in closed_set:
-		# 	if not cell.is_end and not cell.is_start:
-		# 		cell.drawn = True
-		# 		cell.draw_cell(screen, h.show_centers, h.colors[2])
-		# 		cell.drawn = False
+		if draw_open:
+			for cell in open_set:
+				if not cell.is_end and not cell.is_start:
+					cell.draw_cell(screen, h.colors[3])
+		if draw_closed:
+			for cell in closed_set:
+				if not cell.is_end and not cell.is_start:
+					cell.draw_cell(screen, h.colors[2])
+
+		# drawing path
+		if draw_path:
+			path = []
+			temp = current
+			while temp.came_from is not None:
+				path.append(temp)
+				temp = temp.came_from
+			for cell in path:
+				cell.draw_cell(screen, h.colors[6])
+
+		if draw_open or draw_closed or draw_path:
+			clock.tick(360)
+			pygame.display.update()
+
+	messagebox.showwarning(title="Warning", message="No solution exists!")
+	return []

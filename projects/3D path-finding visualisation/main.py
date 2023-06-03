@@ -20,7 +20,7 @@ while True:
 	if len(h.path) > 0:
 		h.draw_path(screen)
 
-	h.detect_event(screen)
+	h.detect_event(screen, clock)
 
 	clock.tick(60)
 	pygame.display.update()

@@ -26,11 +26,7 @@ class cell:
 		self.shift = np.array([2 * h.SCREEN_WIDTH / 5, h.SCREEN_HEIGHT / 2])
 
 		# wall
-		self.is_wall = random() > 0.8
-
-		# drawing
-		self.show_wall = self.is_wall
-		self.drawn = False
+		self.is_wall = random() < h.probability_of_wall
 
 		# pathfinding A*
 		self.is_start = False
@@ -39,7 +35,6 @@ class cell:
 		self.g = 0
 		self.h = 0
 		self.came_from = None
-		self.is_path = False
 	
 	def rotate(self, matrix):
 		self.corners = np.dot(matrix, self.corners)
@@ -48,16 +43,13 @@ class cell:
 		self.is_wall = not self.is_wall
 		self.show_wall = self.is_wall
 
-	def draw_cell(self, screen, show_centers, color):
-		if show_centers:
-			self.draw_center(screen)
-		if self.show_wall or self.is_start or self.is_end or self.is_path or self.drawn:
-			for point_1 in self.corners.T[1:]:
-				for point_2 in self.corners.T[1:]:
-					if np.linalg.norm(point_2 - point_1) <= self.cell_size and np.linalg.norm(point_2 - point_1, ord=1) > 0:
-						start = point_1[0:3:2] + self.shift
-						end = point_2[0:3:2] + self.shift
-						pygame.draw.line(screen, color, start.tolist(), end.tolist())
+	def draw_cell(self, screen, color):
+		for point_1 in self.corners.T[1:]:
+			for point_2 in self.corners.T[1:]:
+				if np.linalg.norm(point_2 - point_1) <= self.cell_size and np.linalg.norm(point_2 - point_1, ord=1) > 0:
+					start = point_1[0:3:2] + self.shift
+					end = point_2[0:3:2] + self.shift
+					pygame.draw.line(screen, color, start.tolist(), end.tolist())
 
 	def draw_center(self, screen):
 		pygame.draw.circle(screen, h.colors[1], (self.corners.T[0][0:3:2] + self.shift).tolist(), 5)

@@ -1,14 +1,14 @@
 import helper as h
 import pygame
 
-UI_LEFT = 210
+UI_LEFT = 220
 
 def draw_ui(screen):
 	# wall, beginning and end options
-	options = h.UI_FONT.render('Options', True, (0, 0, 0))
-	optionsrect = options.get_rect()
-	optionsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 13)
-	screen.blit(options, optionsrect)
+	grid_options = h.UI_FONT.render('Grid options', True, (0, 0, 0))
+	grid_optionsrect = grid_options.get_rect()
+	grid_optionsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 13)
+	screen.blit(grid_options, grid_optionsrect)
 	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 30, UI_LEFT - 10, 225), width=2)
 	
 	# Toggle walls-button
@@ -58,7 +58,7 @@ def draw_ui(screen):
 	algorithmsrect = algorithms.get_rect()
 	algorithmsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 268)
 	screen.blit(algorithms, algorithmsrect)
-	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 285, UI_LEFT - 10, 120), width=2)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 285, UI_LEFT - 10, 85), width=2)
 
 	# run A* algorithm
 	h.button_5 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 295, UI_LEFT - 30, 30))
@@ -73,3 +73,17 @@ def draw_ui(screen):
 	text8rect = text8.get_rect()
 	text8rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 345)
 	screen.blit(text8, text8rect)
+
+	# Draw options
+	options = h.UI_FONT.render('Draw options', True, (0, 0, 0))
+	optionsrect = options.get_rect()
+	optionsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 383)
+	screen.blit(options, optionsrect)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 400, UI_LEFT - 10, 50), width=2)
+
+	# open options menu
+	h.button_9 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 410, UI_LEFT - 30, 30))
+	text9 = h.UI_FONT.render("Open options", True, (255, 255, 255, 0.5))
+	text9rect = text9.get_rect()
+	text9rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 425)
+	screen.blit(text9, text9rect)
