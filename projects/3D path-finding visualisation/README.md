@@ -22,6 +22,7 @@ Only path visible and walls hidden:
 ![image](https://github.com/naapeli/Python_projects/assets/130310206/786daca0-91ea-43b5-a889-1632f87c524c)
 
 Options menu:
+
 ![image](https://github.com/naapeli/Python_projects/assets/130310206/9feab184-2cff-40fb-b7b5-1d8235d31e63)
 
 Help menu (algorithm descriptions from Wikipedia):
