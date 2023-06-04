@@ -8,6 +8,7 @@ Another reason for creating this program was that path finding algorithms have m
 Overall creating this program was extremely interesting and rewarding. In the future I will continue creating more and more complicated programs in order to practice programming.
 
 Here are some pictures from the program:
+
 A*algorithm running:
 ![image](https://github.com/naapeli/Python_projects/assets/130310206/1fe0512c-5113-4253-b317-46ed77702e39)
 Dijkstra's algorithm running:
