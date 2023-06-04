@@ -47,7 +47,7 @@ class optionMenu:
 		# draw open set
 		draw_open_grid = tk.LabelFrame(drawing_options)
 		draw_open_grid.grid(row=1, column=2)
-		draw_open_label = tk.Label(draw_open_grid, font=('Arial', 12), text="Draw closed set")
+		draw_open_label = tk.Label(draw_open_grid, font=('Arial', 12), text="Draw open set")
 		draw_open_label.grid(row=0, column=0)
 		self.draw_open_value = tk.StringVar(self.root)
 		self.draw_open_value.set(str(h.draw_open))
@@ -133,7 +133,13 @@ class optionMenu:
 					cube = h.cubes[i][j][k]
 					if not cube.is_start or not cube.is_end:
 						cube.is_wall = (i == round(h.rows/2))
-		h.cubes[round((h.rows + 1)/2)][round((h.columns + 1)/2)][round((h.depth + 1)/2)].is_wall = False
+					cube.is_start = False
+					cube.is_end = False
+		h.cubes[round((h.rows)/2)][round((h.columns)/2)][round((h.depth + 1)/2)].is_wall = False
+		h.cubes[1][1][1].is_wall = False
+		h.cubes[1][1][1].is_start = True
+		h.cubes[h.rows][h.columns][h.depth].is_wall = False
+		h.cubes[h.rows][h.columns][h.depth].is_end = True
 		self.preset_used = True
 
 	def wall_preset_2(self):
@@ -150,7 +156,7 @@ class optionMenu:
 		h.draw_closed = (self.draw_closed_value.get() == "True")
 		h.draws_path = (self.draw_path_value.get() == "True")
 		h.probability_of_wall = self.wall_probability_option.get()
-		if not self.preset_used:
+		if not self.preset_used and self.dimensions_changed():
 			h.rows = self.rows_option.get()
 			h.columns = self.columns_option.get()
 			h.depth = self.height_option.get()
@@ -160,6 +166,9 @@ class optionMenu:
 				h.layer = 1
 			h.cubes = [[[0 for k in range(h.depth + 2)] for j in range(h.columns + 2)] for i in range(h.rows + 2)]
 			h.create_cubes()
-		elif h.rows != self.rows_option.get() or h.columns != self.columns_option.get() or h.depth != self.height_option.get():
+		elif self.dimensions_changed():
 			tk.messagebox.showwarning(title="Warning!", message="Preset used. Change the dimensions of the grid again.")
 		self.root.destroy()
+
+	def dimensions_changed(self):
+		return h.rows != self.rows_option.get() or h.columns != self.columns_option.get() or h.depth != self.height_option.get()

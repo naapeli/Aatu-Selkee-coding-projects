@@ -1,4 +1,0 @@
-website
-chess engine
-3d a* algorithm path finding solver
-sudoku solver

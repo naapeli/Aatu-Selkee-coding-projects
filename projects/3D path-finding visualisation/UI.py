@@ -3,7 +3,7 @@ import pygame
 
 UI_LEFT = 220
 
-def draw_ui(screen):
+def draw_ui(screen, clock):
 	# wall, beginning and end options
 	grid_options = h.UI_FONT.render('Grid options', True, (0, 0, 0))
 	grid_optionsrect = grid_options.get_rect()
@@ -75,11 +75,11 @@ def draw_ui(screen):
 	screen.blit(text8, text8rect)
 
 	# Draw options
-	options = h.UI_FONT.render('Draw options', True, (0, 0, 0))
+	options = h.UI_FONT.render('Draw options / Help', True, (0, 0, 0))
 	optionsrect = options.get_rect()
 	optionsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 383)
 	screen.blit(options, optionsrect)
-	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 400, UI_LEFT - 10, 50), width=2)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 400, UI_LEFT - 10, 85), width=2)
 
 	# open options menu
 	h.button_9 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 410, UI_LEFT - 30, 30))
@@ -87,3 +87,52 @@ def draw_ui(screen):
 	text9rect = text9.get_rect()
 	text9rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 425)
 	screen.blit(text9, text9rect)
+
+	# open help menu
+	h.button_10 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 445, UI_LEFT - 30, 30))
+	text10 = h.UI_FONT.render("Help", True, (255, 255, 255, 0.5))
+	text10rect = text10.get_rect()
+	text10rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 460)
+	screen.blit(text10, text10rect)
+
+	# statistics
+	statistics = h.UI_FONT.render('Statistics', True, (0, 0, 0))
+	statisticsrect = statistics.get_rect()
+	statisticsrect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 498)
+	screen.blit(statistics, statisticsrect)
+	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 515, UI_LEFT - 10, 185), width=2)
+
+	# grid dimensions
+	button11 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 525, UI_LEFT - 30, 60))
+	text11 = h.UI_FONT.render("Grid dimensions:", True, (255, 255, 255, 0.5))
+	text11rect = text11.get_rect()
+	text11rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 540)
+	screen.blit(text11, text11rect)
+	text11_ = h.UI_FONT.render(str((h.rows, h.columns, h.depth)), True, (255, 255, 255, 0.5))
+	text11_rect = text11_.get_rect()
+	text11_rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 565)
+	screen.blit(text11_, text11_rect)
+
+	# path length
+	button12 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 590, UI_LEFT - 30, 60))
+	text12 = h.UI_FONT.render("Path lenght:", True, (255, 255, 255, 0.5))
+	text12rect = text12.get_rect()
+	text12rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 605)
+	screen.blit(text12, text12rect)
+	path_lenght = None
+	if len(h.path) == 0:
+		path_lenght = "No path yet"
+	else:
+		path_lenght = str(len(h.path))
+	text12_ = h.UI_FONT.render(path_lenght, True, (255, 255, 255, 0.5))
+	text12_rect = text12_.get_rect()
+	text12_rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 630)
+	screen.blit(text12_, text12_rect)
+
+	# fps
+	buttonfps = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 660, UI_LEFT - 30, 30))
+	fps_text = h.UI_FONT.render("FPS: " + str(round(clock.get_fps(), 2)), True, (255, 255, 255, 0.5))
+	fps_text_rect = fps_text.get_rect()
+	fps_text_rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 675)
+	screen.blit(fps_text, fps_text_rect)
+

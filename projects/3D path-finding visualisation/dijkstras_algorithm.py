@@ -66,7 +66,7 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 		# drawing
 		if draw_open or draw_closed or draw_path:
 			screen.fill((255, 255, 255))
-			UI.draw_ui(screen)
+			UI.draw_ui(screen, clock)
 			if h.layer <= 0 or h.layer >= h.depth + 1:
 				h.draw_all(screen)
 			else:
@@ -86,14 +86,15 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 		if draw_path:
 			path = []
 			temp = current
-			while temp.came_from is not None:
+			while temp is not None:
 				path.append(temp)
 				temp = temp.came_from
+			h.path = path
 			for cell in path:
 				cell.draw_cell(screen, h.colors[6])
 
 		if draw_open or draw_closed or draw_path:
-			clock.tick(360)
+			clock.tick()
 			pygame.display.update()
 	
 	messagebox.showwarning(title="Warning", message="No solution exists!")

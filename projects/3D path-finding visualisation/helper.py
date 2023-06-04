@@ -7,6 +7,7 @@ from random import random
 import a_star_algorithm as a_star
 import dijkstras_algorithm as dijkstras
 from option_menu import optionMenu
+from help_menu import helpMenu
 
 pygame.init()
 pygame.font.init()
@@ -22,6 +23,7 @@ button_6 = None
 button_7 = None
 button_8 = None
 button_9 = None
+button_10 = None
 
 # Constants
 SCREEN_HEIGHT = 800
@@ -32,9 +34,9 @@ colors = [(255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (255, 255, 0), (
 # Variables
 angle_x = 0
 angle_z = 0
-rows = 12
-columns = 12
-depth = 6
+rows = 15
+columns = 15
+depth = 1
 layer = None
 if depth != 1:
 	layer = depth + 1
@@ -46,9 +48,9 @@ show_centers = False
 select_start = False
 select_end = False
 show_walls = True
-draw_open = False
-draw_closed = False
-draws_path = False
+draw_open = True
+draw_closed = True
+draws_path = True
 probability_of_wall = 0.2
 
 def create_cubes():
@@ -64,8 +66,8 @@ def create_cubes():
 					cubes[i][j][k].is_wall = True
 
 	# setting default start and end
-	cubes[1][1][1].is_wall = False
-	cubes[1][1][1].is_start = True
+	cubes[round((rows)/2)][round((columns)/2)][round((depth + 1)/2)].is_wall = False
+	cubes[round((rows)/2)][round((columns)/2)][round((depth + 1)/2)].is_start = True
 	cubes[rows][columns][depth].is_wall = False
 	cubes[rows][columns][depth].is_end = True
 
@@ -172,6 +174,9 @@ def detect_event(screen, clock):
 			if button_9.collidepoint(mouse_pos):
 				path = []
 				optionMenu()
+			if button_10.collidepoint(mouse_pos):
+				helpMenu()
+
 
 def draw_all(screen):
 	for i in range(rows + 2):
