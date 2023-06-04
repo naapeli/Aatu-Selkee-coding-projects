@@ -6,3 +6,19 @@ This project originates from my need of applying my knowledge in linear algebra 
 Another reason for creating this program was that path finding algorithms have many applications in real life. Visualising these algorithms that are used in nvaigation systems, robotics and supply chain management felt useful as these applications are vital for products we use every day. Therefore understanding these algorithms was important.
 
 Overall creating this program was extremely interesting and rewarding. In the future I will continue creating more and more complicated programs in order to practice programming.
+
+Here are some pictures from the program:
+A*algorithm running:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/1fe0512c-5113-4253-b317-46ed77702e39)
+Dijkstra's algorithm running:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/6e679345-b8f8-4ff5-815c-7ae765b21696)
+GUI:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/984240a9-40ae-4ec3-b99f-cf91e7f90454)
+Only path visible and walls hidden:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/786daca0-91ea-43b5-a889-1632f87c524c)
+Options menu:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/9feab184-2cff-40fb-b7b5-1d8235d31e63)
+Help menu (algorithm descriptions from Wikipedia):
+![image](https://github.com/naapeli/Python_projects/assets/130310206/6e693d78-ee28-424c-a07b-3b9719f62f6f)
+Preset 1:
+![image](https://github.com/naapeli/Python_projects/assets/130310206/30f7d03c-60ca-40a5-bf8a-9d763e312e82)
