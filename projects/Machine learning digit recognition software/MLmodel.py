@@ -1,36 +1,76 @@
-from sklearn.neighbors import KNeighborsClassifier
+import tensorflow as tf
 import numpy as np
 from PIL import Image
 import os
+import matplotlib.pyplot as plt
 
 
 class Model:
-    def __init__(self, number_of_each_digit=100):
-        self.number_of_each_digit = number_of_each_digit
-        self.x_data = np.zeros((1, 1024))
-        self.y_data = np.zeros((1, 1))
-        self.knn_model = KNeighborsClassifier(n_neighbors=2)
-        self.train()
+    def __init__(self):
+        self.nn_model = tf.keras.Sequential([
+            tf.keras.layers.Dense(32, activation='relu', input_shape=(1024,)),
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(10, activation='softmax')
+        ])
+        self.nn_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-    def train(self):
-        directory = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine " \
-                    r"learning digit recognition software\data\train"
+    @staticmethod
+    def save_train_data(number_of_each_digit):
+        x_data = np.zeros((1, 1024))
+        y_data = np.zeros((1, 1))
+        directory = r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine learning digit recognition software\data"
         for digit_name in os.listdir(directory):
-            i = 0
-            for filename in os.listdir(os.path.join(directory, digit_name)):
-                i += 1
-                print(digit_name, i)
-                if i <= self.number_of_each_digit:
-                    file = os.path.join(directory, digit_name, filename)
-                    image = Image.open(file)
-                    pixels = np.asarray(image)
-                    pixels = pixels.reshape(1, 1024)
-                    self.x_data = np.vstack([self.x_data, pixels])
-                    self.y_data = np.vstack([self.y_data, digit_name])
-        self.knn_model.fit(self.x_data[1:, :], np.ravel(self.y_data[1:, :]))
+            print(digit_name)
+            image = Image.open(os.path.join(directory, digit_name))
+            # image = image.convert("1")
+            pixels = np.asarray(image)
+            pixels = pixels[:, :, 3].reshape(1, 1024)
+            x_data = np.vstack([x_data, pixels])
+            y_data = np.vstack([y_data, int(digit_name[0])])
+        data = np.concatenate((x_data, y_data.reshape(-1, 1)), axis=1)
+        data = data[np.random.permutation(data.shape[0])]
+        return data[:, :-1], data[:, -1].reshape(-1, 1)
+
+    def train(self, iterations, number_of_each_digit):
+        x_data, y_data = self.save_train_data(number_of_each_digit)
+        history = self.nn_model.fit(x_data[1:, :], y_data[1:, :], epochs=iterations, validation_split=0.2)
+        self.nn_model.save_weights("nn_weights2.h5")
+
+        def plot_loss(history):
+            plt.plot(history.history['loss'], label='loss')
+            plt.plot(history.history['val_loss'], label='val_loss')
+            plt.xlabel('Epoch')
+            plt.ylabel('sparse_categorical_crossentropy')
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+
+        def plot_accuracy(history):
+            plt.plot(history.history['accuracy'], label='accuracy')
+            plt.plot(history.history['val_accuracy'], label='val_accuracy')
+            plt.xlabel('Epoch')
+            plt.ylabel('Accuracy')
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+
+        plt.figure(1)
+        plot_loss(history)
+        plt.figure(2)
+        plot_accuracy(history)
 
     def predict(self, picture):
-        predict_x = np.asarray(picture)[:, :, 1] / 255
-        predict_x = predict_x.reshape(1, 1024)
-        number = self.knn_model.predict(predict_x).item()
+        # picture = picture.convert("1")
+        predict_x = np.asarray(picture)[:, :, 3].reshape(1, 1024)
+        predict_x
+        output = self.nn_model.predict(predict_x)
+        print(output)
+        number = np.argmax(output)
         return number
+
+malli = Model()
+malli.train(30, 100)
+# kuva1 = Image.open(r"C:\Users\aatus\PycharmProjects\Python_projects\projects\Machine learning digit recognition software\data\0_picture_0.jpg")
+# pixels = np.asarray(kuva1)[:, :, 3]
+# pixels = pixels[pixels == 0]
+# print(len(pixels))

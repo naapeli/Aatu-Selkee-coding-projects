@@ -1,5 +1,4 @@
 import tkinter as tk
-import MLmodel
 import NNmodel
 from PIL import ImageTk
 

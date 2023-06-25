@@ -70,5 +70,6 @@ class Model:
         picture = picture.convert("1")
         predict_x = np.asarray(picture).reshape(1, 1024)
         output = self.nn_model.predict(predict_x)
+        print(output)
         number = np.argmax(output)
         return number
