@@ -53,6 +53,9 @@ class GUI:
         self.canvas.create_image(1, 1, anchor=tk.NW, image=self.image, state="normal")
         self.canvas.bind("<B1-Motion>", self.paint)
         self.canvas.grid(row=0, column=0)
+        self.result_label.destroy()
+        self.result_label = tk.Label(self.window, text="-")
+        self.result_label.grid(row=4, column=0)
 
     def determine_number(self):
         image = ImageTk.getimage(self.image)

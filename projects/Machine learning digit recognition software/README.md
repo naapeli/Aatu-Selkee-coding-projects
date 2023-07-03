@@ -7,3 +7,5 @@ This program is designed to recognise hand-drawn digits from 0-9. With this prog
 The intent behind this program was not to make the most beautiful GUI imaginable, but to make a program that showcases the neural networks ability to be applied to many different things. To me, image recognition using software is a little unintuitive, thus this project was natural to start off my machine learning tasks.
 
 Here are some pictures from the program:
+
+The basic GUI:
