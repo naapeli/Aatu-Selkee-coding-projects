@@ -20,7 +20,7 @@ class GUI:
         self.canvas.bind("<B1-Motion>", self.paint)
         self.image = tk.PhotoImage(width=width_height, height=width_height)
         self.image.put("#000000", to=(0, 0, width_height, width_height))
-        self.canvas.create_image((width_height / 2, width_height / 2), image=self.image, state="normal")
+        self.canvas.create_image(1, 1, anchor=tk.NW, image=self.image, state="normal")
         frame = tk.Frame(self.window)
         frame.grid(row=1, column=0)
         clear_button = tk.Button(frame, command=self.clear_canvas, text="Clear canvas", width=22)
@@ -39,6 +39,10 @@ class GUI:
     def paint(self, event):
         x, y = max(min(event.x, width_height - 1), 1), max(min(event.y, width_height - 1), 1)
         self.image.put("#FFFFFF", (x, y))
+        # self.image.put("#FFFFFF", (x - 1, y - 1))
+        # self.image.put("#FFFFFF", (x - 1, y + 1))
+        # self.image.put("#FFFFFF", (x + 1, y + 1))
+        # self.image.put("#FFFFFF", (x + 1, y - 1))
 
     def clear_canvas(self):
         self.canvas.destroy()
@@ -46,7 +50,7 @@ class GUI:
                                 highlightbackground="black")
         self.image = tk.PhotoImage(width=width_height, height=width_height)
         self.image.put("#000000", to=(0, 0, width_height, width_height))
-        self.canvas.create_image((width_height / 2, width_height / 2), image=self.image, state="normal")
+        self.canvas.create_image(1, 1, anchor=tk.NW, image=self.image, state="normal")
         self.canvas.bind("<B1-Motion>", self.paint)
         self.canvas.grid(row=0, column=0)
 
