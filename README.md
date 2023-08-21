@@ -7,7 +7,7 @@ My projects include (from most complicated to least complicated):
 3. Flappy bird played by an artificial intelligence
 4. Digit recognition program (neural network) with ok accuracy
 5. Climate data visualisation tool
-6. A few solution to Matt Parker's Math Puzzles
-7. Some solutions to Leetcode problems
+6. A few solutions to Matt Parker's Math Puzzles
+7. Some solutions to Leetcode problems (most solutions not included)
 8. Some school excercises in my linear algebra course
 9. A simple login-system that checks password and username from an excel-database
