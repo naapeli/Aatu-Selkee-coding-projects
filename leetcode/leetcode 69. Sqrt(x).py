@@ -4,12 +4,13 @@ from math import floor
 # Newton's method
 
 def sqrt(y: float) -> int:
-    a = 0.01
+    if x == 0: return 0
+    a = 0.00001
     x_prev = 1
-    x_new = y
+    x_new = x
     while abs(x_new - x_prev)/x_prev > a:
         x_prev = x_new
-        x_new = x_prev - (x_prev ** 2 - y)/(2 * x_prev)
+        x_new = x_prev - (x_prev ** 2 - x)/(2 * x_prev)
     return floor(x_new)
 
 
@@ -24,7 +25,7 @@ def sqrt_2(y: float) -> int:
             area[0] = mid
         else:
             area[1] = mid
-    return floor(area[0])
+    return floor(area[1])
 
 
 print(sqrt(2))

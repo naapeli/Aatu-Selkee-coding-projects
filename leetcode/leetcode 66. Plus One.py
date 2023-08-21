@@ -23,8 +23,6 @@ def plus_one(digits: List[int]) -> List[int]:
 
 
 def plus_one_2(digits: List[int]) -> List[int]:
-    def to_int(n: int):
-        return int(n)
     number = 0
     result = []
     for index in range(len(digits)):
@@ -33,7 +31,7 @@ def plus_one_2(digits: List[int]) -> List[int]:
     number += 1
     for num in str(number):
         result += num
-        result = list(map(to_int, result))
+        result = list(map(int, result))
     return result
 
 
