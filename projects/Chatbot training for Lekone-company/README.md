@@ -1,0 +1,1 @@
+Tried to make a simple chatbot from a whatsapp conversation, however couldn't format the whatsapp data that was in Finnish in a way that the computer was able to understand it.
