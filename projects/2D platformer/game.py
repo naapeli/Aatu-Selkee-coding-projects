@@ -7,8 +7,8 @@ from scripts.tilemap import tilemap
 
 class game:
 	def __init__(self):
-		self.SCREEN_WIDTH = 640
-		self.SCREEN_HEIGHT = 480
+		self.SCREEN_WIDTH = 1280
+		self.SCREEN_HEIGHT = 960
 		self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
 		pygame.display.set_caption('2D platformer')
 		self.display = pygame.Surface((480, 360))
@@ -17,14 +17,21 @@ class game:
 		self.assets = {
 		"background": pygame.Rect(0, 0, self.SCREEN_WIDTH, self.SCREEN_HEIGHT),
 		"player": load_picture("player/01.png"),
-		"grass": load_pictures("grass/")
+		"grass": load_pictures("grass/"),
+		"dirt": load_pictures("dirt/"),
+		"stone": load_pictures("stone/")
 		}
 
 		self.tilemap = tilemap(self.assets)
-		for i in range(0, 9):
-			self.tilemap.add_tile(str(i) + ";7", "grass", 0, (i, 7))
 		for j in range(2, 9):
-			self.tilemap.add_tile("4;" + str(j), "grass", 0, (4, j))
+			self.tilemap.add_tile(str(j) + ";5", "stone", 0, (j, 5), 0)
+		for i in range(0, 9):
+			self.tilemap.add_tile(str(i) + ";7", "grass", 0, (i, 7), 0)
+		self.tilemap.add_tile("9;7", "grass", 1, (9, 7), 0)
+		self.tilemap.add_tile("9;8", "grass", 0, (9, 8), 3)
+		for i in range(0, 9):
+			self.tilemap.add_tile(str(i) + ";8", "dirt", 0, (i, 8), 0)
+
 
 		self.player = player(self.assets["player"])
 

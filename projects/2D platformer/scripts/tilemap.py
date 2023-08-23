@@ -6,22 +6,22 @@ class tilemap:
 		self.off_grid_tiles = []
 		self.TILESIZE = 32
 		self.assets = assets
-		self.collision_tile_types = {"grass"}
+		self.collision_tile_types = {"grass", "stone"}
 
 	def render(self, surface):
 		for tile in self.off_grid_tiles:
-			surface.blit(self.assets[tile["type"]][tile["variant"]], tile["position"])
+			surface.blit(pygame.transform.rotate(self.assets[tile["type"]][tile["variant"]], 90 * tile["rotation"]), tile["position"])
 
 		for position in self.on_grid_tiles:
 			tile = self.on_grid_tiles[position]
 			tile_position = (tile["position"][0] * self.TILESIZE, tile["position"][1] * self.TILESIZE)
-			surface.blit(self.assets[tile["type"]][tile["variant"]], tile_position)
+			surface.blit(pygame.transform.rotate(self.assets[tile["type"]][tile["variant"]], 90 * tile["rotation"]), tile_position)
 
-	def add_tile(self, indicies, type, variant, position, on_grid=True):
+	def add_tile(self, indicies, type, variant, position, rotation, on_grid=True):
 		if on_grid:
-			self.on_grid_tiles[indicies] = {"type": type, "variant": variant, "position": position}
+			self.on_grid_tiles[indicies] = {"type": type, "variant": variant, "position": position, "rotation": rotation}
 		else:
-			self.off_grid_tiles.append({"position": position, "type": type, "variant": variant})
+			self.off_grid_tiles.append({"position": position, "type": type, "variant": variant, "rotation": rotation})
 
 	def remove_tile(self, indicies, on_grid=True, position=None):
 		if on_grid:

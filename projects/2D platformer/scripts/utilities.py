@@ -1,7 +1,7 @@
 import pygame
 import os
 
-BASE_PATH = r"C:/Users/aatus/OneDrive/Documents/GitHub/Python_projects/projects/2D platformer/scripts/pictures/"
+BASE_PATH = os.getcwd() + r"/scripts/pictures/"
 
 def load_picture(path):
 	full_path = BASE_PATH + path
