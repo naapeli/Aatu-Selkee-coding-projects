@@ -8,14 +8,18 @@ class tilemap:
 		self.assets = assets
 		self.collision_tile_types = {"grass", "stone"}
 
-	def render(self, surface):
+	def render(self, surface, offset=[0, 0]):
 		for tile in self.off_grid_tiles:
-			surface.blit(pygame.transform.rotate(self.assets[tile["type"]][tile["variant"]], 90 * tile["rotation"]), tile["position"])
-
-		for position in self.on_grid_tiles:
-			tile = self.on_grid_tiles[position]
-			tile_position = (tile["position"][0] * self.TILESIZE, tile["position"][1] * self.TILESIZE)
+			tile_position = (tile["position"][0] - offset[0], tile["position"][1] - offset[1])
 			surface.blit(pygame.transform.rotate(self.assets[tile["type"]][tile["variant"]], 90 * tile["rotation"]), tile_position)
+
+		for x in range(offset[0] // self.TILESIZE, (offset[0] + surface.get_width()) // self.TILESIZE + 1):
+			for y in range(offset[1] // self.TILESIZE, (offset[1] + surface.get_height()) // self.TILESIZE + 1):
+				position = str(x) + ";" + str(y)
+				if position in self.on_grid_tiles:
+					tile = self.on_grid_tiles[position]
+					tile_position = (tile["position"][0] * self.TILESIZE - offset[0], tile["position"][1] * self.TILESIZE - offset[1])
+					surface.blit(pygame.transform.rotate(self.assets[tile["type"]][tile["variant"]], 90 * tile["rotation"]), tile_position)
 
 	def add_tile(self, indicies, type, variant, position, rotation, on_grid=True):
 		if on_grid:

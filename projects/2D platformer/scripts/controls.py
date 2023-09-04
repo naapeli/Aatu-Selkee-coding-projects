@@ -16,6 +16,7 @@ def detect_event(player):
 				if player.jump_counter > 0:
 					player.jump_counter -= 1
 					player.velocity[1] = -player.jump_strength
+					player.set_action("jump")
 		if event.type == pygame.KEYUP:
 			if event.key == pygame.K_LEFT:
 				player.movement[0] = False
