@@ -38,4 +38,10 @@ ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=18)
 
 plt.title('Kahvilan liikevaihdon muutos seuraavan neljän vuoden aikana', fontsize=30)
 fig.tight_layout()
+
+fig, ax = plt.subplots()
+table = ax.table(cellText=[["kvartaali"] + list(quarter), ["Myydyt tuotteet"] + list(buys_per_quarter), ["Liikevaihto"] + list(revenue_per_quarter)], loc='center', colWidths=[0.1 for i in range(0, len(["Liikevaihto"] + list(revenue_per_quarter)))])
+table.auto_set_font_size(False)
+ax.axis("off")
+plt.tick_params(labelsize=0)
 plt.show()
