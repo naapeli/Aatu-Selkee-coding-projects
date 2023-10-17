@@ -1,0 +1,28 @@
+#gameboard {
+    width: 800px;
+    height: 800px;
+    background-color: black;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.square {
+    height: 100px;
+    width: 100px;
+}
+
+.square:hover {
+    background-color: #de8e4d;
+}
+
+.square img {
+    position: relative;
+}
+
+.white {
+    background-color: #f0d9b5;
+}
+
+.black{
+    background-color: #b58863;
+}
