@@ -1,7 +1,6 @@
 #gameboard {
     width: 800px;
     height: 800px;
-    background-color: black;
     display: flex;
     flex-wrap: wrap;
 }
