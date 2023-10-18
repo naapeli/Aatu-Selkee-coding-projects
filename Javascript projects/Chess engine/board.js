@@ -128,6 +128,7 @@ class board {
     };
 
     getPossibleMoves() {
+        // maybe add variables for all piece positions so that do not need to loop over whole board???
         let moves = [];
         let color = this.whiteToMove ? "w" : "b";
         let oppositeColor = this.whiteToMove ? "b" : "w";
@@ -164,8 +165,6 @@ class board {
                 };
             };
         };
-        // TODO: remove pinned moves and checks
-
         return moves
     };
 
