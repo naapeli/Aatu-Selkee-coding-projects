@@ -13,14 +13,35 @@ class board {
         this.whiteToMove = true
         this.blackKingPosition = [4, 0];
         this.whiteKingPosition = [4, 7];
-        this.whiteMaterial = 39.4
-        this.blackMaterial = 39.4
-        this.possibleMoves = this.getPossibleMoves()
-        this.moveLog = []
-        this.currentCheckingPieces = [] // element is in format [[locationOfChekingPiece, directionFromKing],
+        this.whiteMaterial = 39.4;
+        this.blackMaterial = 39.4;
+        this.possibleMoves = this.getPossibleMoves();
+        this.moveLog = []; // [[move, takenPiece], ...]
+        this.whiteCanCastle = [true, true] // long, short
+        this.blackCanCastle = [true, true] // long, short
+        this.currentCheckingPieces = []; // element is in format [[locationOfChekingPiece, directionFromKing],
         // [locationOfChekingPiece, undefined (if knight is checking)]...]
-        this.currentPinnedPieces = [] // element is in format [[locationOfPinnedPiece, directionFromKing],
+        this.currentPinnedPieces = []; // element is in format [[locationOfPinnedPiece, directionFromKing],
         // [locationOfPinnedPiece, directionFromKing]...]
+    };
+
+    copyBoard() {
+        let newBoard = new board()
+        this.board.forEach((row, j) => {
+            row.forEach((piece, i) => {
+                newBoard.board[j][i] = piece
+            });
+        });
+        newBoard.whiteToMove = this.whiteToMove
+        newBoard.blackKingPosition = this.blackKingPosition
+        newBoard.whiteKingPosition = this.whiteKingPosition
+        newBoard.whiteMaterial = this.whiteMaterial
+        newBoard.blackMaterial = this.blackMaterial
+        newBoard.possibleMoves = this.possibleMoves
+        newBoard.moveLog = this.moveLog
+        newBoard.currentCheckingPieces = this.currentCheckingPieces
+        newBoard.currentPinnedPieces = this.currentPinnedPieces
+        return newBoard
     };
 
     makeMove(move) {
@@ -41,9 +62,11 @@ class board {
                 switch(movingPiece[0]) {
                     case "w":
                         this.whiteKingPosition = move.endPos;
+                        this.whiteCanCastle = [false, false]
                         break;
                     case "b":
                         this.blackKingPosition = move.endPos;
+                        this.blackCanCastle = [false, false]
                         break;
                 };
             };
@@ -56,15 +79,71 @@ class board {
                     break;
                 case "b":
                     this.blackMaterial -= diffValue;
+                    break;
             };
-            this.board[j][i] = "--";
-            this.board[jNew][iNew] = movingPiece;
+            if (move.castleKing) {
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;
+                if (jNew > j) {
+                    this.board[jNew - 1][iNew] = this.board[jNew + 1][iNew];
+                    this.board[jNew + 1][iNew] = "--";
+                } else {
+                    this.board[jNew + 1][iNew] = this.board[jNew - 1][iNew];
+                    this.board[jNew - 1][iNew] = "--";
+                };
+            } else if (move.promotion) {
+
+            } else {
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;
+            };
             this.possibleMoves = [];
             this.determineChecksAndPins()
             this.possibleMoves = this.getPossibleMoves();
             return true;
         };
         return false;
+    };
+
+    undoMove() {
+        // if there are moves remaining
+        if (this.moveLog.length > 0) {
+            // update board, king position and material count
+            this.whiteToMove = !this.whiteToMove
+            let [move, oldPiece] = this.moveLog.pop();
+            this.board[move.startPos[1]][move.startPos[0]] = this.board[move.endPos[1]][move.endPos[0]];
+            this.board[move.endPos[1]][move.endPos[0]] = oldPiece;
+            if (this.board[move.startPos[1]][move.startPos[0]][1] == "K") {
+                switch(this.board[move.startPos[1]][move.startPos[0]][0]) {
+                    case "w":
+                        this.whiteKingPosition = move.startPos;
+                        break;
+                    case "b":
+                        this.blackKingPosition = move.startPos;
+                        break;
+                };
+            };
+            if (oldPiece != "--") {
+                let diffValue = pieceValues[oldPiece[1]];
+                switch(oldPiece[0]) {
+                    case "w":
+                        this.whiteMaterial += diffValue;
+                        break;
+                    case "b":
+                        this.blackMaterial += diffValue;
+                        break;
+                };
+            };
+
+            // draw correct pieces on correct squares
+            let oldSquareId = move.startPos[0] + move.startPos[1] * 8;
+            let newSquareId = move.endPos[0] + move.endPos[1] * 8;
+            updateBoard(oldSquareId, newSquareId, oldPiece)
+
+            // recalculate checks, pins and moves
+            this.determineChecksAndPins()
+            this.possibleMoves = this.getPossibleMoves();
+        };
     };
 
     determineChecksAndPins() {
@@ -117,16 +196,6 @@ class board {
         this.currentPinnedPieces = pinnedPieceLocations;
     };
 
-    undoMove() {
-        if (this.moveLog.length > 0) {
-            this.whiteToMove = !this.whiteToMove
-            let [move, takenPiece] = this.moveLog.pop();
-            this.board[move.startPos[1]][move.startPos[0]];
-            this.board[move.endPos[1]][move.endPos[0]] = takenPiece;
-            // need to update king positions, materials recalculate pins and checks
-        };
-    };
-
     getPossibleMoves() {
         // maybe add variables for all piece positions so that do not need to loop over whole board???
         let moves = [];
@@ -169,7 +238,7 @@ class board {
     };
 
     // returns possible pawn moves in a position
-    // need to add promotion, en passant
+    // need to add en passant
     getPawnMoves(pieceLocation, color) {
         let [i, j] = pieceLocation;
         let moves = [];
@@ -211,10 +280,10 @@ class board {
         let [i, j] = pieceLocation;
         let moves = [];
         moveDifferences.forEach((xyDiff) => {
-            let xDiff = xyDiff[0]
-            let yDiff = xyDiff[1]
-            if (0 <= (i + xDiff) && (i + xDiff) < 8 && 0 <= (j + yDiff) && (j + yDiff) < 8 && this.board[j + yDiff][i + xDiff][0] != color) {
-                moves.push(new Move(pieceLocation, [i + xDiff, j + yDiff]));
+            let iNew = i + xyDiff[0]
+            let jNew = j + xyDiff[1]
+            if (0 <= iNew && iNew < 8 && 0 <= jNew && jNew < 8 && this.board[jNew][iNew][0] != color) {
+                moves.push(new Move(pieceLocation, [iNew, jNew]));
             };
         });
         return moves;

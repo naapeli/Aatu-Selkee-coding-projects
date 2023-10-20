@@ -1,16 +1,16 @@
 const pieceImages = {
-    "wK": '<img class="wK" src="./images/wK.png" width="100" height="100">',
-    "wQ": '<img class="wQ" src="./images/wQ.png" width="100" height="100">',
-    "wR": '<img class="wR" src="./images/wR.png" width="100" height="100">',
-    "wB": '<img class="wB" src="./images/wB.png" width="100" height="100">',
-    "wN": '<img class="wN" src="./images/wN.png" width="100" height="100">',
-    "wP": '<img class="wP" src="./images/wP.png" width="100" height="100">',
-    "bK": '<img class="bK" src="./images/bK.png" width="100" height="100">',
-    "bQ": '<img class="bQ" src="./images/bQ.png" width="100" height="100">',
-    "bR": '<img class="bR" src="./images/bR.png" width="100" height="100">',
-    "bB": '<img class="bB" src="./images/bB.png" width="100" height="100">',
-    "bN": '<img class="bN" src="./images/bN.png" width="100" height="100">',
-    "bP": '<img class="bP" src="./images/bP.png" width="100" height="100">'
+    "wK": '<img class="w K" src="./images/wK.png" width="100" height="100">',
+    "wQ": '<img class="w Q" src="./images/wQ.png" width="100" height="100">',
+    "wR": '<img class="w R" src="./images/wR.png" width="100" height="100">',
+    "wB": '<img class="w B" src="./images/wB.png" width="100" height="100">',
+    "wN": '<img class="w N" src="./images/wN.png" width="100" height="100">',
+    "wP": '<img class="w P" src="./images/wP.png" width="100" height="100">',
+    "bK": '<img class="b K" src="./images/bK.png" width="100" height="100">',
+    "bQ": '<img class="b Q" src="./images/bQ.png" width="100" height="100">',
+    "bR": '<img class="b R" src="./images/bR.png" width="100" height="100">',
+    "bB": '<img class="b B" src="./images/bB.png" width="100" height="100">',
+    "bN": '<img class="b N" src="./images/bN.png" width="100" height="100">',
+    "bP": '<img class="b P" src="./images/bP.png" width="100" height="100">'
 }
 
 
