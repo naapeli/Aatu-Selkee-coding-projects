@@ -30,67 +30,78 @@ function startGame() {
             };
             
             square.addEventListener("dragstart", (event) => {
-                movingPieceImageElement = event.target;
-                movingPieceStartElement = event.target.parentNode;
-                let parentID = movingPieceStartElement.id;
-                movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
+                dragPiece(event);
             });
             square.addEventListener("dragover", (event) => {
                 event.preventDefault();
             });
             square.addEventListener("drop", (event) => {
                 event.stopPropagation();
-                let target;
-                let targetIsImage = false;
-                if (event.target.tagName == "IMG") {
-                    target = event.target.parentNode;
-                    targetIsImage = true;
-                } else {
-                    target = event.target;
-                };
-                let parentID = target.id;
-                movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
-                console.log(movingStartSquare, movingEndSquare, target);
-                let movingPieceIsPawn = movingPieceImageElement.classList.contains("P");
-                let movingPieceIsKing = movingPieceImageElement.classList.contains("K");
-                let isPromotion = false;
-                let isCastling = false;
-                if (movingPieceIsPawn) {
-                    isPromotion = parentID < 8 || parentID > 55;
-                };
-                if (movingPieceIsKing) {
-                    isCastleStart = movingStartSquare[0] == 4 && (movingStartSquare[1] == 0 || movingStartSquare[1] == 7)
-                    isCastleEnd = (parentID == 2) || (parentID == 6) || (parentID == 58) || (parentID == 62)
-                    isCastling = isCastleStart && isCastleEnd
-                };
-                let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling)
-                let moveMade = currentBoard.makeMove(currentMove)
-                if (moveMade) {
-                    if (targetIsImage) {
-                        target.removeChild(target.firstChild)
-                    };
-                    target.appendChild(movingPieceImageElement)
-                    player.textContent = currentBoard.whiteToMove ? "white" : "black";
-                };
+                dropPiece(event);
+                
             });
             gameBoard.append(square)
         });
     });
-    player.textContent = currentBoard.whiteToMove ? "white" : "black";
     undoButton.addEventListener("click", () => {
         currentBoard.undoMove()
     });
 };
 
-function updateBoard(startId, endId, oldPiece) {
-    let startSquare = document.querySelector(`[id="${startId}"]`)
-    let endSquare = document.querySelector(`[id="${endId}"]`)
+function dragPiece(event) {
+    movingPieceImageElement = event.target;
+    movingPieceStartElement = event.target.parentNode;
+    let parentID = movingPieceStartElement.id;
+    movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
+};
 
-    startSquare.appendChild(endSquare.firstChild)
-    if (oldPiece != "--") {
-        endSquare.innerHTML = pieceImages[oldPiece]
+function dropPiece(event) {
+    let target;
+    let targetIsImage = false;
+    if (event.target.tagName == "IMG") {
+        target = event.target.parentNode;
+        targetIsImage = true;
+    } else {
+        target = event.target;
     };
+    let parentID = target.id;
+    movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
+    console.log(movingStartSquare, movingEndSquare, target);
+    let movingPieceIsPawn = movingPieceImageElement.classList.contains("P");
+    let movingPieceIsKing = movingPieceImageElement.classList.contains("K");
+    let isPromotion = false;
+    let isCastling = false;
+    let isAnPassant = false;
+    if (movingPieceIsPawn) {
+        isPromotion = parentID < 8 || parentID > 55;
+        whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
+        blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
+        isAnPassant = whiteAnPassant || blackAnPassant;
+    } else if (movingPieceIsKing) {
+        isCastleStart = movingStartSquare[0] == 4 && (movingStartSquare[1] == 0 || movingStartSquare[1] == 7);
+        isCastleEnd = (parentID == 2) || (parentID == 6) || (parentID == 58) || (parentID == 62);
+        isCastling = isCastleStart && isCastleEnd;
+    };
+    let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant);
+    let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
+    if (moveMade) {
+        updateSquares(squaresToBeUpdated);
+    };
+};
+
+function updateSquares(squaresToBeUpdated) {
     player.textContent = currentBoard.whiteToMove ? "white" : "black";
+    squaresToBeUpdated.forEach((pos) => {
+        let [i, j] = pos;
+        let id = i + j * 8;
+        let squareToBeUppdated = document.querySelector(`[id="${id}"]`)
+        let piece = currentBoard.board[j][i]
+        if (piece != "--") {
+            squareToBeUppdated.innerHTML = pieceImages[piece];
+        } else {
+            squareToBeUppdated.innerHTML = "";
+        };
+    });
 };
 
 startGame();
