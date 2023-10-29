@@ -13,20 +13,16 @@ A*algorithm running:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/2f3cf973-bd38-4d69-a656-999188aba55f)
 
 Dijkstra's algorithm running:
-![image](https://github.com/naapeli/Python_projects/assets/130310206/6e679345-b8f8-4ff5-815c-7ae765b21696)
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/043b7df0-a086-4df3-a918-7a597e1a3caa)
 
 GUI:
-![image](https://github.com/naapeli/Python_projects/assets/130310206/984240a9-40ae-4ec3-b99f-cf91e7f90454)
-
-Only path visible and walls hidden:
-![image](https://github.com/naapeli/Python_projects/assets/130310206/786daca0-91ea-43b5-a889-1632f87c524c)
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/361bded4-de81-4da4-a003-c302a7662d89)
 
 Options menu:
-
-![image](https://github.com/naapeli/Python_projects/assets/130310206/9feab184-2cff-40fb-b7b5-1d8235d31e63)
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/d378d4e2-5da3-4bcd-8529-791db0cbe866)
 
 Help menu (algorithm descriptions from Wikipedia):
-![image](https://github.com/naapeli/Python_projects/assets/130310206/6e693d78-ee28-424c-a07b-3b9719f62f6f)
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/6ff67dd1-c2c8-48fc-b66e-57d0e03cd59a)
 
-Preset 1:
-![image](https://github.com/naapeli/Python_projects/assets/130310206/30f7d03c-60ca-40a5-bf8a-9d763e312e82)
+One of the wall presets:
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/4fd05cac-1116-4de2-be61-d9c43060ad93)
