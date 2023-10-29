@@ -25,6 +25,7 @@ Chess engine:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/fcf3ccf5-7b3c-48ec-b265-2c5cc1f4bd3e)
 
 flappy bird AI:
+
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/f4bc7657-9770-45e2-a07a-1a3f34bc925e)
 
 Buffon's needle problem tool:
