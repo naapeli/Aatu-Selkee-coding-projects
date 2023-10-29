@@ -80,5 +80,5 @@ if __name__ == "__main__":
 	pygame.display.set_caption("flappy bird")
 
 	local_dir = os.getcwd()
-	config_path = os.path.join(local_dir, "config.txt")
+	config_path = os.path.join(local_dir, r"Python projects\flappy bird machine learning\config.txt")
 	h.run(config_path)
