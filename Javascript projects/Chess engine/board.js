@@ -13,14 +13,37 @@ class board {
         this.whiteToMove = true
         this.blackKingPosition = [4, 0];
         this.whiteKingPosition = [4, 7];
-        this.whiteMaterial = 39.4
-        this.blackMaterial = 39.4
-        this.possibleMoves = this.getPossibleMoves()
-        this.moveLog = []
-        this.currentCheckingPieces = [] // element is in format [[locationOfChekingPiece, directionFromKing],
+        this.whiteMaterial = 39.4;
+        this.blackMaterial = 39.4;
+        this.whiteCanCastle = [true, true]; // long, short
+        this.blackCanCastle = [true, true]; // long, short
+        this.currentCheckingPieces = []; // element is in format [[locationOfChekingPiece, directionFromKing],
         // [locationOfChekingPiece, undefined (if knight is checking)]...]
-        this.currentPinnedPieces = [] // element is in format [[locationOfPinnedPiece, directionFromKing],
+        this.currentPinnedPieces = []; // element is in format [[locationOfPinnedPiece, directionFromKing],
         // [locationOfPinnedPiece, directionFromKing]...]
+        this.enPassant = [];
+        this.possibleMoves = this.getPossibleMoves();
+        this.moveLog = []; // [[move, takenPiece, whiteCanCastle, blackCanCastle, enPassant], ...]
+    };
+
+    copyBoard() {
+        let newBoard = new board()
+        this.board.forEach((row, j) => {
+            row.forEach((piece, i) => {
+                newBoard.board[j][i] = piece;
+            });
+        });
+        newBoard.whiteToMove = this.whiteToMove;
+        newBoard.blackKingPosition = this.blackKingPosition;
+        newBoard.whiteKingPosition = this.whiteKingPosition;
+        newBoard.whiteMaterial = this.whiteMaterial;
+        newBoard.blackMaterial = this.blackMaterial;
+        newBoard.possibleMoves = this.possibleMoves;
+        newBoard.moveLog = this.moveLog;
+        newBoard.enPassant = this.enPassant;
+        newBoard.currentCheckingPieces = this.currentCheckingPieces;
+        newBoard.currentPinnedPieces = this.currentPinnedPieces;
+        return newBoard;
     };
 
     makeMove(move) {
@@ -34,21 +57,29 @@ class board {
         };
         if (currentMovePossible) {
             this.whiteToMove = !this.whiteToMove;
+            let squaresToBeUpdated = [];
             let [i, j] = move.startPos;
             let movingPiece = this.board[j][i];
             let [iNew, jNew] = move.endPos;
+            let oldPiece = this.board[jNew][iNew];
+            this.moveLog.push([move, oldPiece, this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
             if (movingPiece[1] == "K") {
                 switch(movingPiece[0]) {
                     case "w":
                         this.whiteKingPosition = move.endPos;
+                        this.whiteCanCastle = [false, false]
                         break;
                     case "b":
                         this.blackKingPosition = move.endPos;
+                        this.blackCanCastle = [false, false]
                         break;
                 };
             };
-            let oldPiece = this.board[jNew][iNew];
-            this.moveLog.push([move, oldPiece]);
+            if (movingPiece[1] == "P" && Math.abs(jNew - j) == 2) {
+                this.enPassant = move.endPos;
+            } else {
+                this.enPassant = [];
+            };
             let diffValue = pieceValues[oldPiece[1]];
             switch(oldPiece[0]) {
                 case "w":
@@ -56,15 +87,125 @@ class board {
                     break;
                 case "b":
                     this.blackMaterial -= diffValue;
+                    break;
             };
-            this.board[j][i] = "--";
-            this.board[jNew][iNew] = movingPiece;
+            if (move.castleKing) {
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;
+                if (iNew > i) {
+                    this.board[jNew][iNew - 1] = this.board[jNew][iNew + 1];
+                    this.board[jNew][iNew + 1] = "--";
+                    squaresToBeUpdated.push([iNew - 1, jNew], [iNew + 1, jNew]);
+                } else {
+                    this.board[jNew][iNew + 1] = this.board[jNew][iNew - 2];
+                    this.board[jNew][iNew - 2] = "--";
+                    squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
+                };
+            } else if (move.promotion) {
+                // ask for the promoted piece
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;/*Piece that the user decides to promote to*/
+            } else if (move.enPassant) {
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;
+                switch(movingPiece[0]) {
+                    case "w":
+                        this.board[jNew + 1][iNew] = "--";
+                        this.whiteMaterial -= 1;
+                        squaresToBeUpdated.push([iNew, jNew + 1]);
+                        break;
+                    case "b":
+                        this.board[jNew - 1][iNew] = "--";
+                        this.blackMaterial -= 1;
+                        squaresToBeUpdated.push([iNew, jNew - 1]);
+                        break;
+                };
+            } else {
+                this.board[j][i] = "--";
+                this.board[jNew][iNew] = movingPiece;
+                if (movingPiece[1] == "R") {
+                    switch(movingPiece[0]) {
+                        case "w":
+                            this.whiteCanCastle = [this.whiteCanCastle[0] && this.board[7][0] == "wR", this.whiteCanCastle[1] && this.board[7][7] == "wR"];
+                            break;
+                        case "b":
+                            this.blackCanCastle = [this.blackCanCastle[0] && this.board[0][0] == "bR", this.blackCanCastle[1] && this.board[0][7] == "bR"];
+                            break;
+                    };
+                };
+            };
+            squaresToBeUpdated.push([i, j], [iNew, jNew]);
             this.possibleMoves = [];
+            this.determineChecksAndPins();
+            this.possibleMoves = this.getPossibleMoves();
+            return [true, squaresToBeUpdated];
+        };
+        return [false];
+    };
+
+    undoMove() {
+        if (this.moveLog.length > 0) {
+            this.whiteToMove = !this.whiteToMove
+            let squaresToBeUpdated = [];
+            let [move, oldPiece, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
+            this.board[move.startPos[1]][move.startPos[0]] = this.board[move.endPos[1]][move.endPos[0]];
+            this.board[move.endPos[1]][move.endPos[0]] = oldPiece;
+            this.whiteCanCastle = whiteCanCastle;
+            this.blackCanCastle = blackCanCastle;
+            this.enPassant = possibleEnPassant;
+            squaresToBeUpdated.push(move.startPos, move.endPos)
+            let iNew = move.endPos[0];
+            let jNew = move.endPos[1];
+
+            if (move.castleKing) {
+                if (move.endPos[0] > move.startPos[0]) {
+                    this.board[jNew][iNew + 1] = this.board[jNew][iNew - 1];
+                    this.board[jNew][iNew - 1] = "--";
+                    squaresToBeUpdated.push([iNew + 1, jNew], [iNew - 1, jNew]);
+                } else {
+                    this.board[jNew][iNew - 2] = this.board[jNew][iNew + 1];
+                    this.board[jNew][iNew + 1] = "--";
+                    squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
+                };
+            } else if (move.enPassant) {
+                switch(this.board[move.startPos[1]][move.startPos[0]]) {
+                    case "wP":
+                        this.board[jNew + 1][iNew] = "bP"
+                        squaresToBeUpdated.push([iNew, jNew + 1]);
+                        break;
+                    case "bP":
+                        this.board[jNew - 1][iNew] = "wP"
+                        squaresToBeUpdated.push([iNew, jNew - 1]);
+                        break;
+                };
+            };
+
+            if (this.board[move.startPos[1]][move.startPos[0]][1] == "K") {
+                switch(this.board[move.startPos[1]][move.startPos[0]][0]) {
+                    case "w":
+                        this.whiteKingPosition = move.startPos;
+                        break;
+                    case "b":
+                        this.blackKingPosition = move.startPos;
+                        break;
+                };
+            };
+            if (oldPiece != "--") {
+                let diffValue = pieceValues[oldPiece[1]];
+                switch(oldPiece[0]) {
+                    case "w":
+                        this.whiteMaterial += diffValue;
+                        break;
+                    case "b":
+                        this.blackMaterial += diffValue;
+                        break;
+                };
+            };
+
+            updateSquares(squaresToBeUpdated)
             this.determineChecksAndPins()
             this.possibleMoves = this.getPossibleMoves();
-            return true;
         };
-        return false;
     };
 
     determineChecksAndPins() {
@@ -75,32 +216,42 @@ class board {
         let pinnedPieceLocations = [];
         let checks = [];
         directions.forEach((direction, j) => {
-            var i = 1;
+            let i = 1;
             let xDiff = direction[0];
             let yDiff = direction[1];
             let directionPinned = []
             while (0 <= kingPosition[0] + i * xDiff && kingPosition[0] + i * xDiff < 8 && 0 <= kingPosition[1] + i * yDiff && kingPosition[1] + i * yDiff < 8) {
                 let currentPiece = this.board[kingPosition[1] + i * yDiff][kingPosition[0] + i * xDiff];
-                if (currentPiece[0] == oppositeColor && directionPinned.length == 1) { // possible pin
-                    if (j < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) { // found piece that pins other piece
+                if (currentPiece == "--") {
+                    i++;
+                    continue;
+                } else if (currentPiece[0] == oppositeColor && directionPinned.length == 1) {
+                    if (j < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) {
                         pinnedPieceLocations.push(directionPinned[0]);
                         break;
-                    } else if (4 <= j && (currentPiece[1] == "R" || currentPiece[1] == "Q")) { // found piece that pins other piece
+                    } else if (4 <= j && (currentPiece[1] == "R" || currentPiece[1] == "Q")) {
                         pinnedPieceLocations.push(directionPinned[0]);
+                        break;
+                    } else {
                         break;
                     };
-                } else if (currentPiece[0] == color && directionPinned.length == 0) { // first own colored piece
+                } else if (currentPiece[0] == color && directionPinned.length == 0) {
                     directionPinned.push([[kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff], direction]);
-                } else if (currentPiece[0] == oppositeColor && directionPinned.length == 0) { // direct check
+                    i++;
+                    continue;
+                } else if (currentPiece[0] == oppositeColor && directionPinned.length == 0) {
                     if (j < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) {
                         checks.push([[kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff], direction]);
                         break;
                     } else if (4 <= j && (currentPiece[1] == "R" || currentPiece[1] == "Q")) {
                         checks.push([[kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff], direction]);
                         break;
+                    } else {
+                        break;
                     };
+                } else {
+                    break;
                 };
-                i++;
             };
         });
 
@@ -113,18 +264,24 @@ class board {
                 };
             };
         });
+
+        let i = kingPosition[0]
+        let j = kingPosition[1]
+        if (oppositeColor == "w") {
+            if (0 <= j + 1 && j + 1 < 8 && 0 <= i - 1 && i - 1 < 8 && this.board[j + 1][i - 1] == "wP") {
+                checks.push([[i - 1, j + 1], [-1, 1]]);
+            } else if (0 <= j + 1 && j + 1 < 8 && 0 <= i + 1 && i + 1 < 8 && this.board[j + 1][i + 1] == "wP") {
+                checks.push([[i + 1, j + 1], [1, 1]]);
+            };
+        } else {
+            if (0 <= j - 1 && j - 1 < 8 && 0 <= i - 1 && i - 1 < 8 && this.board[j - 1][i - 1] == "bP") {
+                checks.push([[i - 1, j - 1], [-1, -1]]);
+            } else if (0 <= j - 1 && j - 1 < 8 && 0 <= i + 1 && i + 1 < 8 && this.board[j - 1][i + 1] == "bP") {
+                checks.push([i + 1, j - 1], [1, -1]);
+            };
+        };
         this.currentCheckingPieces = checks;
         this.currentPinnedPieces = pinnedPieceLocations;
-    };
-
-    undoMove() {
-        if (this.moveLog.length > 0) {
-            this.whiteToMove = !this.whiteToMove
-            let [move, takenPiece] = this.moveLog.pop();
-            this.board[move.startPos[1]][move.startPos[0]];
-            this.board[move.endPos[1]][move.endPos[0]] = takenPiece;
-            // need to update king positions, materials recalculate pins and checks
-        };
     };
 
     getPossibleMoves() {
@@ -168,8 +325,6 @@ class board {
         return moves
     };
 
-    // returns possible pawn moves in a position
-    // need to add promotion, en passant
     getPawnMoves(pieceLocation, color) {
         let [i, j] = pieceLocation;
         let moves = [];
@@ -187,6 +342,14 @@ class board {
                 if (j - 1 >= 0 && i + 1 < 8 && this.board[j - 1][i + 1][0] == "b") {
                     moves.push(new Move(pieceLocation, [i + 1, j - 1], j - 1 == 0));
                 };
+                if (this.enPassant.length > 0 && j == 3) {
+                    if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1) { // need to add detection for pins if king is on the same rank as taken pawn
+                        moves.push(new Move(pieceLocation, [i - 1, j - 1], false, false, true));
+                    };
+                    if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8) { // need to add detection for pins if king is on the same rank as taken pawn
+                        moves.push(new Move(pieceLocation, [i + 1, j - 1], false, false, true));
+                    };
+                };
                 break;
             case "b":
                 if (j + 1 < 8 && this.board[j + 1][i] == "--") {
@@ -201,20 +364,28 @@ class board {
                 if (j + 1 < 8 && i + 1 < 8 && this.board[j + 1][i + 1][0] == "w") {
                     moves.push(new Move(pieceLocation, [i + 1, j + 1], j + 1 == 7));
                 };
+                if (this.enPassant.length > 0 && j == 4) {
+                    if (this.enPassant[1] == 4 && this.enPassant[0] == i - 1 && 0 <= i - 1) { // need to add detection for pins if king is on the same rank as taken pawn
+                        moves.push(new Move(pieceLocation, [i - 1, j + 1], false, false, true));
+                    };
+                    if (this.enPassant[1] == 4 && this.enPassant[0] == i + 1 && i + 1 < 8) { // need to add detection for pins if king is on the same rank as taken pawn
+                        moves.push(new Move(pieceLocation, [i + 1, j + 1], false, false, true));
+                    };
+                };
                 break;
         };
         return moves;
     };
 
     getKnightMoves(pieceLocation, color) {
-        let moveDifferences = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]]
+        let moveDifferences = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]];
         let [i, j] = pieceLocation;
         let moves = [];
         moveDifferences.forEach((xyDiff) => {
-            let xDiff = xyDiff[0]
-            let yDiff = xyDiff[1]
-            if (0 <= (i + xDiff) && (i + xDiff) < 8 && 0 <= (j + yDiff) && (j + yDiff) < 8 && this.board[j + yDiff][i + xDiff][0] != color) {
-                moves.push(new Move(pieceLocation, [i + xDiff, j + yDiff]));
+            let iNew = i + xyDiff[0]
+            let jNew = j + xyDiff[1]
+            if (0 <= iNew && iNew < 8 && 0 <= jNew && jNew < 8 && this.board[jNew][iNew][0] != color) {
+                moves.push(new Move(pieceLocation, [iNew, jNew]));
             };
         });
         return moves;
@@ -277,22 +448,94 @@ class board {
         return moves;
     };
 
-    // need to add castling and check detection
     getKingMoves(pieceLocation, color) {
         let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
         let [i, j] = pieceLocation;
         let moves = [];
+        let oppositeColor = color == "w" ? "b" : "w";
         directions.forEach(direction => {
             if (0 <= i + direction[0] && i + direction[0] < 8 && 0 <= j + direction[1] && j + direction[1] < 8) {
                 let iNew = i + direction[0];
                 let jNew = j + direction[1];
                 let currentSquare = this.board[jNew][iNew];
-                if (currentSquare[0] != color) {
+                if (currentSquare[0] != color && !this.opponentAttackSquare([iNew, jNew], oppositeColor)) {
                     moves.push(new Move(pieceLocation, [iNew, jNew]));
                 };
             };
         });
+        switch(color) {
+            case "w":
+                if (this.whiteCanCastle[0] && this.board[7][0] == "wR" && this.board[7][1] == "--" && this.board[7][2] == "--" && this.board[7][3] == "--") {
+                    if (!this.opponentAttackSquare([2, 7], oppositeColor) && !this.opponentAttackSquare([3, 7], oppositeColor) && this.currentCheckingPieces.length == 0) {
+                        moves.push(new Move(pieceLocation, [2, 7], false, true)); // white castle long
+                    };
+                };
+                if (this.whiteCanCastle[1] && this.board[7][7] == "wR" && this.board[7][5] == "--" && this.board[7][6] == "--") {
+                    if (!this.opponentAttackSquare([5, 7], oppositeColor) && !this.opponentAttackSquare([6, 7], oppositeColor) && this.currentCheckingPieces.length == 0) {
+                        moves.push(new Move(pieceLocation, [6, 7], false, true)) // white castle short
+                    };
+                };
+                break;
+            case "b":
+                if (this.blackCanCastle[0] && this.board[0][0] == "bR" && this.board[0][1] == "--" && this.board[0][2] == "--" && this.board[0][3] == "--") {
+                    if (!this.opponentAttackSquare([2, 0], oppositeColor) && !this.opponentAttackSquare([3, 0], oppositeColor) && this.currentCheckingPieces.length == 0) {
+                        moves.push(new Move(pieceLocation, [2, 0], false, true)); // black castle long
+                    };
+                };
+                if (this.blackCanCastle[1] && this.board[0][7] == "bR" && this.board[0][5] == "--" && this.board[0][6] == "--") {
+                    if (!this.opponentAttackSquare([5, 0], oppositeColor) && !this.opponentAttackSquare([6, 0], oppositeColor) && this.currentCheckingPieces.length == 0) {
+                        moves.push(new Move(pieceLocation, [6, 0], false, true)) // black castle short
+                    };
+                };
+                break;
+        };
         return moves;
+    };
+
+    opponentAttackSquare(position, oppositeColor) {
+        let [i, j] = position;
+        let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
+        for (var index = 0; index < directions.length; index++) {
+            let direction = directions[index];
+            let n = 1;
+            while (0 <= i + n * direction[0] && i + n * direction[0] < 8 && 0 <= j + n * direction[1] && j + n * direction[1] < 8) {
+                let iNew = i + n * direction[0];
+                let jNew = j + n * direction[1];
+                let currentPiece = this.board[jNew][iNew];
+                if (currentPiece[0] == oppositeColor && ((index < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) || 
+                (index >= 4 && (currentPiece[1] == "R" || currentPiece[1] == "Q")) || 
+                (n == 1 && currentPiece[1] == "K"))) {
+                    return true;
+                } else if (currentPiece != "--") {
+                    break;
+                };
+                n++;
+            };
+        };
+        let moveDifferences = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]];
+        for (var index = 0; index < moveDifferences.length; index++) {
+            let xyDiff = moveDifferences[index];
+            let iNew = i + xyDiff[0];
+            let jNew = j + xyDiff[1];
+            if (0 <= iNew && iNew < 8 && 0 <= jNew && jNew < 8) {
+                let currentPiece = this.board[jNew][iNew];
+                if (currentPiece[0] == oppositeColor && currentPiece[1] == "N") {
+                    return true;
+                };
+            };
+        };
+        if (oppositeColor == "w") {
+            if ((0 <= j + 1 && j + 1 < 8 && 0 <= i - 1 && i - 1 < 8 && this.board[j + 1][i - 1][1] == "P" && this.board[j + 1][i - 1][0] == oppositeColor) || 
+            (0 <= j + 1 && j + 1 < 8 && 0 <= i + 1 && i + 1 < 8 && this.board[j + 1][i + 1][1] == "P" && this.board[j + 1][i + 1][0] == oppositeColor)) {
+                return true;
+            };
+        } else {
+            if ((0 <= j - 1 && j - 1 < 8 && 0 <= i - 1 && i - 1 < 8 && this.board[j - 1][i - 1][1] == "P" && this.board[j - 1][i - 1][0] == oppositeColor) || 
+            (0 <= j - 1 && j - 1 < 8 && 0 <= i + 1 && i + 1 < 8 && this.board[j - 1][i + 1][1] == "P" && this.board[j - 1][i + 1][0] == oppositeColor)) {
+                return true;
+            };
+        };
+        return false;
     };
 };
 

@@ -5,11 +5,17 @@
     <link rel="stylesheet" href="styles.css"></link>
 </head>
 <body>
-    <div id="gameboard"></div>
-    <p>It is <span id ="player"></span> to move.</p>
-    <p id="info-display"></p>
-    <script src="pieces.js"></script>
-    <script src="board.js"></script>
-    <script src="app.js"></script>
+    <div id="main-container">
+        <div id="gameboard"></div>
+        <div id="sidepanel">
+            <h1 id="info-display">Info display</h1>
+            <p>It is <span id ="player">white</span> to move.</p>
+            <button id="undo-button">Undo move</button>
+            <input placeholder="fen-string eg. rbnqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RBNQKBNR">
+        </div>
+        <script src="pieces.js"></script>
+        <script src="board.js"></script>
+        <script src="app.js"></script>
+    </div>
 </body>
 </html>
