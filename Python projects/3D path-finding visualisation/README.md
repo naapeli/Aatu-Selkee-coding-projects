@@ -10,7 +10,7 @@ Overall creating this program was extremely interesting and rewarding. In the fu
 Here are some pictures from the program:
 
 A*algorithm running:
-![image](https://github.com/naapeli/Python_projects/assets/130310206/1fe0512c-5113-4253-b317-46ed77702e39)
+![image]([https://github.com/naapeli/Python_projects/assets/130310206/1fe0512c-5113-4253-b317-46ed77702e39](https://github.com/naapeli/Aatu-Selkee-coding-projects/blob/main/Python%20projects/3D%20path-finding%20visualisation/Images/A%20star.PNG))
 
 Dijkstra's algorithm running:
 ![image](https://github.com/naapeli/Python_projects/assets/130310206/6e679345-b8f8-4ff5-815c-7ae765b21696)
