@@ -17,10 +17,8 @@ class board {
         this.blackMaterial = 39.4;
         this.whiteCanCastle = [true, true]; // long, short
         this.blackCanCastle = [true, true]; // long, short
-        this.currentCheckingPieces = []; // element is in format [[locationOfChekingPiece, directionFromKing, blockLocations],
-        // [locationOfChekingPiece, undefined (if knight is checking)]...]
-        this.currentPinnedPieces = []; // element is in format [[locationOfPinnedPiece, directionFromKing],
-        // [locationOfPinnedPiece, directionFromKing]...]
+        this.currentCheckingPieces = []; // element is in format [Set(possibleBlocks), ...]
+        this.currentPinnedPieces = new Map(); // element is in format {location => directionIndex, ...}
         this.enPassant = [];
         this.possibleMoves = this.getPossibleMoves();
         this.moveLog = []; // [[move, takenPiece, whiteCanCastle, blackCanCastle, enPassant], ...]
@@ -213,7 +211,7 @@ class board {
         let color = this.whiteToMove ? "w" : "b";
         let oppositeColor = this.whiteToMove ? "b" : "w";
         let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
-        let pinnedPieceLocations = [];
+        let pinnedPieceLocations = new Map();
         let checks = [];
         directions.forEach((direction, j) => {
             let checkBlockPositions = new Set();
@@ -229,16 +227,18 @@ class board {
                     continue;
                 } else if (currentPiece[0] == oppositeColor && directionPinned.length == 1) {
                     if (j < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) {
-                        pinnedPieceLocations.push(directionPinned[0]);
+                        let [position, directionIndex] = directionPinned[0];
+                        pinnedPieceLocations.set(10 * position[0] + position[1], directionIndex);
                         break;
                     } else if (4 <= j && (currentPiece[1] == "R" || currentPiece[1] == "Q")) {
-                        pinnedPieceLocations.push(directionPinned[0]);
+                        let [position, directionIndex] = directionPinned[0];
+                        pinnedPieceLocations.set(10 * position[0] + position[1], directionIndex);
                         break;
                     } else {
                         break;
                     };
                 } else if (currentPiece[0] == color && directionPinned.length == 0) {
-                    directionPinned.push([[kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff], direction]);
+                    directionPinned.push([[kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff], j]);
                     i++;
                     continue;
                 } else if (currentPiece[0] == oppositeColor && directionPinned.length == 0) {
@@ -604,7 +604,6 @@ class board {
             while (this.positionOnBoard(ownKingPosition[0] + n * direction[0], ownKingPosition[1] + n * direction[1])) {
                 let iNew = ownKingPosition[0] + n * direction[0];
                 let jNew = ownKingPosition[1] + n * direction[1];
-                console.log([iNew, jNew])
                 if ((iNew == pawnPosition[0] && jNew == pawnPosition[1]) || (iNew == takenPosition[0] && jNew == takenPosition[1])) {
                     n++;
                     continue;
@@ -626,13 +625,9 @@ class board {
     };
 
     pieceInPinnedPieces(i, j) {
-        for (let index = 0; index < this.currentPinnedPieces.length; index++) {
-            let [location, direction] = this.currentPinnedPieces[index];
-            if (location[0] == i && location[1] == j) {
-                return [true, direction];
-            };
-        };
-        return [false, []];
+        let positionHash = 10 * i + j;
+        let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
+        return [this.currentPinnedPieces.get(positionHash) != undefined, directions[this.currentPinnedPieces.get(positionHash)]];
     };
 };
 
