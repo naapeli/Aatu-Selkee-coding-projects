@@ -39,7 +39,6 @@ function startGame() {
             square.addEventListener("drop", (event) => {
                 event.stopPropagation();
                 dropPiece(event);
-                
             });
             gameBoard.append(square)
         });
@@ -72,20 +71,33 @@ function dropPiece(event) {
     let isPromotion = false;
     let isCastling = false;
     let isAnPassant = false;
+    let playerToMove = currentBoard.whiteToMove ? "w" : "b";
+    let promotedPiece = null;
     if (movingPieceIsPawn) {
         isPromotion = parentID < 8 || parentID > 55;
         let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
+        if (isPromotion) {
+             askForPawnPromotion(playerToMove).then((promotedPiece) => {
+                let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant, promotedPiece);
+                let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
+                if (moveMade) {
+                    updateSquares(squaresToBeUpdated);
+                };
+             });
+        };
     } else if (movingPieceIsKing) {
         isCastleStart = movingStartSquare[0] == 4 && (movingStartSquare[1] == 0 || movingStartSquare[1] == 7);
         isCastleEnd = (parentID == 2) || (parentID == 6) || (parentID == 58) || (parentID == 62);
         isCastling = isCastleStart && isCastleEnd;
     };
-    let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant);
-    let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
-    if (moveMade) {
-        updateSquares(squaresToBeUpdated);
+    if (!isPromotion) {
+        let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant, promotedPiece);
+        let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
+        if (moveMade) {
+            updateSquares(squaresToBeUpdated);
+        };
     };
 };
 
@@ -104,4 +116,32 @@ function updateSquares(squaresToBeUpdated) {
     });
 };
 
+async function askForPawnPromotion(color) {
+    return new Promise((resolve) => {
+        const pieces = ["Q", "R", "B", "N"];
+        const pawnPromotionDiv = document.createElement("div");
+        pawnPromotionDiv.classList.add("pawn-promotion-container");
+        gameBoard.appendChild(pawnPromotionDiv);
+        pieces.forEach((piece) => {
+            let drawnPiece = color + piece;
+            pawnPromotionDiv.innerHTML = pawnPromotionDiv.innerHTML + pieceImages[drawnPiece];
+        });
+        for (let i = 0; i < pawnPromotionDiv.children.length; i++) {
+            let piece = pawnPromotionDiv.children[i];
+            piece.addEventListener("click", (event) => {
+                event.stopPropagation();
+                let pieceClasses = event.target.classList;
+                let pieceString = "";
+                for (let j = 0; j < pieceClasses.length; j++) {
+                    pieceString = pieceString + pieceClasses[j];
+                };
+                pawnPromotionDiv.remove();
+                resolve(pieceString);
+            });
+        };
+    });
+};
+
 startGame();
+const gameEngine = new engine()
+console.log(gameEngine.getNumberOfMoves(0))
