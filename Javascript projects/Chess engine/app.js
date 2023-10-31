@@ -4,6 +4,7 @@ const gameBoard = document.querySelector("#gameboard")
 const player = document.querySelector("#player")
 const infoDisplay = document.querySelector("#info-display")
 const undoButton = document.querySelector("#undo-button")
+const positionInput = document.querySelector("#position-input")
 let movingPieceImageElement;
 let movingPieceStartElement;
 let movingStartSquare;
@@ -66,7 +67,6 @@ function dropPiece(event) {
     };
     let parentID = target.id;
     movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
-    console.log(movingStartSquare, movingEndSquare, target);
     let movingPieceIsPawn = movingPieceImageElement.classList.contains("P");
     let movingPieceIsKing = movingPieceImageElement.classList.contains("K");
     let isPromotion = false;
@@ -74,9 +74,9 @@ function dropPiece(event) {
     let isAnPassant = false;
     if (movingPieceIsPawn) {
         isPromotion = parentID < 8 || parentID > 55;
-        whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-        blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-        isAnPassant = whiteAnPassant || blackAnPassant;
+        let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
+        let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
+        isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
     } else if (movingPieceIsKing) {
         isCastleStart = movingStartSquare[0] == 4 && (movingStartSquare[1] == 0 || movingStartSquare[1] == 7);
         isCastleEnd = (parentID == 2) || (parentID == 6) || (parentID == 58) || (parentID == 62);
