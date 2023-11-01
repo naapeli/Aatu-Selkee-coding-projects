@@ -11,6 +11,7 @@ let movingStartSquare;
 let movingEndSquare;
 
 const currentBoard = new board();
+const gameEngine = new engine();
 function startGame() {
     currentBoard.board.forEach((row, j) => {
         row.forEach((piece, i) => {
@@ -143,5 +144,4 @@ async function askForPawnPromotion(color) {
 };
 
 startGame();
-const gameEngine = new engine()
-console.log(gameEngine.getNumberOfMoves(0))
+console.log(gameEngine.getNumberOfMoves(4))

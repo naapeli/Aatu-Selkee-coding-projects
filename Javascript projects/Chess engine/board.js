@@ -63,11 +63,9 @@ class board {
             if (iNew > i) {
                 this.board[jNew][iNew - 1] = this.board[jNew][iNew + 1];
                 this.board[jNew][iNew + 1] = "--";
-                squaresToBeUpdated.push([iNew - 1, jNew], [iNew + 1, jNew]);
             } else {
                 this.board[jNew][iNew + 1] = this.board[jNew][iNew - 2];
                 this.board[jNew][iNew - 2] = "--";
-                squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
             };
         } else if (move.promotion) {
             this.board[j][i] = "--";
@@ -79,12 +77,10 @@ class board {
                 case "w":
                     this.board[jNew + 1][iNew] = "--";
                     this.whiteMaterial -= 1;
-                    squaresToBeUpdated.push([iNew, jNew + 1]);
                     break;
                 case "b":
                     this.board[jNew - 1][iNew] = "--";
                     this.blackMaterial -= 1;
-                    squaresToBeUpdated.push([iNew, jNew - 1]);
                     break;
             };
         } else {
@@ -789,6 +785,10 @@ class board {
             };
             return true;
         };
+    };
+
+    isCheckMate() {
+        return (this.possibleMoves.length == 0)
     };
 
     positionOnBoard(i, j) {
