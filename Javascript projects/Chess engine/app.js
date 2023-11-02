@@ -5,6 +5,7 @@ const player = document.querySelector("#player")
 const infoDisplay = document.querySelector("#info-display")
 const undoButton = document.querySelector("#undo-button")
 const positionInput = document.querySelector("#position-input")
+const updateButton = document.querySelector("#update-button")
 let movingPieceImageElement;
 let movingPieceStartElement;
 let movingStartSquare;
@@ -45,7 +46,13 @@ function startGame() {
         });
     });
     undoButton.addEventListener("click", () => {
-        currentBoard.undoMove()
+        let squaresToBeUpdated = currentBoard.undoMove();
+        updateSquares(squaresToBeUpdated);
+    });
+    updateButton.addEventListener("click", () => {
+        const fenString = positionInput.value;
+        currentBoard.positionFromFen(fenString);
+        updateAllSquares()
     });
 };
 
@@ -115,6 +122,17 @@ function updateSquares(squaresToBeUpdated) {
             squareToBeUppdated.innerHTML = "";
         };
     });
+};
+
+function updateAllSquares() {
+    const squares = [];
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            const position = [i, j];
+            squares.push(position);
+        };
+    };
+    updateSquares(squares);
 };
 
 async function askForPawnPromotion(color) {

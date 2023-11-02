@@ -15,7 +15,7 @@ const pieceImages = {
 
 
 const pieceValues = {
-    "K": Infinity,
+    "K": 0,
     "P": 1,
     "N": 3,
     "B": 3.2,
@@ -32,4 +32,15 @@ const boardPositions = {
     5: "f",
     6: "g",
     7: "h",
+}
+
+const numberPositions = {
+    "a": 0,
+    "b": 1,
+    "c": 2,
+    "d": 3,
+    "e": 4,
+    "f": 5,
+    "g": 6,
+    "h": 7,
 }
