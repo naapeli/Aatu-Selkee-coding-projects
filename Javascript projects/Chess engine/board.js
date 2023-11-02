@@ -529,7 +529,7 @@ class board {
                         };
                     };
                     if (j + 1 < 8 && i - 1 >= 0 && this.board[j + 1][i - 1][0] == "w" && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j + 1))) {
-                        if (j - 1 != 0) {
+                        if (j + 1 != 7) {
                             moves.push(new Move(pieceLocation, [i - 1, j + 1]));
                         } else {
                             const possiblePromotions = ["wN", "wB", "wR", "wQ"];
@@ -539,7 +539,7 @@ class board {
                         };
                     };
                     if (j + 1 < 8 && i + 1 < 8 && this.board[j + 1][i + 1][0] == "w" && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j + 1))) {
-                        if (j - 1 != 0) {
+                        if (j + 1 != 7) {
                             moves.push(new Move(pieceLocation, [i + 1, j + 1]));
                         } else {
                             const possiblePromotions = ["wN", "wB", "wR", "wQ"];
@@ -607,8 +607,10 @@ class board {
                         let iNew = i + n * direction[0];
                         let jNew = j + n * direction[1];
                         let currentPiece = this.board[jNew][iNew];
-                        if (currentPiece == "--" && (noCheck || blockLocations.has(10 * iNew + jNew))) {
-                            moves.push(new Move(pieceLocation, [iNew, jNew]));
+                        if (currentPiece == "--") {
+                            if (noCheck || blockLocations.has(10 * iNew + jNew)) {
+                                moves.push(new Move(pieceLocation, [iNew, jNew]));
+                            };
                             n++;
                             continue;
                         } else if (currentPiece[0] == oppositeColor && (noCheck || blockLocations.has(10 * iNew + jNew))) {
@@ -680,7 +682,17 @@ class board {
                 let iNew = i + direction[0];
                 let jNew = j + direction[1];
                 let currentSquare = this.board[jNew][iNew];
-                if (currentSquare[0] != color && !this.opponentAttackSquare([iNew, jNew], oppositeColor)) {
+                let checkPin = false;
+                for (let index = 0; index < this.currentCheckingPieces.length; index++) {
+                    let blockLocation = this.currentCheckingPieces[index];
+                    let checkPinForward = blockLocation.has(10 * iNew + jNew) && blockLocation.size > 1;
+                    let checkPinBackward = blockLocation.has(10 * (i - direction[0]) + j - direction[1]) && this.board[j - direction[1]][i - direction[0]][1] != "P";
+                    checkPin = checkPinForward || checkPinBackward;
+                    if (checkPin) {
+                        break;
+                    };
+                };
+                if (currentSquare[0] != color && !this.opponentAttackSquare([iNew, jNew], oppositeColor) && !checkPin) {
                     moves.push(new Move(pieceLocation, [iNew, jNew]));
                 };
             };

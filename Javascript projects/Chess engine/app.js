@@ -144,4 +144,3 @@ async function askForPawnPromotion(color) {
 };
 
 startGame();
-console.log(gameEngine.getNumberOfMoves(4))

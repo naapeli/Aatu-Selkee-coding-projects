@@ -2,7 +2,7 @@ import chess
 
 def count_positions(fen, depth):
     board = chess.Board(fen)
-    
+
     def perft(board, ply):
         if ply == 0:
             return 1
@@ -29,7 +29,7 @@ def count_positions(fen, depth):
 
 # Example usage
 fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-ply = 4  # Specify the number of half-moves
+ply = 5  # Specify the number of half-moves
 move_counts = count_positions(fen_string, ply)
 
 sum = 0
@@ -37,7 +37,3 @@ for move, count in move_counts.items():
     sum += count
     print(f"{move}: {count}")
 print(f"Total: {sum}")
-
-
-
-
