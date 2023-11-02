@@ -2,6 +2,10 @@ import chess
 
 def count_positions(fen, depth):
     board = chess.Board(fen)
+    board.push(chess.Move.from_uci("b4f4"))
+    board.push(chess.Move.from_uci("h4g5"))
+    board.push(chess.Move.from_uci("a5b4"))
+    board.push(chess.Move.from_uci("c7c5"))
 
     def perft(board, ply):
         if ply == 0:
@@ -28,8 +32,8 @@ def count_positions(fen, depth):
     return positions_count
 
 # Example usage
-fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-ply = 5  # Specify the number of half-moves
+fen_string = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -"
+ply = 1  # Specify the number of half-moves
 move_counts = count_positions(fen_string, ply)
 
 sum = 0

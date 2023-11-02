@@ -190,6 +190,7 @@ class board {
             this.possibleMoves = this.getPossibleMoves();
             return squaresToBeUpdated
         };
+        return [];
     };
 
     determineChecksAndPins() {
@@ -368,7 +369,7 @@ class board {
                         if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.whiteKingPosition, this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
                             moves.push(new Move(pieceLocation, [i - 1, j - 1], false, false, true));
                         };
-                        if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.whiteKingPosition, this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j - 1))) {
+                        if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.whiteKingPosition, this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
                             moves.push(new Move(pieceLocation, [i + 1, j - 1], false, false, true));
                         };
                     };
@@ -689,6 +690,8 @@ class boardUtils {
                         return true;
                     } else if (board[jNew][iNew][0] == oppositeColor && (board[jNew][iNew][1] == "Q" || board[jNew][iNew][1] == "R")) {
                         return false;
+                    } else if (board[jNew][iNew][0] == oppositeColor) {
+                        return true;
                     };
                     n++;
                 };

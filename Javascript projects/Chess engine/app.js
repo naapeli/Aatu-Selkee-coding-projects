@@ -51,8 +51,12 @@ function startGame() {
     });
     updateButton.addEventListener("click", () => {
         const fenString = positionInput.value;
-        currentBoard.positionFromFen(fenString);
-        updateAllSquares()
+        try {
+            currentBoard.positionFromFen(fenString);
+            updateAllSquares()
+        } catch (error) {
+            console.log("Remember to input a valid fen string!")
+        }
     });
 };
 
