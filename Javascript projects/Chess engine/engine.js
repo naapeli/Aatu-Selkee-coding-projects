@@ -1,6 +1,6 @@
 class engine {
     constructor() {
-        this.depth = 4;
+        this.maxDepth = 4;
         this.openingTheory = [];
     };
 
