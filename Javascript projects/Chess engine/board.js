@@ -394,7 +394,7 @@ class board {
                         if (j + 1 != 7) {
                             moves.push(new Move(pieceLocation, [i - 1, j + 1]));
                         } else {
-                            const possiblePromotions = ["wN", "wB", "wR", "wQ"];
+                            const possiblePromotions = ["bN", "bB", "bR", "bQ"];
                             possiblePromotions.forEach((piece) => {
                                 moves.push(new Move(pieceLocation, [i - 1, j + 1], true, false, false, piece));
                             });
@@ -404,7 +404,7 @@ class board {
                         if (j + 1 != 7) {
                             moves.push(new Move(pieceLocation, [i + 1, j + 1]));
                         } else {
-                            const possiblePromotions = ["wN", "wB", "wR", "wQ"];
+                            const possiblePromotions = ["bN", "bB", "bR", "bQ"];
                             possiblePromotions.forEach((piece) => {
                                 moves.push(new Move(pieceLocation, [i + 1, j + 1], true, false, false, piece));
                             });
