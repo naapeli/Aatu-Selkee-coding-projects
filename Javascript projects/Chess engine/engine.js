@@ -1,15 +1,47 @@
 class engine {
-    constructor() {
+    constructor(board) {
         this.maxDepth = 4;
         this.openingTheory = [];
+        this.board = board;
+        this.moveOrdering = new moveOrderer();
     };
 
-    searchPositions(depth) {
+    iterativeSearch(depth) {
 
+    };
+
+    search(currentDepth, alpha, beta) {
+        if (this.board.possibleMoves.length === 0) {
+            if (this.board.boardUtility.isCheckMate()) {
+                return Number.NEGATIVE_INFINITY;
+            };
+            return 0; // stalemate
+        };
+        if (currentDepth === 0) {
+            return this.evaluatePosition()
+        };
+
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            this.board.makeMove(move);
+            const currentEvaluation = -this.search(currentDepth - 1, -beta, -alpha);
+            bestEvaluation = Math.max(currentEvaluation, bestEvaluation);
+            this.board.undoMove();
+            
+            // alpha-beta-pruning:
+            if (currentEvaluation >= beta) {
+                return beta;
+            };
+            alpha = Math.max(alpha, currentEvaluation)
+        };
+        return alpha;
     };
 
     evaluatePosition() {
-
+        const perspective = this.board.whiteToMove ? 1 : -1;
+        const evaluation = this.board.whiteMaterial - this.board.blackMaterial;
+        return perspective * evaluation;
     };
 
     getNumberOfMoves(currentDepth) {
@@ -17,22 +49,22 @@ class engine {
         if (currentDepth === 0) {
             return 1;
         };
-        currentBoard.possibleMoves.forEach(move => {
-            currentBoard.makeMove(move);
+        this.board.possibleMoves.forEach(move => {
+            this.board.makeMove(move);
             numberOfMoves += this.getNumberOfMoves(currentDepth - 1);
-            currentBoard.undoMove();
+            this.board.undoMove();
         });
         return numberOfMoves;
     };
 
     debugNumberOfMoves(depth) {
         let total = 0
-        currentBoard.possibleMoves.forEach(move => {
+        this.board.possibleMoves.forEach(move => {
             let moveString = boardPositions[move.startPos[0]] + (8 - move.startPos[1]) + boardPositions[move.endPos[0]] + (8 - move.endPos[1]);
-            currentBoard.makeMove(move);
+            this.board.makeMove(move);
             let moves = this.getNumberOfMoves(depth - 1);
             total += moves
-            currentBoard.undoMove();
+            this.board.undoMove();
             console.log([moveString, moves])
         });
         console.log(["Total", total])
@@ -85,5 +117,26 @@ class engine {
         const elapsedTime6 = endTime6 - startTime6;
         console.log("Position 6 up to depth 4 is " + test6);
         console.log(`Code execution time: ${elapsedTime6} milliseconds`);
+    };
+};
+
+class moveOrderer {
+    orderMoves(moves) {
+        moves.forEach(move => {
+            const movingPieceType = move.movingPiece[1];
+            const takenPieceType = move.takenPiece[1];
+
+            if (takenPieceType != "-") {
+                move.assumedMoveScore += 10 * pieceValues[takenPieceType] - pieceValues[movingPieceType];
+            };
+
+            if (move.promotion) {
+                move.assumedMoveScore += pieceValues[move.promotedPiece[1]];
+            };
+        });
+        const sortedMoves = moves.sort((moveA, moveB) => {
+            return moveB.assumedMoveScore - moveA.assumedMoveScore;
+        });
+        return sortedMoves;
     };
 };

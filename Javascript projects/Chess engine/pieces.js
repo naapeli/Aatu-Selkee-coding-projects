@@ -20,7 +20,8 @@ const pieceValues = {
     "N": 3,
     "B": 3.2,
     "R": 5,
-    "Q": 9
+    "Q": 9,
+    "-": 0
 }
 
 const boardPositions = {

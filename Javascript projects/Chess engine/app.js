@@ -12,7 +12,7 @@ let movingStartSquare;
 let movingEndSquare;
 
 const currentBoard = new board();
-const gameEngine = new engine();
+const gameEngine = new engine(currentBoard);
 function startGame() {
     currentBoard.board.forEach((row, j) => {
         row.forEach((piece, i) => {
@@ -78,8 +78,10 @@ function dropPiece(event) {
     };
     let parentID = target.id;
     movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
-    let movingPieceIsPawn = movingPieceImageElement.classList.contains("P");
-    let movingPieceIsKing = movingPieceImageElement.classList.contains("K");
+    const movingPiece = Array.from(movingPieceImageElement.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "");
+    const takenPiece = targetIsImage ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
+    let movingPieceIsPawn = movingPiece[1] == "P";
+    let movingPieceIsKing = movingPiece[1] == "K";
     let isPromotion = false;
     let isCastling = false;
     let isAnPassant = false;
@@ -92,7 +94,7 @@ function dropPiece(event) {
         isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
         if (isPromotion) {
              askForPawnPromotion(playerToMove).then((promotedPiece) => {
-                let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant, promotedPiece);
+                let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
                 let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
                 if (moveMade) {
                     updateSquares(squaresToBeUpdated);
@@ -105,7 +107,8 @@ function dropPiece(event) {
         isCastling = isCastleStart && isCastleEnd;
     };
     if (!isPromotion) {
-        let currentMove = new Move(movingStartSquare, movingEndSquare, isPromotion, isCastling, isAnPassant, promotedPiece);
+        let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
+        console.log(currentMove)
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
             updateSquares(squaresToBeUpdated);
