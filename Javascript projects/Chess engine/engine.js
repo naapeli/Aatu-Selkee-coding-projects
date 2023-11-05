@@ -1,32 +1,63 @@
 class engine {
     constructor(board) {
-        this.maxDepth = 4;
+        this.maxDepth = 5;
         this.openingTheory = [];
         this.board = board;
         this.moveOrdering = new moveOrderer();
     };
 
-    iterativeSearch(depth) {
-
+    iterativeSearch(allowedTime) {
+        this.moveOrdering.calculateAssumedMoveScores(this.board.possibleMoves)
+        const moves = this.moveOrdering.sort(this.board.possibleMoves);
+        let bestMove = moves[0];
+        let bestEvaluation = Number.NEGATIVE_INFINITY;
+        let notCancelled = true;
+        const startTime = performance.now();
+        for (let i = 0; i <= this.maxDepth; i++) {
+            let bestIterEvaluation = Number.NEGATIVE_INFINITY;
+            let bestIterMove = moves[0];
+            moves.forEach(move => {
+                if (notCancelled) {
+                    this.board.makeMove(move);
+                    const currentEvaluation = -this.search(i, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
+                    this.board.undoMove();
+                    if (currentEvaluation > bestIterEvaluation) {
+                        bestIterMove = move;
+                        bestIterEvaluation = currentEvaluation;
+                        move.assumedMoveScore = currentEvaluation;
+                    };
+                    const currentTime = performance.now();
+                    const takenTimeSoFar = currentTime - startTime;
+                    notCancelled = takenTimeSoFar < allowedTime;
+                };
+            });
+            if (bestIterEvaluation > bestEvaluation) {
+                bestEvaluation = bestIterEvaluation;
+                bestMove = bestIterMove;
+            };
+            // sort moves w.r.t previously calculated movescores
+            this.moveOrdering.insertionSort(moves);
+        };
+        return bestMove;
     };
 
     search(currentDepth, alpha, beta) {
         if (this.board.possibleMoves.length === 0) {
-            if (this.board.boardUtility.isCheckMate()) {
+            if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.NEGATIVE_INFINITY;
             };
             return 0; // stalemate
         };
         if (currentDepth === 0) {
-            return this.evaluatePosition()
+            return this.evaluatePosition() // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
         };
 
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        this.moveOrdering.calculateAssumedMoveScores(this.board.possibleMoves)
+        const moves = this.moveOrdering.sort(this.board.possibleMoves);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
             const currentEvaluation = -this.search(currentDepth - 1, -beta, -alpha);
-            bestEvaluation = Math.max(currentEvaluation, bestEvaluation);
             this.board.undoMove();
             
             // alpha-beta-pruning:
@@ -117,11 +148,12 @@ class engine {
         const elapsedTime6 = endTime6 - startTime6;
         console.log("Position 6 up to depth 4 is " + test6);
         console.log(`Code execution time: ${elapsedTime6} milliseconds`);
+        currentBoard.positionFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     };
 };
 
 class moveOrderer {
-    orderMoves(moves) {
+    calculateAssumedMoveScores(moves) {
         moves.forEach(move => {
             const movingPieceType = move.movingPiece[1];
             const takenPieceType = move.takenPiece[1];
@@ -133,10 +165,31 @@ class moveOrderer {
             if (move.promotion) {
                 move.assumedMoveScore += pieceValues[move.promotedPiece[1]];
             };
+
+            if (move.castleKing) {
+                move.assumedMoveScore += 10
+            };
         });
+    };
+
+    sort(moves) {
         const sortedMoves = moves.sort((moveA, moveB) => {
             return moveB.assumedMoveScore - moveA.assumedMoveScore;
         });
         return sortedMoves;
+    };
+
+    // best sorting algorithm for almost sorted array
+    insertionSort(moves) {
+        for (let i = 1; i < moves.length; i++) {
+            const key = moves[i];
+            let j = i - 1;
+            while (j >= 0 && moves[j].assumedMoveScore > key.assumedMoveScore) {
+                moves[j + 1] = moves[j];
+                moves[j] = key;
+                j--;
+            };
+        };
+        return moves;
     };
 };
