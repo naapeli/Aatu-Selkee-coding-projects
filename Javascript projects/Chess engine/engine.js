@@ -1,50 +1,64 @@
 class engine {
     constructor(board) {
-        this.maxDepth = 5;
+        this.maxDepth = 10;
         this.openingTheory = [];
         this.board = board;
         this.moveOrdering = new moveOrderer();
     };
 
     iterativeSearch(allowedTime) {
+        const start = performance.now()
         this.moveOrdering.calculateAssumedMoveScores(this.board.possibleMoves)
         const moves = this.moveOrdering.sort(this.board.possibleMoves);
         let bestMove = moves[0];
-        let bestEvaluation = Number.NEGATIVE_INFINITY;
+        let bestEvaluation = Number.MIN_SAFE_INTEGER;
         let notCancelled = true;
         const startTime = performance.now();
         for (let i = 0; i <= this.maxDepth; i++) {
-            let bestIterEvaluation = Number.NEGATIVE_INFINITY;
+            console.log("Iter: " + i)
+            let bestIterEvaluation = Number.MIN_SAFE_INTEGER;
             let bestIterMove = moves[0];
-            moves.forEach(move => {
-                if (notCancelled) {
-                    this.board.makeMove(move);
-                    const currentEvaluation = -this.search(i, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY);
-                    this.board.undoMove();
-                    if (currentEvaluation > bestIterEvaluation) {
-                        bestIterMove = move;
-                        bestIterEvaluation = currentEvaluation;
-                        move.assumedMoveScore = currentEvaluation;
-                    };
-                    const currentTime = performance.now();
-                    const takenTimeSoFar = currentTime - startTime;
-                    notCancelled = takenTimeSoFar < allowedTime;
+            for (let j = 0; j < moves.length; j++) {
+                if (!notCancelled) {
+                    break;
                 };
-            });
-            if (bestIterEvaluation > bestEvaluation) {
+
+                const move = moves[j];
+                this.board.makeMove(move);
+                const currentEvaluation = -this.search(i, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+                this.board.undoMove();
+                if (currentEvaluation == Number.MAX_SAFE_INTEGER) { // forced checkmate
+                    console.log("checkmate")
+                    move.assumedMoveScore = currentEvaluation;
+                    return move;
+                };
+                if (currentEvaluation > bestIterEvaluation) {
+                    bestIterMove = move;
+                    bestIterEvaluation = currentEvaluation;
+                    move.assumedMoveScore = currentEvaluation;
+                };
+                const currentTime = performance.now();
+                const takenTimeSoFar = currentTime - startTime;
+                notCancelled = takenTimeSoFar < allowedTime;
+            };
+            if (notCancelled || (bestIterEvaluation > bestEvaluation)) {
                 bestEvaluation = bestIterEvaluation;
                 bestMove = bestIterMove;
+            };
+            if (!notCancelled) {
+                break;
             };
             // sort moves w.r.t previously calculated movescores
             this.moveOrdering.insertionSort(moves);
         };
+        console.log(performance.now() - start)
         return bestMove;
     };
 
     search(currentDepth, alpha, beta) {
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return Number.NEGATIVE_INFINITY;
+                return Number.MIN_SAFE_INTEGER;
             };
             return 0; // stalemate
         };
