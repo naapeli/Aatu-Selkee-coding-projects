@@ -88,12 +88,12 @@ class board {
                 switch(movingPiece[0]) {
                     case "w":
                         this.board[jNew + 1][iNew] = "--";
-                        this.whiteMaterial -= 1;
+                        this.blackMaterial -= 1;
                         squaresToBeUpdated.push([iNew, jNew + 1]);
                         break;
                     case "b":
                         this.board[jNew - 1][iNew] = "--";
-                        this.blackMaterial -= 1;
+                        this.whiteMaterial -= 1;
                         squaresToBeUpdated.push([iNew, jNew - 1]);
                         break;
                 };

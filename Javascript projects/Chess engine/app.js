@@ -98,9 +98,14 @@ function dropPiece(event) {
                 let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
                 if (moveMade) {
                     updateSquares(squaresToBeUpdated);
+                    //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                    //    playCheckMateScreen()
+                    //};
                     const engineMove = gameEngine.iterativeSearch(1000);
                     const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                    updateSquares(engineSquaresToBeUpdated);
+                    if (engineMoveMade) {
+                        updateSquares(engineSquaresToBeUpdated);
+                    };
                 };
              });
         };
@@ -114,9 +119,14 @@ function dropPiece(event) {
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
             updateSquares(squaresToBeUpdated);
+            //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+            //    playCheckMateScreen()
+            //};
             const engineMove = gameEngine.iterativeSearch(1000);
             const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-            updateSquares(engineSquaresToBeUpdated);
+            if (engineMoveMade) {
+                updateSquares(engineSquaresToBeUpdated);
+            };
         };
     };
 };

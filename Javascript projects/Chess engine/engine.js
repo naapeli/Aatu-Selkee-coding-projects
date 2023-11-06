@@ -1,61 +1,47 @@
 class engine {
     constructor(board) {
-        this.maxDepth = 10;
+        this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
+        this.maxAllowedTime = 250;
+
+        this.searchStartTime;
+        this.searchCancelled = false;
+        this.bestMove;
+        this.bestMoveEval;
+        this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
+        this.bestIterMove;
         this.moveOrdering = new moveOrderer();
     };
 
-    iterativeSearch(allowedTime) {
-        const start = performance.now()
-        this.moveOrdering.calculateAssumedMoveScores(this.board.possibleMoves)
-        const moves = this.moveOrdering.sort(this.board.possibleMoves);
-        let bestMove = moves[0];
-        let bestEvaluation = Number.MIN_SAFE_INTEGER;
-        let notCancelled = true;
-        const startTime = performance.now();
-        for (let i = 0; i <= this.maxDepth; i++) {
-            console.log("Iter: " + i)
-            let bestIterEvaluation = Number.MIN_SAFE_INTEGER;
-            let bestIterMove = moves[0];
-            for (let j = 0; j < moves.length; j++) {
-                if (!notCancelled) {
-                    break;
-                };
-
-                const move = moves[j];
-                this.board.makeMove(move);
-                const currentEvaluation = -this.search(i, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
-                this.board.undoMove();
-                if (currentEvaluation == Number.MAX_SAFE_INTEGER) { // forced checkmate
-                    console.log("checkmate")
-                    move.assumedMoveScore = currentEvaluation;
-                    return move;
-                };
-                if (currentEvaluation > bestIterEvaluation) {
-                    bestIterMove = move;
-                    bestIterEvaluation = currentEvaluation;
-                    move.assumedMoveScore = currentEvaluation;
-                };
-                const currentTime = performance.now();
-                const takenTimeSoFar = currentTime - startTime;
-                notCancelled = takenTimeSoFar < allowedTime;
-            };
-            if (notCancelled || (bestIterEvaluation > bestEvaluation)) {
-                bestEvaluation = bestIterEvaluation;
-                bestMove = bestIterMove;
-            };
-            if (!notCancelled) {
-                break;
-            };
-            // sort moves w.r.t previously calculated movescores
-            this.moveOrdering.insertionSort(moves);
+    iterativeSearch() {
+        this.searchStartTime = performance.now();
+        this.searchCancelled = false;
+        if (this.board.possibleMoves.length == 0) {
+            return;
         };
-        console.log(performance.now() - start)
-        return bestMove;
+        for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
+            console.log("Iter: " + searchDepth)
+            this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+            if (this.searchCancelled) {
+                console.log("search cancelled") // need to make calculateAssumedMoveOrder to start with previous iterations best move
+                //this.bestMove = this.bestIterMove;
+                //this.bestMoveEval = this.bestIterEvaluation;
+                console.log("Evaluation: " + this.bestMoveEval)
+                return this.bestMove;
+            } else {
+                this.bestMove = this.bestIterMove;
+                this.bestMoveEval = this.bestIterEvaluation;
+            };
+        };
     };
 
-    search(currentDepth, alpha, beta) {
+    search(currentDepth, depthFromRoot, alpha, beta) {
+        this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
+        if (this.searchCancelled) {
+            return 0;
+        };
+
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.MIN_SAFE_INTEGER;
@@ -65,20 +51,25 @@ class engine {
         if (currentDepth === 0) {
             return this.evaluatePosition() // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
         };
-
-        this.moveOrdering.calculateAssumedMoveScores(this.board.possibleMoves)
-        const moves = this.moveOrdering.sort(this.board.possibleMoves);
+        // in the future, store previous iterations best move here, so it can be ordered first
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
-            const currentEvaluation = -this.search(currentDepth - 1, -beta, -alpha);
+            const currentEvaluation = -this.search(currentDepth - 1, depthFromRoot + 1, -beta, -alpha);
             this.board.undoMove();
             
             // alpha-beta-pruning:
             if (currentEvaluation >= beta) {
                 return beta;
             };
-            alpha = Math.max(alpha, currentEvaluation)
+            if (currentEvaluation > alpha) { // found new best move
+                alpha = currentEvaluation;
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = currentEvaluation;
+                    this.bestIterMove = move;
+                };
+            };
         };
         return alpha;
     };
@@ -167,10 +158,23 @@ class engine {
 };
 
 class moveOrderer {
+    constructor() {
+        this.bestMove;
+        this.bestMoveEval = Number.MIN_SAFE_INTEGER;
+    };
+
+    orderMoves(moves) {
+        this.calculateAssumedMoveScores(moves);
+        const sortedMoves = this.sort(moves);
+        return sortedMoves;
+    };
+
     calculateAssumedMoveScores(moves) {
         moves.forEach(move => {
             const movingPieceType = move.movingPiece[1];
             const takenPieceType = move.takenPiece[1];
+
+            move.assumedMoveScore = 0;
 
             if (takenPieceType != "-") {
                 move.assumedMoveScore += 10 * pieceValues[takenPieceType] - pieceValues[movingPieceType];
