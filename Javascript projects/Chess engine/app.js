@@ -98,6 +98,9 @@ function dropPiece(event) {
                 let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
                 if (moveMade) {
                     updateSquares(squaresToBeUpdated);
+                    const engineMove = gameEngine.iterativeSearch(1000);
+                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                    updateSquares(engineSquaresToBeUpdated);
                 };
              });
         };
@@ -108,10 +111,12 @@ function dropPiece(event) {
     };
     if (!isPromotion) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
-        console.log(currentMove)
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
             updateSquares(squaresToBeUpdated);
+            const engineMove = gameEngine.iterativeSearch(1000);
+            const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+            updateSquares(engineSquaresToBeUpdated);
         };
     };
 };
