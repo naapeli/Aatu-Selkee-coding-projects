@@ -14,7 +14,7 @@ class engine {
         this.moveOrdering = new moveOrderer();
     };
 
-    iterativeSearch() {
+    iterativeSearch() { // iterative search useless, since we do not start with the best move from previous iteration
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
         if (this.board.possibleMoves.length == 0) {
