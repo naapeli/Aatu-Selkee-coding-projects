@@ -18,17 +18,21 @@ class engine {
     iterativeSearch() { // iterative search useless, since we do not start with the best move from previous iteration
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
+        this.foundCheckMate = false;
+        this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
+
         if (this.board.possibleMoves.length == 0) {
             return;
         };
         console.log("Search running")
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
+            console.log("Iteration " + searchDepth)
             this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
             if (this.searchCancelled) {
                 console.log("search cancelled"); // need to make calculateAssumedMoveOrder to start with previous iterations best move
                 //this.bestMove = this.bestIterMove;
                 //this.bestMoveEval = this.bestIterEvaluation;
-                console.log("Evaluation: " + this.bestMoveEval);
+                console.log("Evaluation: " + -this.bestMoveEval);
                 console.log("Depth: " + searchDepth)
                 return this.bestMove;
             } else {
@@ -46,12 +50,13 @@ class engine {
 
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return Number.MIN_SAFE_INTEGER;
+                const perspective = this.board.whiteToMove ? 1 : -1;
+                return perspective * Number.MIN_SAFE_INTEGER;
             };
             return 0; // stalemate
         };
         if (currentDepth === 0) {
-            return this.evaluatePosition() // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
+            return this.evaluatePosition(); // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
         };
         // in the future, store previous iterations best move here, so it can be ordered first
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
@@ -61,11 +66,20 @@ class engine {
             const currentEvaluation = -this.search(currentDepth - 1, depthFromRoot + 1, -beta, -alpha);
             this.board.undoMove();
 
+            if (depthFromRoot == 0 && currentEvaluation == Number.MAX_SAFE_INTEGER) { // own checkmate found
+                console.log("checkmate in " + currentDepth + " ply found")
+                this.foundCheckMate = true;
+                this.bestMoveEval = currentEvaluation;
+                this.bestMove = move;
+                this.searchCancelled = true;
+                return;
+            };
+
             // alpha-beta-pruning:
-            if (currentEvaluation > beta) { // snip
+            if (currentEvaluation >= beta) { // snip
                 return beta;
             };
-            if (currentEvaluation > alpha) { // found new best move
+            if (currentEvaluation >= alpha) { // found new best move
                 alpha = currentEvaluation;
                 if (depthFromRoot == 0) {
                     this.bestIterEvaluation = currentEvaluation;
