@@ -16,6 +16,8 @@ class board {
         this.whiteKingPosition = [4, 7];
         this.whiteMaterial = this.boardUtility.countMaterial(this.board)[0];
         this.blackMaterial = this.boardUtility.countMaterial(this.board)[1];
+        this.whitePiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[0];
+        this.blackPiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[1];
         this.whiteCanCastle = [true, true]; // long, short
         this.blackCanCastle = [true, true]; // long, short
         this.currentCheckingPieces = []; // element is in format [Set(possibleBlocks), ...]
@@ -25,7 +27,7 @@ class board {
         this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
     };
 
-    makeMove(move) {
+    makeMove(move) { // need to update black and white piecePositionBonus
         let currentMovePossible = false
         for (var i = 0; i < currentBoard.possibleMoves.length; i++) {
             let currentMove = currentBoard.possibleMoves[i];
@@ -120,7 +122,7 @@ class board {
         return [false];
     };
 
-    undoMove() {
+    undoMove() { // need to update black and white piecePositionBonus
         if (this.moveLog.length > 0) {
             this.whiteToMove = !this.whiteToMove
             let squaresToBeUpdated = [];
@@ -764,6 +766,21 @@ class boardUtils {
             };
         };
         return [whiteMaterial, blackMaterial]
+    };
+
+    countPiecePositionBonus(board) {
+        let blackPieceBonus = 0
+        let whitePieceBonus = 0
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (board[j][i][0] == "w") {
+                    whitePieceBonus += startPieceSquareValues[board[j][i][1]][j][i];
+                } else if (board[j][i][0] == "b") {
+                    blackPieceBonus += startPieceSquareValues[board[j][i][1]][7 - j][7 - i];
+                };
+            };
+        };
+        return [whitePieceBonus, blackPieceBonus]
     };
 };
 

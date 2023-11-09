@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 250;
+        this.maxAllowedTime = 2000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -11,6 +11,7 @@ class engine {
         this.bestMoveEval;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
         this.bestIterMove;
+        this.foundCheckMate = false;
         this.moveOrdering = new moveOrderer();
     };
 
@@ -20,14 +21,15 @@ class engine {
         if (this.board.possibleMoves.length == 0) {
             return;
         };
+        console.log("Search running")
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
-            console.log("Iter: " + searchDepth)
             this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
             if (this.searchCancelled) {
-                console.log("search cancelled") // need to make calculateAssumedMoveOrder to start with previous iterations best move
+                console.log("search cancelled"); // need to make calculateAssumedMoveOrder to start with previous iterations best move
                 //this.bestMove = this.bestIterMove;
                 //this.bestMoveEval = this.bestIterEvaluation;
-                console.log("Evaluation: " + this.bestMoveEval)
+                console.log("Evaluation: " + this.bestMoveEval);
+                console.log("Depth: " + searchDepth)
                 return this.bestMove;
             } else {
                 this.bestMove = this.bestIterMove;
@@ -39,7 +41,7 @@ class engine {
     search(currentDepth, depthFromRoot, alpha, beta) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
-            return 0;
+            return;
         };
 
         if (this.board.possibleMoves.length === 0) {
@@ -58,9 +60,9 @@ class engine {
             this.board.makeMove(move);
             const currentEvaluation = -this.search(currentDepth - 1, depthFromRoot + 1, -beta, -alpha);
             this.board.undoMove();
-            
+
             // alpha-beta-pruning:
-            if (currentEvaluation >= beta) {
+            if (currentEvaluation > beta) { // snip
                 return beta;
             };
             if (currentEvaluation > alpha) { // found new best move
@@ -76,7 +78,9 @@ class engine {
 
     evaluatePosition() {
         const perspective = this.board.whiteToMove ? 1 : -1;
-        const evaluation = this.board.whiteMaterial - this.board.blackMaterial;
+        let evaluation = 0;
+        evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
+        
         return perspective * evaluation;
     };
 
@@ -158,11 +162,6 @@ class engine {
 };
 
 class moveOrderer {
-    constructor() {
-        this.bestMove;
-        this.bestMoveEval = Number.MIN_SAFE_INTEGER;
-    };
-
     orderMoves(moves) {
         this.calculateAssumedMoveScores(moves);
         const sortedMoves = this.sort(moves);
@@ -195,19 +194,5 @@ class moveOrderer {
             return moveB.assumedMoveScore - moveA.assumedMoveScore;
         });
         return sortedMoves;
-    };
-
-    // best sorting algorithm for almost sorted array
-    insertionSort(moves) {
-        for (let i = 1; i < moves.length; i++) {
-            const key = moves[i];
-            let j = i - 1;
-            while (j >= 0 && moves[j].assumedMoveScore > key.assumedMoveScore) {
-                moves[j + 1] = moves[j];
-                moves[j] = key;
-                j--;
-            };
-        };
-        return moves;
     };
 };
