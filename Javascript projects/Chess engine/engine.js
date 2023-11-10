@@ -26,7 +26,7 @@ class engine {
         };
         console.log("Search running")
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
-            console.log("Iteration " + searchDepth)
+            console.log("Iteration: " + searchDepth)
             const perspective = this.board.whiteToMove ? 1 : -1;
             this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, perspective);
             if (this.searchCancelled) {
@@ -35,6 +35,7 @@ class engine {
                 //this.bestMoveEval = this.bestIterEvaluation;
                 console.log("Evaluation: " + perspective * this.bestMoveEval);
                 console.log("Depth: " + searchDepth)
+                console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime))
                 return this.bestMove;
             } else {
                 this.bestMove = this.bestIterMove;
@@ -60,8 +61,8 @@ class engine {
             return 0; // stalemate
         };
         if (currentDepth === 0) {
-            const evaluation = this.evaluatePosition(colorPerspective);
-            return evaluation; // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
+            const evaluation = this.searchOnlyCapturesAndChecks(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
+            return evaluation;
         };
         // in the future, store previous iterations best move here, so it can be ordered first
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
@@ -96,6 +97,48 @@ class engine {
         } else {
             return positionEvaluation;
         };
+    };
+
+    searchOnlyCapturesAndChecks(depthFromSearchEnd, alpha, beta, colorPerspective) { // does not search checks yet (need to implement move generation to make move.possibleCheck)
+        if (this.board.possibleMoves.length === 0) {
+            if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
+                return Number.MIN_SAFE_INTEGER;
+            };
+            return 0; // stalemate
+        };
+
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        let positionEvaluation = this.evaluatePosition(colorPerspective);
+        let searchedPosition = false;
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            let currentEvaluation = Number.MIN_SAFE_INTEGER;
+            if (move.isCapture() || move.promotion) {
+                searchedPosition = true;
+                this.board.makeMove(move);
+                currentEvaluation = -this.searchOnlyCapturesAndChecks(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
+                this.board.undoMove();
+
+                if (this.searchCancelled) {
+                    return;
+                };
+            };
+
+            positionEvaluation = Math.max(positionEvaluation, currentEvaluation);
+
+            // alpha-beta-pruning:
+            alpha = Math.max(alpha, positionEvaluation);
+            if (alpha >= beta) {
+                break;
+            };
+        };
+
+        if (!searchedPosition) {
+            const evaluation = this.evaluatePosition(colorPerspective);
+            return evaluation; 
+        };
+        
+        return positionEvaluation;
     };
 
     evaluatePosition(colorPerspective) {

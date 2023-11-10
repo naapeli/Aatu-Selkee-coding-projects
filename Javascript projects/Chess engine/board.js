@@ -802,4 +802,8 @@ class Move {
             this.endPos[1] == move.endPos[1]) && (this.promotion == move.promotion) && (this.castleKing == move.castleKing) && 
             (this.enPassant == move.enPassant) && (this.promotedPiece == move.promotedPiece);
     };
+
+    isCapture() {
+        return this.takenPiece != "--" || this.enPassant;
+    };
 };
