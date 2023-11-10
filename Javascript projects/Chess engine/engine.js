@@ -40,6 +40,7 @@ class engine {
             } else {
                 this.bestMove = this.bestIterMove;
                 this.bestMoveEval = this.bestIterEvaluation;
+                console.log(this.bestMove)
                 if (this.bestMoveEval == Number.MAX_SAFE_INTEGER) {
                     console.log("Found checkmate")
                     return this.bestMove;
@@ -143,8 +144,39 @@ class engine {
 
     evaluatePosition(colorPerspective) {
         let evaluation = 0;
+        const endGameWeight = this.getEndGameWeight();
+
+        // calculate material
         evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
+
+        // calculate piece placement factor
+        evaluation += (1/10) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus)
+
+        // calculate king position in endgames
+        evaluation += 2 * endGameWeight * this.getKingPositionEndGameFactor();
+
         return colorPerspective * evaluation;
+    };
+
+    getEndGameWeight() {
+        const numberOfWhitePieces = this.board.whitePieces;
+        const numberOfBlackPieces = this.board.blackPieces;
+        const endGameStart = 5;
+        const multiplier = 1 / endGameStart;
+        if (this.board.whiteToMove) {
+            return Math.sqrt(1 - Math.min(1, multiplier * numberOfBlackPieces))
+        } else {
+            return Math.sqrt(1 - Math.min(1, multiplier * numberOfWhitePieces))
+        };
+    };
+
+    getKingPositionEndGameFactor() { // works, if engine playing as black, doesn't if engine playing as white
+        const [iWhite, jWhite] = this.board.whiteKingPosition;
+        const [iBlack, jBlack] = this.board.blackKingPosition;
+        const kingL1DistFromEachOther = Math.abs(iWhite - iBlack) + Math.abs(jWhite - jBlack);
+        const blackMinDistFromEdge = Math.min(Math.abs(iBlack), Math.abs(iBlack - 7), Math.abs(jBlack), Math.abs(jBlack - 7));
+        const whiteMinDistFromEdge = Math.min(Math.abs(iWhite), Math.abs(iWhite - 7), Math.abs(jWhite), Math.abs(jWhite - 7));
+        return blackMinDistFromEdge + whiteMinDistFromEdge + kingL1DistFromEachOther;
     };
 
     getNumberOfMoves(currentDepth) {
