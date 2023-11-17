@@ -124,11 +124,12 @@ function dropPiece(event) {
             //    playCheckMateScreen()
             //};
             
+            /*
             const engineMove = gameEngine.iterativeSearch(1000);
             const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
             if (engineMoveMade) {
                 updateSquares(engineSquaresToBeUpdated);
-            };
+            };*/
         };
     };
 };

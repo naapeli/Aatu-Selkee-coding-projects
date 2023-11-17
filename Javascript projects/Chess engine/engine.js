@@ -150,7 +150,7 @@ class engine {
         evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
 
         // calculate piece placement factor
-        evaluation += (1/10) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus)
+        evaluation += (1/10) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
 
         // calculate king position in endgames
         evaluation += 2 * endGameWeight * this.getKingPositionEndGameFactor();
@@ -271,7 +271,8 @@ class moveOrderer {
             move.assumedMoveScore = 0;
 
             if (takenPieceType != "-") {
-                move.assumedMoveScore += 10 * pieceValues[takenPieceType] - pieceValues[movingPieceType];
+                move.assumedMoveScore += 1.5 * pieceValues[takenPieceType];
+                move.assumedMoveScore -= pieceValues[movingPieceType];
             };
 
             if (move.promotion) {
