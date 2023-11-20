@@ -27,7 +27,6 @@ class board {
         this.enPassant = [];
         this.possibleMoves = this.getPossibleMoves();
         this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
-        this.pieces = new Set(["R", "B", "N", "Q"]);
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
     };
 
@@ -109,7 +108,7 @@ class board {
                 };
             };
 
-            if (this.pieces.has(move.takenPiece[1])) {
+            if (pieces.has(move.takenPiece[1])) {
                 switch(move.takenPiece[0]) {
                     case "w":
                         this.whitePieces--;
@@ -194,7 +193,7 @@ class board {
                 };
             };
 
-            if (this.pieces.has(move.takenPiece[1])) {
+            if (pieces.has(move.takenPiece[1])) {
                 switch(move.takenPiece[0]) {
                     case "w":
                         this.whitePieces++;
@@ -686,12 +685,16 @@ class board {
         const [whitePiecePositionBonus, blackPiecePositionBonus] = this.boardUtility.countPiecePositionBonus(this.board);
         this.whitePiecePositionBonus = whitePiecePositionBonus;
         this.blackPiecePositionBonus = blackPiecePositionBonus;
-        const [whitePieces, blackPieces] = this.boardUtility.countPieces(this.board, this.pieces);
+        const [whitePieces, blackPieces] = this.boardUtility.countPieces(this.board, pieces);
         this.whitePieces = whitePieces;
         this.blackPieces = blackPieces;
         this.determineChecksAndPins();
         this.possibleMoves = this.getPossibleMoves();
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
+    };
+
+    inCheck() {
+        return this.currentCheckingPieces.length > 0;
     };
 };
 
@@ -866,7 +869,6 @@ class boardUtils {
         zobristHash = zobristHash ^ endPosRandomKey;
         zobristHash = zobristHash ^ takenPieceRandomKey;
         if (move.enPassant) { // if move is en passant, update taken piece
-            console.log("here")
             if (whiteMove) {
                 const takenPieceIndex = 11;
                 const takenPosIndex = this.squareToIndex([move.endPos[0], move.endPos[1] + 1]);
@@ -1067,5 +1069,9 @@ class Move {
 
     isCapture() {
         return this.takenPiece != "--" || this.enPassant;
+    };
+
+    isPieceCapture() {
+        return pieces.has(this.takenPiece[1]);
     };
 };

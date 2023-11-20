@@ -13,6 +13,7 @@ class engine {
         this.bestIterMove;
         this.foundCheckMate = false;
         this.moveOrdering = new moveOrderer();
+        this.transpositionTable = new transpositionTable();
     };
 
     iterativeSearch() { // iterative search useless, since we do not start with the best move from previous iteration (apart from going as deep as possible, with timing the moves and getting a good result)
@@ -36,6 +37,7 @@ class engine {
                 console.log("Evaluation: " + perspective * this.bestMoveEval);
                 console.log("Depth: " + searchDepth)
                 console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime))
+                console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp)
                 return this.bestMove;
             } else {
                 this.bestMove = this.bestIterMove;
@@ -49,12 +51,38 @@ class engine {
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) { // in the future, implement a transposition table: https://en.wikipedia.org/wiki/Negamax
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) { // in some positions searchOnlyCapturesAndChecks() takes too much time so there is not enough time to complete the search even on depth 1 and result is bad...
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
         };
+        
+        const alphaOriginal = alpha;
 
+        // look if position exists in the transposition table
+        const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
+        if (position != undefined && position.zobristHash == this.board.zobristHash && currentDepth <= position.depth) {
+            if (position.nodeType == 0) {
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = position.evaluation;
+                    this.bestIterMove = position.bestMove;
+                };
+                return position.evaluation;
+            } else if (position.nodeType == 1) {
+                alpha = Math.max(alpha, position.evaluation);
+            } else if (position.nodeType == 2) {
+                beta = Math.min(beta, position.evaluation);
+            };
+        };
+        if (alpha >= beta) { // if found a value for the position, return it
+            if (depthFromRoot == 0) {
+                this.bestIterEvaluation = position.evaluation;
+                this.bestIterMove = position.bestMove;
+            };
+            return position.evaluation;
+        };
+
+        // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.MIN_SAFE_INTEGER;
@@ -65,23 +93,31 @@ class engine {
             const evaluation = this.searchOnlyCapturesAndChecks(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
             return evaluation;
         };
-        // in the future, store previous iterations best move here, so it can be ordered first
+        
+        // search through all moves and select the best one
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
-            const currentEvaluation = -this.search(currentDepth - 1, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+            // calculate check extension after making the wanted move.
+            const checkExtension = this.board.inCheck() ? 1 : 0;
+            if (this.board.inCheck()) {console.log("here")}
+            const currentEvaluation = -this.search(currentDepth - 1 + checkExtension, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
             this.board.undoMove();
-
-            if (this.searchCancelled) {
-                return;
-            };
 
             if (currentEvaluation > positionEvaluation) {
                 positionEvaluation = currentEvaluation;
                 positionBestMove = move;
+            };
+
+            if (this.searchCancelled) {
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = positionEvaluation;
+                    this.bestIterMove = positionBestMove;
+                };
+                return positionEvaluation;
             };
 
             // alpha-beta-pruning:
@@ -90,6 +126,17 @@ class engine {
                 break;
             };
         };
+        
+        // store the evaluation of the position to the transposition table
+        let nodeType;
+        if (positionEvaluation <= alphaOriginal) { // upperbound node
+            nodeType = 1
+        } else if (positionEvaluation >= beta) { // lowerbound node
+            nodeType = 2
+        } else { // exact node
+            nodeType = 0
+        };
+        this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
         // remember the best moves if the position is the original one, else return the evaluation
         if (depthFromRoot == 0) {
@@ -100,7 +147,7 @@ class engine {
         };
     };
 
-    searchOnlyCapturesAndChecks(depthFromSearchEnd, alpha, beta, colorPerspective) { // does not search checks yet (need to implement move generation to make move.possibleCheck)
+    searchOnlyCapturesAndChecks(depthFromSearchEnd, alpha, beta, colorPerspective) { // does not search checks yet
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.MIN_SAFE_INTEGER;
@@ -114,7 +161,7 @@ class engine {
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             let currentEvaluation = Number.MIN_SAFE_INTEGER;
-            if (move.isCapture() || move.promotion) {
+            if (move.isCapture() || move.promotion) { // continue search if move is piece capture or pawn promotion
                 searchedPosition = true;
                 this.board.makeMove(move);
                 currentEvaluation = -this.searchOnlyCapturesAndChecks(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
@@ -126,7 +173,7 @@ class engine {
             };
 
             positionEvaluation = Math.max(positionEvaluation, currentEvaluation);
-
+            
             // alpha-beta-pruning:
             alpha = Math.max(alpha, positionEvaluation);
             if (alpha >= beta) {
@@ -138,7 +185,6 @@ class engine {
             const evaluation = this.evaluatePosition(colorPerspective);
             return evaluation; 
         };
-        
         return positionEvaluation;
     };
 
@@ -150,7 +196,7 @@ class engine {
         evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
 
         // calculate piece placement factor
-        evaluation += (1/10) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
+        evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
 
         // calculate king position in endgames
         evaluation += 2 * endGameWeight * this.getKingPositionEndGameFactor();

@@ -15,10 +15,23 @@ function getRandom64BitInt() {
     return upper32 * (2n ** 32n) + lower32;
 };
 
-const randomPieceKeys = new Array(12).fill().map(() => new Array(64).fill(getRandom64BitInt()));
-const randomEnPassantKeys = new Array(64).fill(getRandom64BitInt());
-const randomCastlingKeys = new Array(16).fill(getRandom64BitInt());
+const randomPieceKeys = new Array(12).fill().map(() => new Array(64));
+const randomEnPassantKeys = new Array(64);
+const randomCastlingKeys = new Array(16);
 const randomSideKey = getRandom64BitInt();
+
+// fill arrays with random numbers
+for (let piece = 0; piece < 12; piece++) {
+    for (let square = 0; square < 64; square++) {
+        randomPieceKeys[piece][square] = getRandom64BitInt();
+    };
+};
+for (let square = 0; square < 64; square++) {
+    randomEnPassantKeys[square] = getRandom64BitInt();
+};
+for (let castlingRight = 0; castlingRight < 16; castlingRight++) {
+    randomCastlingKeys[castlingRight] = getRandom64BitInt();
+};
 
 const pieceToIndex = {
     "wK": 0,

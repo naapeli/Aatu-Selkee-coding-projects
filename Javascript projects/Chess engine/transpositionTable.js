@@ -1,13 +1,12 @@
 class transpositionTable {
-    constructor(board, sizeInMB) {
-        this.board = board;
-        this.size = this.getSizeOfArray(sizeInMB);
-        this.positionLookUp = new Array(this.size);
-        this.searchFailed = Number.MIN_SAFE_INTEGER;
+    constructor() {
+        this.size = this.getSizeOfArray();
+        this.positionLookUp = new Array(parseInt(this.size));
+        this.positionsInLookUp = 0;
     };
 
     getSizeOfArray() { // for now use 4 000 000 positions
-        return 4000000;
+        return 4000000n;
     };
 
     getIndex(zobristHash) {
@@ -18,22 +17,10 @@ class transpositionTable {
         this.positionLookUp = new Array(this.size);
     };
 
-    getEvaluationFromHash(zobristHash, alpha, beta, depth) {
+    getEntryFromHash(zobristHash) {
         const index = this.getIndex(zobristHash);
         const entry = this.positionLookUp[index];
-        if (entry != undefined && zobristHash == entry.zobristHash && depth <= entry.depth) { // if found a previously saved entry that is lower depth than current depth
-            if (entry.nodeType == 0) {
-                return entry.evaluation;   
-            } else if (entry.nodeType == 1 && entry.evaluation <= alpha) {
-                return alpha;
-            } else if (entry.nodeType == 2 && entry.evaluation >= beta) {
-                return beta;
-            };
-            this.rememberBestMove(); // unfinished...
-            
-        // if hash not saved previously to table or did not return evaluation
-        return this.searchFailed;
-        };
+        return entry;
     };
 
     getBestMoveFromHash(zobristHash) {
@@ -46,11 +33,19 @@ class transpositionTable {
         };
     };
 
-    storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove) { // unfinished ???
+    storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove) {
         const index = this.getIndex(zobristHash);
         const overWritten = this.positionLookUp[index] != undefined;
-        console.log(overWritten) // remove when ready
+        if (!overWritten) {this.positionsInLookUp++}
         this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
+    };
+
+    printLookUpTable() {
+        this.positionLookUp.forEach(entry => {
+            if (entry != undefined) {
+                console.log(entry)
+            };
+        });
     };
 };
 
