@@ -3,6 +3,9 @@ This is a fun little project at the end of my partial differential equations cou
 Let her go - Passenger:
 [Download WAV File](Videos%20and%20audio%20files/sections/final.wav)
 
+Guitar string vibrating:
 ![Alt Text](Videos%20and%20audio%20files/videos/guitar%20string.gif)
 
+An easier case of solving the wave equation using the finite difference method:
+![Alt Text](Videos%20and%20audio%20files/videos/wave%20equation.gif)
 
