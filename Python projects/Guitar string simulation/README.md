@@ -4,3 +4,4 @@ Let her go - Passenger:
 
 https://github.com/naapeli/Aatu-Selkee-coding-projects/blob/main/Python%20projects/Guitar%20string%20simulation/Videos%20and%20audio%20files/sections/final.wav
 
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/b07f9dac-4a51-48e3-a7b2-67e0163fc489)
