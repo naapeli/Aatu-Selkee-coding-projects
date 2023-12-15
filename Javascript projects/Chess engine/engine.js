@@ -13,6 +13,7 @@ class engine {
         this.bestIterMove;
         this.foundCheckMate = false;
         this.moveOrdering = new moveOrderer();
+        this.transpositionTable = new transpositionTable();
     };
 
     iterativeSearch() { // iterative search useless, since we do not start with the best move from previous iteration (apart from going as deep as possible, with timing the moves and getting a good result)
@@ -26,7 +27,7 @@ class engine {
         };
         console.log("Search running")
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
-            console.log("Iteration " + searchDepth)
+            console.log("Iteration: " + searchDepth)
             const perspective = this.board.whiteToMove ? 1 : -1;
             this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, perspective);
             if (this.searchCancelled) {
@@ -35,10 +36,13 @@ class engine {
                 //this.bestMoveEval = this.bestIterEvaluation;
                 console.log("Evaluation: " + perspective * this.bestMoveEval);
                 console.log("Depth: " + searchDepth)
+                console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime))
+                console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp)
                 return this.bestMove;
             } else {
                 this.bestMove = this.bestIterMove;
                 this.bestMoveEval = this.bestIterEvaluation;
+                console.log(this.bestMove)
                 if (this.bestMoveEval == Number.MAX_SAFE_INTEGER) {
                     console.log("Found checkmate")
                     return this.bestMove;
@@ -47,12 +51,38 @@ class engine {
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) { // in the future, implement a transposition table: https://en.wikipedia.org/wiki/Negamax
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) { // in some positions searchOnlyCapturesAndChecks() takes too much time so there is not enough time to complete the search even on depth 1 and result is bad...
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
         };
+        
+        const alphaOriginal = alpha;
 
+        // look if position exists in the transposition table
+        const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
+        if (position != undefined && position.zobristHash == this.board.zobristHash && currentDepth <= position.depth) {
+            if (position.nodeType == 0) {
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = position.evaluation;
+                    this.bestIterMove = position.bestMove;
+                };
+                return position.evaluation;
+            } else if (position.nodeType == 1) {
+                alpha = Math.max(alpha, position.evaluation);
+            } else if (position.nodeType == 2) {
+                beta = Math.min(beta, position.evaluation);
+            };
+        };
+        if (alpha >= beta) { // if found a value for the position, return it
+            if (depthFromRoot == 0) {
+                this.bestIterEvaluation = position.evaluation;
+                this.bestIterMove = position.bestMove;
+            };
+            return position.evaluation;
+        };
+
+        // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.MIN_SAFE_INTEGER;
@@ -60,26 +90,34 @@ class engine {
             return 0; // stalemate
         };
         if (currentDepth === 0) {
-            const evaluation = this.evaluatePosition(colorPerspective);
-            return evaluation; // in the future, start a new search that looks only at captures and promotions (and checks) until there are none remaining.
+            const evaluation = this.searchOnlyCapturesAndChecks(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
+            return evaluation;
         };
-        // in the future, store previous iterations best move here, so it can be ordered first
+        
+        // search through all moves and select the best one
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
-            const currentEvaluation = -this.search(currentDepth - 1, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+            // calculate check extension after making the wanted move.
+            const checkExtension = this.board.inCheck() ? 1 : 0;
+            if (this.board.inCheck()) {console.log("here")}
+            const currentEvaluation = -this.search(currentDepth - 1 + checkExtension, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
             this.board.undoMove();
-
-            if (this.searchCancelled) {
-                return;
-            };
 
             if (currentEvaluation > positionEvaluation) {
                 positionEvaluation = currentEvaluation;
                 positionBestMove = move;
+            };
+
+            if (this.searchCancelled) {
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = positionEvaluation;
+                    this.bestIterMove = positionBestMove;
+                };
+                return positionEvaluation;
             };
 
             // alpha-beta-pruning:
@@ -88,6 +126,17 @@ class engine {
                 break;
             };
         };
+        
+        // store the evaluation of the position to the transposition table
+        let nodeType;
+        if (positionEvaluation <= alphaOriginal) { // upperbound node
+            nodeType = 1
+        } else if (positionEvaluation >= beta) { // lowerbound node
+            nodeType = 2
+        } else { // exact node
+            nodeType = 0
+        };
+        this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
         // remember the best moves if the position is the original one, else return the evaluation
         if (depthFromRoot == 0) {
@@ -98,10 +147,82 @@ class engine {
         };
     };
 
+    searchOnlyCapturesAndChecks(depthFromSearchEnd, alpha, beta, colorPerspective) { // does not search checks yet
+        if (this.board.possibleMoves.length === 0) {
+            if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
+                return Number.MIN_SAFE_INTEGER;
+            };
+            return 0; // stalemate
+        };
+
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        let positionEvaluation = this.evaluatePosition(colorPerspective);
+        let searchedPosition = false;
+        for (let i = 0; i < moves.length; i++) {
+            const move = moves[i];
+            let currentEvaluation = Number.MIN_SAFE_INTEGER;
+            if (move.isCapture() || move.promotion) { // continue search if move is piece capture or pawn promotion
+                searchedPosition = true;
+                this.board.makeMove(move);
+                currentEvaluation = -this.searchOnlyCapturesAndChecks(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
+                this.board.undoMove();
+
+                if (this.searchCancelled) {
+                    return;
+                };
+            };
+
+            positionEvaluation = Math.max(positionEvaluation, currentEvaluation);
+            
+            // alpha-beta-pruning:
+            alpha = Math.max(alpha, positionEvaluation);
+            if (alpha >= beta) {
+                break;
+            };
+        };
+
+        if (!searchedPosition) {
+            const evaluation = this.evaluatePosition(colorPerspective);
+            return evaluation; 
+        };
+        return positionEvaluation;
+    };
+
     evaluatePosition(colorPerspective) {
         let evaluation = 0;
+        const endGameWeight = this.getEndGameWeight();
+
+        // calculate material
         evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
+
+        // calculate piece placement factor
+        evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
+
+        // calculate king position in endgames
+        evaluation += 2 * endGameWeight * this.getKingPositionEndGameFactor();
+
         return colorPerspective * evaluation;
+    };
+
+    getEndGameWeight() {
+        const numberOfWhitePieces = this.board.whitePieces;
+        const numberOfBlackPieces = this.board.blackPieces;
+        const endGameStart = 5;
+        const multiplier = 1 / endGameStart;
+        if (this.board.whiteToMove) {
+            return Math.sqrt(1 - Math.min(1, multiplier * numberOfBlackPieces))
+        } else {
+            return Math.sqrt(1 - Math.min(1, multiplier * numberOfWhitePieces))
+        };
+    };
+
+    getKingPositionEndGameFactor() { // works, if engine playing as black, doesn't if engine playing as white
+        const [iWhite, jWhite] = this.board.whiteKingPosition;
+        const [iBlack, jBlack] = this.board.blackKingPosition;
+        const kingL1DistFromEachOther = Math.abs(iWhite - iBlack) + Math.abs(jWhite - jBlack);
+        const blackMinDistFromEdge = Math.min(Math.abs(iBlack), Math.abs(iBlack - 7), Math.abs(jBlack), Math.abs(jBlack - 7));
+        const whiteMinDistFromEdge = Math.min(Math.abs(iWhite), Math.abs(iWhite - 7), Math.abs(jWhite), Math.abs(jWhite - 7));
+        return blackMinDistFromEdge + whiteMinDistFromEdge + kingL1DistFromEachOther;
     };
 
     getNumberOfMoves(currentDepth) {
@@ -196,7 +317,8 @@ class moveOrderer {
             move.assumedMoveScore = 0;
 
             if (takenPieceType != "-") {
-                move.assumedMoveScore += 10 * pieceValues[takenPieceType] - pieceValues[movingPieceType];
+                move.assumedMoveScore += 1.5 * pieceValues[takenPieceType];
+                move.assumedMoveScore -= pieceValues[movingPieceType];
             };
 
             if (move.promotion) {

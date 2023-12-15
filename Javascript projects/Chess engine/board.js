@@ -18,6 +18,8 @@ class board {
         this.blackMaterial = this.boardUtility.countMaterial(this.board)[1];
         this.whitePiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[0];
         this.blackPiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[1];
+        this.whitePieces = 7;
+        this.blackPieces = 7;
         this.whiteCanCastle = [true, true]; // long, short
         this.blackCanCastle = [true, true]; // long, short
         this.currentCheckingPieces = []; // element is in format [Set(possibleBlocks), ...]
@@ -25,9 +27,10 @@ class board {
         this.enPassant = [];
         this.possibleMoves = this.getPossibleMoves();
         this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
+        this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
     };
 
-    makeMove(move) { // need to update black and white piecePositionBonus
+    makeMove(move) {
         let currentMovePossible = false
         for (var i = 0; i < currentBoard.possibleMoves.length; i++) {
             let currentMove = currentBoard.possibleMoves[i];
@@ -37,6 +40,8 @@ class board {
             };
         };
         if (currentMovePossible) {
+            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
             this.whiteToMove = !this.whiteToMove;
             let squaresToBeUpdated = [];
             let [i, j] = move.startPos;
@@ -60,15 +65,6 @@ class board {
             } else {
                 this.enPassant = [];
             };
-            let diffValue = pieceValues[move.takenPiece[1]];
-            switch(move.takenPiece[0]) {
-                case "w":
-                    this.whiteMaterial -= diffValue;
-                    break;
-                case "b":
-                    this.blackMaterial -= diffValue;
-                    break;
-            };
             if (move.castleKing) {
                 this.board[j][i] = "--";
                 this.board[jNew][iNew] = movingPiece;
@@ -90,12 +86,10 @@ class board {
                 switch(movingPiece[0]) {
                     case "w":
                         this.board[jNew + 1][iNew] = "--";
-                        this.blackMaterial -= 1;
                         squaresToBeUpdated.push([iNew, jNew + 1]);
                         break;
                     case "b":
                         this.board[jNew - 1][iNew] = "--";
-                        this.whiteMaterial -= 1;
                         squaresToBeUpdated.push([iNew, jNew - 1]);
                         break;
                 };
@@ -113,17 +107,40 @@ class board {
                     };
                 };
             };
+
+            if (pieces.has(move.takenPiece[1])) {
+                switch(move.takenPiece[0]) {
+                    case "w":
+                        this.whitePieces--;
+                        break;
+                    case "b":
+                        this.blackPieces--;
+                        break;
+                };
+            };
+
+            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff] = this.boardUtility.getMaterialDiffs(move);
+            this.whiteMaterial += whiteMaterialDiff;
+            this.blackMaterial += blackMaterialDiff;
+            this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
+            this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             squaresToBeUpdated.push([i, j], [iNew, jNew]);
             this.possibleMoves = [];
             this.determineChecksAndPins();
             this.possibleMoves = this.getPossibleMoves();
+
+            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
+            this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, !this.whiteToMove, this.enPassant);
             return [true, squaresToBeUpdated];
         };
         return [false];
     };
 
-    undoMove() { // need to update black and white piecePositionBonus
+    undoMove() {
         if (this.moveLog.length > 0) {
+            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
             this.whiteToMove = !this.whiteToMove
             let squaresToBeUpdated = [];
             let [move, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
@@ -150,12 +167,10 @@ class board {
                 switch(move.movingPiece) {
                     case "wP":
                         this.board[jNew + 1][iNew] = "bP";
-                        this.blackMaterial += 1;
                         squaresToBeUpdated.push([iNew, jNew + 1]);
                         break;
                     case "bP":
                         this.board[jNew - 1][iNew] = "wP";
-                        this.whiteMaterial += 1;
                         squaresToBeUpdated.push([iNew, jNew - 1]);
                         break;
                 };
@@ -177,20 +192,28 @@ class board {
                         break;
                 };
             };
-            if (move.takenPiece != "--") {
-                let diffValue = pieceValues[move.takenPiece[1]];
+
+            if (pieces.has(move.takenPiece[1])) {
                 switch(move.takenPiece[0]) {
                     case "w":
-                        this.whiteMaterial += diffValue;
+                        this.whitePieces++;
                         break;
                     case "b":
-                        this.blackMaterial += diffValue;
+                        this.blackPieces++;
                         break;
                 };
             };
 
+            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff] = this.boardUtility.getMaterialDiffs(move, true);
+            this.whiteMaterial += whiteMaterialDiff;
+            this.blackMaterial += blackMaterialDiff;
+            this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
+            this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             this.determineChecksAndPins()
             this.possibleMoves = this.getPossibleMoves();
+            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
+            this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, this.whiteToMove, this.enPassant);
             return squaresToBeUpdated
         };
         return [];
@@ -659,8 +682,19 @@ class board {
         const [whiteMaterial, blackMaterial] = this.boardUtility.countMaterial(this.board);
         this.whiteMaterial = whiteMaterial;
         this.blackMaterial = blackMaterial;
+        const [whitePiecePositionBonus, blackPiecePositionBonus] = this.boardUtility.countPiecePositionBonus(this.board);
+        this.whitePiecePositionBonus = whitePiecePositionBonus;
+        this.blackPiecePositionBonus = blackPiecePositionBonus;
+        const [whitePieces, blackPieces] = this.boardUtility.countPieces(this.board, pieces);
+        this.whitePieces = whitePieces;
+        this.blackPieces = blackPieces;
         this.determineChecksAndPins();
         this.possibleMoves = this.getPossibleMoves();
+        this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
+    };
+
+    inCheck() {
+        return this.currentCheckingPieces.length > 0;
     };
 };
 
@@ -776,11 +810,241 @@ class boardUtils {
                 if (board[j][i][0] == "w") {
                     whitePieceBonus += startPieceSquareValues[board[j][i][1]][j][i];
                 } else if (board[j][i][0] == "b") {
-                    blackPieceBonus += startPieceSquareValues[board[j][i][1]][7 - j][7 - i];
+                    blackPieceBonus += startPieceSquareValues[board[j][i][1]][7 - j][i];
                 };
             };
         };
         return [whitePieceBonus, blackPieceBonus]
+    };
+
+    countPieces(board, pieces) {
+        let whitePieces = 0;
+        let blackPieces = 0;
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (board[j][i][0] == "w") {
+                    if (pieces.has(board[j][i][1])) {
+                        whitePieces++;
+                    };
+                } else if (board[j][i][0] == "b") {
+                    if (pieces.has(board[j][i][1])) {
+                        blackPieces++;
+                    };
+                };
+            };
+        };
+        return [whitePieces, blackPieces];
+    };
+
+    updateZobristHashCastlingRights(zobristHash, whiteCanCastle, blackCanCastle) {
+        const castleIndex = whiteCanCastle[0] * 8 + whiteCanCastle[1] * 4 + blackCanCastle[0] * 2 + blackCanCastle[1];
+        const randomCastleKey = randomCastlingKeys[castleIndex];
+        return zobristHash ^ randomCastleKey;
+    };
+
+    updateZobristHashEnPassant(zobristHash, enPassant) {
+        if (enPassant.length == 0) {
+            return zobristHash;
+        };
+
+        const enPassantSquareIndex = this.squareToIndex(enPassant);
+        const enPassantRandomKey = randomEnPassantKeys[enPassantSquareIndex];
+        zobristHash = zobristHash ^ enPassantRandomKey;
+        return zobristHash;
+    };
+
+    updateZobristHash(zobristHash, move, whiteMove, enPassant) {
+        // update side
+        zobristHash = zobristHash ^ randomSideKey;
+
+        // update start and end squares
+        const startPosIndex = this.squareToIndex(move.startPos);
+        const endPosIndex = this.squareToIndex(move.endPos);
+        const movingPieceIndex = pieceToIndex[move.movingPiece];
+        const takenPieceIndex = move.takenPiece == "--" ? -1 : pieceToIndex[move.takenPiece];
+        const startPosRandomKey = randomPieceKeys[movingPieceIndex][startPosIndex];
+        const endPosRandomKey = randomPieceKeys[movingPieceIndex][endPosIndex];
+        const takenPieceRandomKey = takenPieceIndex == -1 ? 0n : randomPieceKeys[takenPieceIndex][endPosIndex];
+        zobristHash = zobristHash ^ startPosRandomKey;
+        zobristHash = zobristHash ^ endPosRandomKey;
+        zobristHash = zobristHash ^ takenPieceRandomKey;
+        if (move.enPassant) { // if move is en passant, update taken piece
+            if (whiteMove) {
+                const takenPieceIndex = 11;
+                const takenPosIndex = this.squareToIndex([move.endPos[0], move.endPos[1] + 1]);
+                const takenPieceRandomKey = randomPieceKeys[takenPieceIndex][takenPosIndex];
+                zobristHash = zobristHash ^ takenPieceRandomKey;
+            } else {
+                const takenPieceIndex = 5;
+                const takenPosIndex = this.squareToIndex([move.endPos[0], move.endPos[1] - 1]);
+                const takenPieceRandomKey = randomPieceKeys[takenPieceIndex][takenPosIndex];
+                zobristHash = zobristHash ^ takenPieceRandomKey;
+            };
+        };
+
+        if (move.castleKing) { // if move was castling, update rook position
+            let startPosRandomKey;
+            let endPosRandomKey;
+            if (whiteMove) {
+                let rookStartPosIndex;
+                let rookEndPosIndex;
+                if (move.endPos[0] - move.startPos[0] > 0) { // castle short
+                    rookStartPosIndex = 63;
+                    rookEndPosIndex = 61;
+                } else { // castle long
+                    rookStartPosIndex = 56;
+                    rookEndPosIndex = 59;
+                };
+                const whiteRookPieceIndex = 2;
+                startPosRandomKey = randomPieceKeys[whiteRookPieceIndex][rookStartPosIndex];
+                endPosRandomKey = randomPieceKeys[whiteRookPieceIndex][rookEndPosIndex];
+            } else {
+                let rookStartPosIndex;
+                let rookEndPosIndex;
+                if (move.endPos[0] - move.startPos[0] > 0) { // castle short
+                    rookStartPosIndex = 7;
+                    rookEndPosIndex = 5;
+                } else { // castle long
+                    rookStartPosIndex = 0;
+                    rookEndPosIndex = 3;
+                };
+                const blackRookPieceIndex = 8;
+                startPosRandomKey = randomPieceKeys[blackRookPieceIndex][rookStartPosIndex];
+                endPosRandomKey = randomPieceKeys[blackRookPieceIndex][rookEndPosIndex];
+            };
+            zobristHash = zobristHash ^ startPosRandomKey;
+            zobristHash = zobristHash ^ endPosRandomKey;
+        };
+
+        return zobristHash;
+    };
+
+    getMaterialDiffs(move, undo = false) { // castling piece position bonuses not implemented
+        if (!undo) {
+            let whiteMaterialDiff = 0;
+            let blackMaterialDiff = 0;
+            let whitePiecePositionBonusDiff = 0;
+            let blackPiecePositionBonusDiff = 0;
+            const playerDiff = move.movingPiece[0] == "w" ? 1 : -1;
+            let [i, j] = move.startPos;
+            let [iNew, jNew] = playerDiff == 1 ? move.endPos : [7 - move.endPos[0], 7 - move.endPos[1]];
+
+
+
+            // update taken piece materials and piece position bonuses
+            if (move.takenPiece[0] != "--" || move.enPassant) {
+                const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
+                const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
+                switch(move.movingPiece[0]) {
+                    case "b":
+                        whiteMaterialDiff -= materialDiffValue;
+                        whitePiecePositionBonusDiff -= piecePositionBonusDiff;
+                        break;
+                    case "w":
+                        blackMaterialDiff -= materialDiffValue;
+                        blackPiecePositionBonusDiff -= piecePositionBonusDiff;
+                        break;
+                };
+            };
+
+            // update moving piece position bonuses and materials if promotion
+            const oldPromotionMaterialDiffValue = move.promotion ? pieceValues[move.movingPiece[1]] : 0;
+            const newPromotionMaterialDiffValue = move.promotion ? pieceValues[move.promotedPiece[1]] : 0;
+            const promotionMaterialDiffValue = newPromotionMaterialDiffValue - oldPromotionMaterialDiffValue;
+            const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
+            const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
+            const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
+            switch(move.movingPiece[0]) {
+                case "w":
+                    whiteMaterialDiff += promotionMaterialDiffValue;
+                    whitePiecePositionBonusDiff += piecePositioningBonusDiff;
+                    break;
+                case "b":
+                    blackMaterialDiff += promotionMaterialDiffValue;
+                    blackPiecePositionBonusDiff += piecePositioningBonusDiff;
+                    break;
+            };
+
+            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff];
+        } else {
+            let whiteMaterialDiff = 0;
+            let blackMaterialDiff = 0;
+            let whitePiecePositionBonusDiff = 0;
+            let blackPiecePositionBonusDiff = 0;
+            const playerDiff = move.movingPiece[0] == "w" ? 1 : -1;
+            let [i, j] = move.startPos;
+            let [iNew, jNew] = playerDiff == 1 ? move.endPos : [7 - move.endPos[0], 7 - move.endPos[1]];
+
+            // update taken piece materials and piece position bonuses
+            if (move.takenPiece[0] != "--" || move.enPassant) {
+                const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
+                const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
+                switch(move.movingPiece[0]) {
+                    case "b":
+                        whiteMaterialDiff += materialDiffValue;
+                        whitePiecePositionBonusDiff += piecePositionBonusDiff;
+                        break;
+                    case "w":
+                        blackMaterialDiff += materialDiffValue;
+                        blackPiecePositionBonusDiff += piecePositionBonusDiff;
+                        break;
+                };
+            };
+            // update moving piece position bonuses and materials if promotion
+            const oldPromotionMaterialDiffValue = move.promotion ? pieceValues[move.movingPiece[1]] : 0;
+            const newPromotionMaterialDiffValue = move.promotion ? pieceValues[move.promotedPiece[1]] : 0;
+            const promotionMaterialDiffValue = newPromotionMaterialDiffValue - oldPromotionMaterialDiffValue;
+            const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
+            const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
+            const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
+            switch(move.movingPiece[0]) {
+                case "w":
+                    whiteMaterialDiff -= promotionMaterialDiffValue;
+                    whitePiecePositionBonusDiff -= piecePositioningBonusDiff;
+                    break;
+                case "b":
+                    blackMaterialDiff -= promotionMaterialDiffValue;
+                    blackPiecePositionBonusDiff -= piecePositioningBonusDiff;
+                    break;
+            };
+
+            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff];
+        };
+    };
+
+    squareToIndex(square) {
+        return square[0] + 8 * square[1];
+    };
+
+    generateZobristHash(board, enPassant, whiteCanCastle, blackCanCastle, whiteToMove) {
+        let hash = 0n;
+        for (let j = 0; j < 8; j++) {
+            for (let i = 0; i < 8; i++) {
+                const piece = board[j][i];
+                if (piece != "--") {
+                    const pieceIndex = pieceToIndex[piece];
+                    const squareIndex = this.squareToIndex([i, j]);
+                    const randomPieceKey = randomPieceKeys[pieceIndex][squareIndex];
+                    hash = hash ^ randomPieceKey;
+                };
+            };
+        };
+
+        if (enPassant.length != 0) {
+            const enPassantSquareIndex = this.squareToIndex(enPassant);
+            const randomEnPassantKey = randomEnPassantKeys[enPassantSquareIndex];
+            hash = hash ^ randomEnPassantKey;
+        };
+
+        const castleIndex = whiteCanCastle[0] * 8 + whiteCanCastle[1] * 4 + blackCanCastle[0] * 2 + blackCanCastle[1];
+        const randomCastleKey = randomCastlingKeys[castleIndex];
+        hash = hash ^ randomCastleKey;
+
+        if (!whiteToMove) {
+            hash = hash ^ randomSideKey;
+        };
+
+        return hash;
     };
 };
 
@@ -801,5 +1065,13 @@ class Move {
         return (this.startPos[0] == move.startPos[0] && this.startPos[1] == move.startPos[1]) && (this.endPos[0] == move.endPos[0] && 
             this.endPos[1] == move.endPos[1]) && (this.promotion == move.promotion) && (this.castleKing == move.castleKing) && 
             (this.enPassant == move.enPassant) && (this.promotedPiece == move.promotedPiece);
+    };
+
+    isCapture() {
+        return this.takenPiece != "--" || this.enPassant;
+    };
+
+    isPieceCapture() {
+        return pieces.has(this.takenPiece[1]);
     };
 };

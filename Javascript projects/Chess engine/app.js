@@ -101,7 +101,8 @@ function dropPiece(event) {
                     //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
                     //    playCheckMateScreen()
                     //};
-                    const engineMove = gameEngine.iterativeSearch(1000);
+                    
+                    const engineMove = gameEngine.iterativeSearch();
                     const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
                     if (engineMoveMade) {
                         updateSquares(engineSquaresToBeUpdated);
@@ -122,7 +123,8 @@ function dropPiece(event) {
             //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
             //    playCheckMateScreen()
             //};
-            const engineMove = gameEngine.iterativeSearch(1000);
+            
+            const engineMove = gameEngine.iterativeSearch();
             const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
             if (engineMoveMade) {
                 updateSquares(engineSquaresToBeUpdated);
