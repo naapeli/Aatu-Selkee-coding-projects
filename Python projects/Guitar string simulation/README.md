@@ -2,6 +2,7 @@ This is a fun little project at the end of my partial differential equations cou
 
 Let her go - Passenger:
 [Download WAV File](Videos%20and%20audio%20files/sections/final.wav)
-https://github.com/naapeli/Aatu-Selkee-coding-projects/blob/main/Python%20projects/Guitar%20string%20simulation/
+
+![Alt Text](Videos%20and%20audio%20files/videos/guitar%20string.gif)
 
 
