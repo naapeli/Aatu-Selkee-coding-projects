@@ -58,7 +58,7 @@ wavfile.write(filepath + r"\secondthird.wav", 20000, secondthird.astype(np.float
 fourth1 = second1
 fourth2 = np.concatenate((np.zeros(sixteenth_note), A3[0:sixteenth_note], F3[0:sixteenth_note], C4[0:sixteenth_note])) + 0.5 * E2[0:quarter_note]
 fourth3 = np.concatenate((G4[0:sixteenth_note], E4[0:sixteenth_note], F3[0:sixteenth_note], C4[0:sixteenth_note])) + 0.5 * E2[0:quarter_note]
-fourth4 = np.concatenate((np.zeros(sixteenth_note), D4[0:sixteenth_note], D3[0:sixteenth_note], E4[0:sixteenth_note])) + 0.5 * F2_sharp[0:quarter_note]
+fourth4 = np.concatenate((np.zeros(sixteenth_note), D4[0:sixteenth_note], D3[0:sixteenth_note], E4[0:eight_note])) + 0.5 * F2_sharp[0:quarter_note + sixteenth_note]
 fourth = np.concatenate((fourth1, fourth2, fourth3, fourth4))
 wavfile.write(filepath + r"\fourth.wav", 20000, fourth.astype(np.float32))
 
@@ -79,4 +79,4 @@ secondend = np.concatenate((secondend1, secondend2, secondend3))
 wavfile.write(filepath + r"\secondend.wav", 20000, secondend.astype(np.float32))
 
 final = np.concatenate((first, secondthirdfourth, firstend, secondthirdfourth, secondend))
-wavfile.write(filepath + r"\final.wav", 20000, final.astype(np.float32))
+wavfile.write(filepath + r"\finalv2.wav", 20000, final.astype(np.float32))
