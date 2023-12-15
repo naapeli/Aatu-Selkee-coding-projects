@@ -1,0 +1,1 @@
+This is a fun little project at the end of my partial differential equations course. First I wanted to solve PDE's numerically using the finite difference method. In the end, the project included a little fourier analysis to get the harmonics for converting the vibrating string into sounds.
