@@ -12,4 +12,4 @@ An easier case of solving the wave equation using the finite difference method:
 The 3 dimensional plot of the solution to the wave equation:
 ![image](Videos%20and%20audio%20files/videos/surface%20plot.png)
 
-Making the song sound better would require me to change the values of $\gamma$ and $l$, however I'm going to move on to other projects. I'll leave that as an excercise for the viewer :D.
+Making the song sound better would require me to change the values of $\gamma$ and $l$ (in https://github.com/naapeli/Aatu-Selkee-coding-projects/blob/main/Python%20projects/Guitar%20string%20simulation/Guitar%20string.py), however I'm going to move on to other projects. I'll leave that as an excercise for the viewer :D.
