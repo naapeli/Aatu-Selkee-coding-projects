@@ -3,7 +3,7 @@ This will be used to sort and save my projects that I use to practise my Python-
 
 If you want to learn a little more from me, please check out the small chatbot project in python projects folder!
 
-My projects include (from most complicated to least complicated):
+A few of my projects include:
 1. Chess engine (Javascript, HTML, CSS) (work in progress)
 2. 3D path-finding visualisation tool
 3. Solving the wave equation for a guitar string and recreating a song with the notes
