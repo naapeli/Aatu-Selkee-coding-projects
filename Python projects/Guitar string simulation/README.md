@@ -10,5 +10,4 @@ An easier case of solving the wave equation using the finite difference method:
 ![Alt Text](Videos%20and%20audio%20files/videos/wave%20equation.gif)
 
 The 3 dimensional plot of the solution to the wave equation:
-![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/18010fd5-31b6-4d41-817d-24a7159adc89)
-
+![image](Videos%20and%20audio%20files/videos/surface%20plot.png)
