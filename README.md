@@ -19,7 +19,7 @@ Here are some pictures from the projects that I have done:
 Chess engine:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/9a7a7d72-7faa-4223-84bc-88859cf3c753)
 
-Vibrating guitar string and the wavfile of the song ([Download WAV File](Python%20projects/Guitar%20string%20simulation/Videos%20and%20audio%20files/sections/final.wav)):
+Vibrating guitar string and the wavfile of the song ([Download WAV File](Python%20projects/Guitar%20string%20simulation/Videos%20and%20audio%20files/sections/finalv2.wav)):
 ![Alt Text](Python%20projects/Guitar%20string%20simulation/Videos%20and%20audio%20files/videos/guitar%20string.gif)
 
 3D path visualisation tool:
