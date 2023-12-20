@@ -16,7 +16,7 @@ class engine {
         this.transpositionTable = new transpositionTable();
     };
 
-    iterativeSearch() { // iterative search useless, since we do not start with the best move from previous iteration (apart from going as deep as possible, with timing the moves and getting a good result)
+    iterativeSearch() {
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
         this.foundCheckMate = false;
@@ -26,32 +26,54 @@ class engine {
             return;
         };
         console.log("Search running")
+        let alpha = Number.MIN_SAFE_INTEGER;
+        let beta = Number.MAX_SAFE_INTEGER;
+        let score;
+        const perspective = this.board.whiteToMove ? 1 : -1;
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
             console.log("Iteration: " + searchDepth)
-            const perspective = this.board.whiteToMove ? 1 : -1;
-            this.search(searchDepth, 0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, perspective);
-            if (this.searchCancelled) {
-                console.log("search cancelled"); // need to make calculateAssumedMoveOrder to start with previous iterations best move
-                //this.bestMove = this.bestIterMove;
-                //this.bestMoveEval = this.bestIterEvaluation;
-                console.log("Evaluation: " + perspective * this.bestMoveEval);
-                console.log("Depth: " + searchDepth)
-                console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime))
-                console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp)
-                return this.bestMove;
-            } else {
-                this.bestMove = this.bestIterMove;
-                this.bestMoveEval = this.bestIterEvaluation;
-                console.log(this.bestMove)
-                if (this.bestMoveEval == Number.MAX_SAFE_INTEGER) {
-                    console.log("Found checkmate")
+            for (let i = 0; i < aspirationWindows.length; i++) {
+                if (score != undefined) {
+                    const window = aspirationWindows[i];
+                    alpha = score - window;
+                    beta = score + window;
+                };
+                score = this.search(searchDepth, 0, alpha, beta, perspective);
+                if (this.searchCancelled) { // if search cancelled
+                    console.log("search cancelled");
+                    if (alpha < score && score < beta) {
+                        this.bestMove = this.bestIterMove;
+                        this.bestMoveEval = this.bestIterEvaluation;
+                        console.log("Evaluation of the last iteration used")
+                    };
+                    console.log(this.bestMove);
+                    console.log("Evaluation: " + perspective * this.bestMoveEval / 1000);
+                    console.log("Depth: " + searchDepth);
+                    console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
+                    console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp / parseInt(this.transpositionTable.size) * 100 + " %");
                     return this.bestMove;
-                }
+                } else if (alpha < score && score < beta) { // if score was inside alpha and beta
+                    this.bestMove = this.bestIterMove;
+                    this.bestMoveEval = this.bestIterEvaluation;
+                    console.log(this.bestMove, this.bestMoveEval)
+                    if (this.bestMoveEval == Number.MAX_SAFE_INTEGER) {
+                        console.log("Found own checkmate");
+                        return this.bestMove;
+                    } else if (this.bestMoveEval == Number.MIN_SAFE_INTEGER) {
+                        console.log("Found opponent checkmate");
+                        return this.bestMove;
+                    };
+                    console.log("here", i)
+                    break;
+                };
+                // if we failed to find the score inside alpha and beta continue to the next aspiration window,
+                // else continue to the next iteration
+                console.log("Aspiration window failed!")
             };
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) { // in some positions searchOnlyCapturesAndChecks() takes too much time so there is not enough time to complete the search even on depth 1 and result is bad...
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
@@ -59,9 +81,17 @@ class engine {
         
         const alphaOriginal = alpha;
 
+        // look if current position is a threefold repetition
+        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+            if (depthFromRoot == 0) {
+                this.bestIterEvaluation = 0;
+            };
+            return 0;
+        };
+
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
-        if (position != undefined && position.zobristHash == this.board.zobristHash && currentDepth <= position.depth) {
+        if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
             if (position.nodeType == 0) {
                 if (depthFromRoot == 0) {
                     this.bestIterEvaluation = position.evaluation;
@@ -74,50 +104,79 @@ class engine {
                 beta = Math.min(beta, position.evaluation);
             };
         };
-        if (alpha >= beta) { // if found a value for the position, return it
-            if (depthFromRoot == 0) {
-                this.bestIterEvaluation = position.evaluation;
-                this.bestIterMove = position.bestMove;
-            };
+        if (alpha >= beta) { // if found a value for the position from transposition table, return it
             return position.evaluation;
         };
 
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return Number.MIN_SAFE_INTEGER;
+                return Number.MIN_SAFE_INTEGER; // checkmate
             };
             return 0; // stalemate
         };
-        if (currentDepth === 0) {
-            const evaluation = this.searchOnlyCapturesAndChecks(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
+        if (currentDepth <= 0) {
+            const evaluation = this.quiescenceSearch(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
             return evaluation;
         };
         
         // search through all moves and select the best one
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove);
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         for (let i = 0; i < moves.length; i++) {
+            let threefoldRepetition = false;
             const move = moves[i];
             this.board.makeMove(move);
-            // calculate check extension after making the wanted move.
-            const checkExtension = this.board.inCheck() ? 1 : 0;
-            if (this.board.inCheck()) {console.log("here")}
-            const currentEvaluation = -this.search(currentDepth - 1 + checkExtension, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+
+            // update the amount of times a position has been seen in the search
+            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                repetitionTable[currentBoard.zobristHash] += 1
+                // if threefold repetition found, stop searching this position update it's value to 0
+                if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                    threefoldRepetition = true;
+                };
+            } else {
+                repetitionTable[currentBoard.zobristHash] = 1
+            };
+            
+            // starts from 0 because of the threefold repetition
+            let currentEvaluation = 0;
+            let extension = 0;
+            let reduction = 0;
+            if (!threefoldRepetition) { // a bug somewhere, where bot takes a draw in a winning position (might remove this part because no effect???)
+                // calculate search extension and reduction after making the wanted move.
+                extension = this.getSearchExtension(move);
+                reduction = this.getSearchReduction(extension, move, i, currentDepth);
+                // do the search
+                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+            };
+
+            // if we reduced depth, but still got a better evaluation, need to do a full depth search
+            if (reduction > 0 && currentEvaluation >= alpha) {
+                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+            };
+            
+            // update the amount of times a position has been seen in the search
+            repetitionTable[currentBoard.zobristHash] -= 1;
+            
             this.board.undoMove();
+
+            if (this.searchCancelled) {
+                // if played the first move from previous iteration or more, store the best move even if the search cancelled,
+                // not to waste the calculation time of the last iteration
+                if (depthFromRoot == 0 && i > 0) {
+                    this.bestIterEvaluation = positionEvaluation;
+                    this.bestIterMove = positionBestMove;
+                    return positionEvaluation;
+                };
+                return;
+            };
 
             if (currentEvaluation > positionEvaluation) {
                 positionEvaluation = currentEvaluation;
                 positionBestMove = move;
-            };
-
-            if (this.searchCancelled) {
-                if (depthFromRoot == 0) {
-                    this.bestIterEvaluation = positionEvaluation;
-                    this.bestIterMove = positionBestMove;
-                };
-                return positionEvaluation;
             };
 
             // alpha-beta-pruning:
@@ -138,16 +197,15 @@ class engine {
         };
         this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
-        // remember the best moves if the position is the original one, else return the evaluation
+        // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
             this.bestIterEvaluation = positionEvaluation;
             this.bestIterMove = positionBestMove;
-        } else {
-            return positionEvaluation;
         };
+        return positionEvaluation;
     };
 
-    searchOnlyCapturesAndChecks(depthFromSearchEnd, alpha, beta, colorPerspective) { // does not search checks yet
+    quiescenceSearch(depthFromSearchEnd, alpha, beta, colorPerspective) {
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return Number.MIN_SAFE_INTEGER;
@@ -155,39 +213,49 @@ class engine {
             return 0; // stalemate
         };
 
+        // check if evaluation of this position causes beta cutoff
+        let stand_pat = this.evaluatePosition(colorPerspective);
+        if (stand_pat >= beta) {
+            return beta;
+        };
+
+        // delta pruning
+        const BIG_DELTA = 1025; // queen value
+        if ( stand_pat < alpha - BIG_DELTA ) {
+            return alpha;
+        };
+
+
+        if (alpha < stand_pat) {
+            alpha = stand_pat;
+        };
+
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
-        let positionEvaluation = this.evaluatePosition(colorPerspective);
-        let searchedPosition = false;
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
-            let currentEvaluation = Number.MIN_SAFE_INTEGER;
-            if (move.isCapture() || move.promotion) { // continue search if move is piece capture or pawn promotion
-                searchedPosition = true;
+            if (move.isCapture()) { // continue search if move is piece capture
                 this.board.makeMove(move);
-                currentEvaluation = -this.searchOnlyCapturesAndChecks(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
+                const score = -this.quiescenceSearch(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
                 this.board.undoMove();
 
                 if (this.searchCancelled) {
                     return;
                 };
-            };
 
-            positionEvaluation = Math.max(positionEvaluation, currentEvaluation);
-            
-            // alpha-beta-pruning:
-            alpha = Math.max(alpha, positionEvaluation);
-            if (alpha >= beta) {
-                break;
+                // alpha-beta pruning
+                if (score >= beta) {
+                    return beta;
+                };
+                if (score > alpha) {
+                    alpha = score;
+                };
             };
         };
 
-        if (!searchedPosition) {
-            const evaluation = this.evaluatePosition(colorPerspective);
-            return evaluation; 
-        };
-        return positionEvaluation;
+        return alpha;
     };
 
+    // determines if a position is good for white (positive) or black (negative) and returns evaluation always as a positive value
     evaluatePosition(colorPerspective) {
         let evaluation = 0;
         const endGameWeight = this.getEndGameWeight();
@@ -197,9 +265,10 @@ class engine {
 
         // calculate piece placement factor
         evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
+        evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
 
-        // calculate king position in endgames
-        evaluation += 2 * endGameWeight * this.getKingPositionEndGameFactor();
+        // calculate king position bonuses in winning endgames
+        evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
 
         return colorPerspective * evaluation;
     };
@@ -207,7 +276,7 @@ class engine {
     getEndGameWeight() {
         const numberOfWhitePieces = this.board.whitePieces;
         const numberOfBlackPieces = this.board.blackPieces;
-        const endGameStart = 5;
+        const endGameStart = 4;
         const multiplier = 1 / endGameStart;
         if (this.board.whiteToMove) {
             return Math.sqrt(1 - Math.min(1, multiplier * numberOfBlackPieces))
@@ -216,13 +285,42 @@ class engine {
         };
     };
 
-    getKingPositionEndGameFactor() { // works, if engine playing as black, doesn't if engine playing as white
-        const [iWhite, jWhite] = this.board.whiteKingPosition;
-        const [iBlack, jBlack] = this.board.blackKingPosition;
-        const kingL1DistFromEachOther = Math.abs(iWhite - iBlack) + Math.abs(jWhite - jBlack);
-        const blackMinDistFromEdge = Math.min(Math.abs(iBlack), Math.abs(iBlack - 7), Math.abs(jBlack), Math.abs(jBlack - 7));
-        const whiteMinDistFromEdge = Math.min(Math.abs(iWhite), Math.abs(iWhite - 7), Math.abs(jWhite), Math.abs(jWhite - 7));
-        return blackMinDistFromEdge + whiteMinDistFromEdge + kingL1DistFromEachOther;
+    getKingPositionEndGameFactor(color) {
+        const myMaterial = color == "w" ? this.board.whiteMaterial : this.board.blackMaterial;
+        const opponentMaterial = color == "b" ? this.board.whiteMaterial : this.board.blackMaterial;
+        if (myMaterial >= opponentMaterial + 2) {
+            const [iFriendly, jFriendly] = color == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+            const [iEnemy, jEnemy] = color == "b" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+            const enemyDistFromCenter = Math.abs(iEnemy - 3.5) + Math.abs(jEnemy - 3.5);
+            const L1DistBetweenKings = Math.abs(iEnemy - iFriendly) + Math.abs(jEnemy - jFriendly);
+            return 5 * enemyDistFromCenter - 10 * L1DistBetweenKings;
+        };
+        return 0;
+    };
+
+    getSearchExtension(move) {
+        let extension = 0
+        if (this.board.inCheck()) { // check extension
+            extension = 1;
+        } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
+            extension = 1;
+        };
+        return extension;
+    };
+
+    getSearchReduction(extension, move, i, currentDepth) {
+        let reduction = 0;
+        // apply reduction, when move is not capture, doesn't cause check, is not promotion, depth is at least 3
+        // and it is not assumed to be in top 3 moves
+        if (i < 4 || currentDepth < 3) {
+            return reduction;
+        };
+        if (!move.isCapture() && !move.promotion) {
+            reduction = 1;
+        } else if (extension == 0) {
+            reduction = 1;
+        };
+        return reduction;
     };
 
     getNumberOfMoves(currentDepth) {
@@ -303,21 +401,25 @@ class engine {
 };
 
 class moveOrderer {
-    orderMoves(moves) {
-        this.calculateAssumedMoveScores(moves);
+    orderMoves(moves, previousBestMove) {
+        this.calculateAssumedMoveScores(moves, previousBestMove);
         const sortedMoves = this.sort(moves);
         return sortedMoves;
     };
 
-    calculateAssumedMoveScores(moves) {
+    calculateAssumedMoveScores(moves, previousBestMove) {
         moves.forEach(move => {
             const movingPieceType = move.movingPiece[1];
             const takenPieceType = move.takenPiece[1];
 
             move.assumedMoveScore = 0;
 
+            if (previousBestMove != undefined && move.equals(previousBestMove)) {
+                move.assumedMoveScore += 999999
+            };
+
             if (takenPieceType != "-") {
-                move.assumedMoveScore += 1.5 * pieceValues[takenPieceType];
+                move.assumedMoveScore += 2 * pieceValues[takenPieceType];
                 move.assumedMoveScore -= pieceValues[movingPieceType];
             };
 

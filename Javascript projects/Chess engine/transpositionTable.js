@@ -14,7 +14,7 @@ class transpositionTable {
     };
 
     clearTable() {
-        this.positionLookUp = new Array(this.size);
+        this.positionLookUp = new Array(parseInt(this.size));
     };
 
     getEntryFromHash(zobristHash) {
@@ -36,7 +36,7 @@ class transpositionTable {
     storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove) {
         const index = this.getIndex(zobristHash);
         const overWritten = this.positionLookUp[index] != undefined;
-        if (!overWritten) {this.positionsInLookUp++}
+        if (!overWritten) {this.positionsInLookUp++};
         this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
     };
 

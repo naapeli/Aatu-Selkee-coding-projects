@@ -13,6 +13,8 @@ let movingEndSquare;
 
 const currentBoard = new board();
 const gameEngine = new engine(currentBoard);
+let repetitionTable = {};
+repetitionTable[currentBoard.zobristHash] = 1;
 function startGame() {
     currentBoard.board.forEach((row, j) => {
         row.forEach((piece, i) => {
@@ -46,6 +48,7 @@ function startGame() {
         });
     });
     undoButton.addEventListener("click", () => {
+        repetitionTable[currentBoard.zobristHash] -= 1;
         let squaresToBeUpdated = currentBoard.undoMove();
         updateSquares(squaresToBeUpdated);
     });
@@ -53,6 +56,8 @@ function startGame() {
         const fenString = positionInput.value;
         try {
             currentBoard.positionFromFen(fenString);
+            gameEngine.transpositionTable.clearTable()
+            repetitionTable = {}
             updateAllSquares()
         } catch (error) {
             console.log("Remember to input a valid fen string!")
@@ -98,14 +103,27 @@ function dropPiece(event) {
                 let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
                 if (moveMade) {
                     updateSquares(squaresToBeUpdated);
-                    //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                    //    playCheckMateScreen()
-                    //};
+                    if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                        repetitionTable[currentBoard.zobristHash] += 1
+                    } else {
+                        repetitionTable[currentBoard.zobristHash] = 1
+                    };
+                    if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                        console.log("draw");
+                    };
                     
                     const engineMove = gameEngine.iterativeSearch();
                     const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
                     if (engineMoveMade) {
                         updateSquares(engineSquaresToBeUpdated);
+                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                            repetitionTable[currentBoard.zobristHash] += 1
+                        } else {
+                            repetitionTable[currentBoard.zobristHash] = 1
+                        };
+                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                            console.log("draw");
+                        };
                     };
                 };
              });
@@ -119,15 +137,28 @@ function dropPiece(event) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
-            updateSquares(squaresToBeUpdated);
-            //if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-            //    playCheckMateScreen()
-            //};
+            window.setTimeout(updateSquares, 0, squaresToBeUpdated);
+            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                repetitionTable[currentBoard.zobristHash] += 1
+            } else {
+                repetitionTable[currentBoard.zobristHash] = 1
+            };
+            if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                console.log("draw");
+            };
             
             const engineMove = gameEngine.iterativeSearch();
             const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
             if (engineMoveMade) {
                 updateSquares(engineSquaresToBeUpdated);
+                if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                    repetitionTable[currentBoard.zobristHash] += 1
+                } else {
+                    repetitionTable[currentBoard.zobristHash] = 1
+                };
+            };
+            if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                console.log("draw");
             };
         };
     };

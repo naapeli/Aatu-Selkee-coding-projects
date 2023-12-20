@@ -15,6 +15,7 @@ function getRandom64BitInt() {
     return upper32 * (2n ** 32n) + lower32;
 };
 
+// arrays for zobrist hashing
 const randomPieceKeys = new Array(12).fill().map(() => new Array(64));
 const randomEnPassantKeys = new Array(64);
 const randomCastlingKeys = new Array(16);

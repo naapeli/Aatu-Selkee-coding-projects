@@ -18,6 +18,8 @@ class board {
         this.blackMaterial = this.boardUtility.countMaterial(this.board)[1];
         this.whitePiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[0];
         this.blackPiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[1];
+        this.whitePiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[2];
+        this.blackPiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[3];
         this.whitePieces = 7;
         this.blackPieces = 7;
         this.whiteCanCastle = [true, true]; // long, short
@@ -119,11 +121,13 @@ class board {
                 };
             };
 
-            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff] = this.boardUtility.getMaterialDiffs(move);
+            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
             this.whiteMaterial += whiteMaterialDiff;
             this.blackMaterial += blackMaterialDiff;
             this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
+            this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
+            this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
             squaresToBeUpdated.push([i, j], [iNew, jNew]);
             this.possibleMoves = [];
             this.determineChecksAndPins();
@@ -204,11 +208,13 @@ class board {
                 };
             };
 
-            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff] = this.boardUtility.getMaterialDiffs(move, true);
+            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move, true);
             this.whiteMaterial += whiteMaterialDiff;
             this.blackMaterial += blackMaterialDiff;
             this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
+            this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
+            this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
             this.determineChecksAndPins()
             this.possibleMoves = this.getPossibleMoves();
             this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
@@ -682,9 +688,11 @@ class board {
         const [whiteMaterial, blackMaterial] = this.boardUtility.countMaterial(this.board);
         this.whiteMaterial = whiteMaterial;
         this.blackMaterial = blackMaterial;
-        const [whitePiecePositionBonus, blackPiecePositionBonus] = this.boardUtility.countPiecePositionBonus(this.board);
+        const [whitePiecePositionBonus, blackPiecePositionBonus, whitePiecePositionBonusEg, blackPiecePositionBonusEg] = this.boardUtility.countPiecePositionBonus(this.board);
         this.whitePiecePositionBonus = whitePiecePositionBonus;
         this.blackPiecePositionBonus = blackPiecePositionBonus;
+        this.whitePiecePositionBonusEg = whitePiecePositionBonusEg;
+        this.blackPiecePositionBonusEg = blackPiecePositionBonusEg;
         const [whitePieces, blackPieces] = this.boardUtility.countPieces(this.board, pieces);
         this.whitePieces = whitePieces;
         this.blackPieces = blackPieces;
@@ -805,16 +813,20 @@ class boardUtils {
     countPiecePositionBonus(board) {
         let blackPieceBonus = 0
         let whitePieceBonus = 0
+        let blackPieceBonusEg = 0
+        let whitePieceBonusEg = 0
         for (let i = 0; i < 8; i++) {
             for (let j = 0; j < 8; j++) {
                 if (board[j][i][0] == "w") {
                     whitePieceBonus += startPieceSquareValues[board[j][i][1]][j][i];
+                    whitePieceBonusEg += endPieceSquareValues[board[j][i][1]][j][i];
                 } else if (board[j][i][0] == "b") {
                     blackPieceBonus += startPieceSquareValues[board[j][i][1]][7 - j][i];
+                    blackPieceBonusEg += endPieceSquareValues[board[j][i][1]][7 - j][i];
                 };
             };
         };
-        return [whitePieceBonus, blackPieceBonus]
+        return [whitePieceBonus, blackPieceBonus, whitePieceBonusEg, blackPieceBonusEg]
     };
 
     countPieces(board, pieces) {
@@ -925,8 +937,10 @@ class boardUtils {
             let blackMaterialDiff = 0;
             let whitePiecePositionBonusDiff = 0;
             let blackPiecePositionBonusDiff = 0;
+            let whitePiecePositionBonusDiffEg = 0;
+            let blackPiecePositionBonusDiffEg = 0;
             const playerDiff = move.movingPiece[0] == "w" ? 1 : -1;
-            let [i, j] = move.startPos;
+            let [i, j] = playerDiff == 1 ? move.startPos : [7 - move.startPos[0], 7 - move.startPos[1]];
             let [iNew, jNew] = playerDiff == 1 ? move.endPos : [7 - move.endPos[0], 7 - move.endPos[1]];
 
 
@@ -935,14 +949,17 @@ class boardUtils {
             if (move.takenPiece[0] != "--" || move.enPassant) {
                 const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
                 const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
+                const piecePositionBonusDiffEg = move.enPassant ? endPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : endPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 switch(move.movingPiece[0]) {
                     case "b":
                         whiteMaterialDiff -= materialDiffValue;
                         whitePiecePositionBonusDiff -= piecePositionBonusDiff;
+                        whitePiecePositionBonusDiffEg -= piecePositionBonusDiffEg;
                         break;
                     case "w":
                         blackMaterialDiff -= materialDiffValue;
                         blackPiecePositionBonusDiff -= piecePositionBonusDiff;
+                        blackPiecePositionBonusDiffEg -= piecePositionBonusDiffEg;
                         break;
                 };
             };
@@ -954,39 +971,69 @@ class boardUtils {
             const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
             const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
             const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
+            const oldPiecePositioningBonusEg = endPieceSquareValues[move.movingPiece[1]][j][i];
+            const newPiecePositioningBonusEg = move.promotion ? endPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : endPieceSquareValues[move.movingPiece[1]][jNew][iNew];
+            const piecePositioningBonusDiffEg = newPiecePositioningBonusEg - oldPiecePositioningBonusEg;
             switch(move.movingPiece[0]) {
                 case "w":
                     whiteMaterialDiff += promotionMaterialDiffValue;
                     whitePiecePositionBonusDiff += piecePositioningBonusDiff;
+                    whitePiecePositionBonusDiffEg += piecePositioningBonusDiffEg;
                     break;
                 case "b":
                     blackMaterialDiff += promotionMaterialDiffValue;
                     blackPiecePositionBonusDiff += piecePositioningBonusDiff;
+                    blackPiecePositionBonusDiffEg += piecePositioningBonusDiffEg;
                     break;
             };
 
-            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff];
+            if (move.castleKing) { 
+                // if long castle, rook positioning value changes
+                const newRookBonus = move.endPos[0] < move.startPos[0] ? startPieceSquareValues["R"][7][3] : startPieceSquareValues["R"][7][5];
+                const oldRookBonus = move.endPos[0] < move.startPos[0] ? startPieceSquareValues["R"][7][0] : startPieceSquareValues["R"][7][7];
+                const newRookBonusEg = move.endPos[0] < move.startPos[0] ? endPieceSquareValues["R"][7][3] : endPieceSquareValues["R"][7][5];
+                const oldRookBonusEg = move.endPos[0] < move.startPos[0] ? endPieceSquareValues["R"][7][0] : endPieceSquareValues["R"][7][7];
+                const rookBonusDiff = newRookBonus - oldRookBonus;
+                const rookBonusDiffEg = newRookBonusEg - oldRookBonusEg;
+                switch(move.movingPiece[0]) {
+                    case "w":
+                        whitePiecePositionBonusDiff += rookBonusDiff;
+                        whitePiecePositionBonusDiffEg += rookBonusDiffEg;
+                        break;
+                    case "b":
+                        blackPiecePositionBonusDiff += rookBonusDiff;
+                        blackPiecePositionBonusDiffEg += rookBonusDiffEg;
+                        break;
+                };
+            };
+
+            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
         } else {
             let whiteMaterialDiff = 0;
             let blackMaterialDiff = 0;
             let whitePiecePositionBonusDiff = 0;
             let blackPiecePositionBonusDiff = 0;
+            let whitePiecePositionBonusDiffEg = 0;
+            let blackPiecePositionBonusDiffEg = 0;
             const playerDiff = move.movingPiece[0] == "w" ? 1 : -1;
-            let [i, j] = move.startPos;
+            let [i, j] = playerDiff == 1 ? move.startPos : [7 - move.startPos[0], 7 - move.startPos[1]];
             let [iNew, jNew] = playerDiff == 1 ? move.endPos : [7 - move.endPos[0], 7 - move.endPos[1]];
 
             // update taken piece materials and piece position bonuses
             if (move.takenPiece[0] != "--" || move.enPassant) {
                 const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
                 const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
+                const piecePositionBonusDiffEg = move.enPassant ? endPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : endPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 switch(move.movingPiece[0]) {
                     case "b":
                         whiteMaterialDiff += materialDiffValue;
                         whitePiecePositionBonusDiff += piecePositionBonusDiff;
+                        whitePiecePositionBonusDiffEg += piecePositionBonusDiffEg;
                         break;
                     case "w":
                         blackMaterialDiff += materialDiffValue;
                         blackPiecePositionBonusDiff += piecePositionBonusDiff;
+                        blackPiecePositionBonusDiffEg += piecePositionBonusDiffEg;
                         break;
                 };
             };
@@ -997,18 +1044,43 @@ class boardUtils {
             const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
             const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
             const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
+            const oldPiecePositioningBonusEg = endPieceSquareValues[move.movingPiece[1]][j][i];
+            const newPiecePositioningBonusEg = move.promotion ? endPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : endPieceSquareValues[move.movingPiece[1]][jNew][iNew];
+            const piecePositioningBonusDiffEg = newPiecePositioningBonusEg - oldPiecePositioningBonusEg;
             switch(move.movingPiece[0]) {
                 case "w":
                     whiteMaterialDiff -= promotionMaterialDiffValue;
                     whitePiecePositionBonusDiff -= piecePositioningBonusDiff;
+                    whitePiecePositionBonusDiffEg -= piecePositioningBonusDiffEg;
                     break;
                 case "b":
                     blackMaterialDiff -= promotionMaterialDiffValue;
                     blackPiecePositionBonusDiff -= piecePositioningBonusDiff;
+                    blackPiecePositionBonusDiffEg -= piecePositioningBonusDiffEg;
                     break;
             };
 
-            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff];
+            if (move.castleKing) {
+                // if long castle, rook positioning value changes
+                const newRookBonus = move.endPos[0] < move.startPos[0] ? startPieceSquareValues["R"][7][3] : startPieceSquareValues["R"][7][5];
+                const oldRookBonus = move.endPos[0] < move.startPos[0] ? startPieceSquareValues["R"][7][0] : startPieceSquareValues["R"][7][7];
+                const newRookBonusEg = move.endPos[0] < move.startPos[0] ? endPieceSquareValues["R"][7][3] : endPieceSquareValues["R"][7][5];
+                const oldRookBonusEg = move.endPos[0] < move.startPos[0] ? endPieceSquareValues["R"][7][0] : endPieceSquareValues["R"][7][7];
+                const rookBonusDiff = newRookBonus - oldRookBonus;
+                const rookBonusDiffEg = newRookBonusEg - oldRookBonusEg;
+                switch(move.movingPiece[0]) {
+                    case "w":
+                        whitePiecePositionBonusDiff -= rookBonusDiff;
+                        whitePiecePositionBonusDiffEg -= rookBonusDiffEg;
+                        break;
+                    case "b":
+                        blackPiecePositionBonusDiff -= rookBonusDiff;
+                        blackPiecePositionBonusDiffEg -= rookBonusDiffEg;
+                        break;
+                };
+            };
+
+            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
         };
     };
 
