@@ -11,7 +11,6 @@ class engine {
         this.bestMoveEval;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
         this.bestIterMove;
-        this.foundCheckMate = false;
         this.moveOrdering = new moveOrderer();
         this.transpositionTable = new transpositionTable();
     };
@@ -19,16 +18,18 @@ class engine {
     iterativeSearch() {
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
-        this.foundCheckMate = false;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
+        let alpha = Number.MIN_SAFE_INTEGER;
+        let beta = Number.MAX_SAFE_INTEGER;
+        let score;
+
+        // clear historytable from previous search
+        currentHistoryTable.clear();
 
         if (this.board.possibleMoves.length == 0) {
             return;
         };
         console.log("Search running")
-        let alpha = Number.MIN_SAFE_INTEGER;
-        let beta = Number.MAX_SAFE_INTEGER;
-        let score;
         const perspective = this.board.whiteToMove ? 1 : -1;
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
             console.log("Iteration: " + searchDepth)
@@ -63,7 +64,6 @@ class engine {
                         console.log("Found opponent checkmate");
                         return this.bestMove;
                     };
-                    console.log("here", i)
                     break;
                 };
                 // if we failed to find the score inside alpha and beta continue to the next aspiration window,
@@ -185,6 +185,9 @@ class engine {
                 break;
             };
         };
+
+        // store the best move into the history table
+        currentHistoryTable.add(positionBestMove, currentDepth * currentDepth)
         
         // store the evaluation of the position to the transposition table
         let nodeType;
@@ -415,17 +418,19 @@ class moveOrderer {
             move.assumedMoveScore = 0;
 
             if (previousBestMove != undefined && move.equals(previousBestMove)) {
-                move.assumedMoveScore += 999999
+                move.assumedMoveScore += 1000000000;
             };
 
             if (takenPieceType != "-") {
-                move.assumedMoveScore += 2 * pieceValues[takenPieceType];
-                move.assumedMoveScore -= pieceValues[movingPieceType];
+                move.assumedMoveScore += 10000000 * (2 * pieceValues[takenPieceType] - pieceValues[movingPieceType]);
             };
 
             if (move.promotion) {
-                move.assumedMoveScore += pieceValues[move.promotedPiece[1]];
+                move.assumedMoveScore += 100000 * pieceValues[move.promotedPiece[1]];
             };
+
+            // order rest of the quiet moves based on the history of other positions
+            move.assumedMoveScore += 100 * currentHistoryTable.get(move);
 
             if (move.castleKing) {
                 move.assumedMoveScore += 10

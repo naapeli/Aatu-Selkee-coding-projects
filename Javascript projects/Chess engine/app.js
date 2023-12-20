@@ -13,6 +13,7 @@ let movingEndSquare;
 
 const currentBoard = new board();
 const gameEngine = new engine(currentBoard);
+const currentHistoryTable = new historyTable();
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
 function startGame() {
