@@ -153,7 +153,7 @@ class board {
             this.whiteCanCastle = whiteCanCastle;
             this.blackCanCastle = blackCanCastle;
             this.enPassant = possibleEnPassant;
-            squaresToBeUpdated.push(move.startPos, move.endPos)
+            squaresToBeUpdated.push(move.startPos, move.endPos);
             let iNew = move.endPos[0];
             let jNew = move.endPos[1];
 
@@ -215,7 +215,7 @@ class board {
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
             this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
-            this.determineChecksAndPins()
+            this.determineChecksAndPins();
             this.possibleMoves = this.getPossibleMoves();
             this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
             this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
@@ -704,6 +704,39 @@ class board {
     inCheck() {
         return this.currentCheckingPieces.length > 0;
     };
+
+    makeNullMove() {
+        // update zobrist hash
+        this.zobristHash = this.zobristHash ^ randomSideKey;
+
+        // update moving player
+        this.whiteToMove = !this.whiteToMove;
+
+        // get new moves for the other player
+        this.determineChecksAndPins();
+        this.possibleMoves = this.getPossibleMoves();
+
+        // put the null move into the movelog to get en passant back after undoing the move
+        this.moveLog.push([new Move([0, 0], [0, 0], "wP", "--"), this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
+
+        this.enPassant = [];
+    };
+
+    undoNullMove() {
+        // update zobrist hash back
+        this.zobristHash = this.zobristHash ^ randomSideKey;
+
+        // get old en passant back
+        const [move, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
+        this.enPassant = possibleEnPassant;
+
+        // update moving player back
+        this.whiteToMove = !this.whiteToMove;
+
+        // get new moves for the other player
+        this.determineChecksAndPins();
+        this.possibleMoves = this.getPossibleMoves();
+    };
 };
 
 class boardUtils {
@@ -931,7 +964,7 @@ class boardUtils {
         return zobristHash;
     };
 
-    getMaterialDiffs(move, undo = false) { // castling piece position bonuses not implemented
+    getMaterialDiffs(move, undo = false) {
         if (!undo) {
             let whiteMaterialDiff = 0;
             let blackMaterialDiff = 0;

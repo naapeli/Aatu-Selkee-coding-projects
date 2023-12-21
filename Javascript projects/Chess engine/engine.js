@@ -13,6 +13,8 @@ class engine {
         this.bestIterMove;
         this.moveOrdering = new moveOrderer();
         this.transpositionTable = new transpositionTable();
+        this.R = 2;
+        this.allowNullMovePruning = true;
     };
 
     iterativeSearch() {
@@ -39,7 +41,8 @@ class engine {
                     alpha = score - window;
                     beta = score + window;
                 };
-                score = this.search(searchDepth, 0, alpha, beta, perspective);
+                // search the current position not allowing null-move-pruning at the first node
+                score = this.search(searchDepth, 0, alpha, beta, perspective, false);
                 if (this.searchCancelled) { // if search cancelled
                     console.log("search cancelled");
                     if (alpha < score && score < beta) {
@@ -73,7 +76,7 @@ class engine {
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective) {
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, allowNullMovePruning) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
@@ -119,6 +122,16 @@ class engine {
             const evaluation = this.quiescenceSearch(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
             return evaluation;
         };
+
+        // null-move pruning (give opponent extra move and search resulting position with reduced depth)
+        if (currentDepth >= 3 && !this.board.inCheck() && allowNullMovePruning && this.board.whitePieces > 1) {
+            this.board.makeNullMove();
+            const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
+            this.board.undoNullMove();
+            if (val >= beta) {
+                return beta;
+            };
+        };
         
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
@@ -145,17 +158,17 @@ class engine {
             let currentEvaluation = 0;
             let extension = 0;
             let reduction = 0;
-            if (!threefoldRepetition) { // a bug somewhere, where bot takes a draw in a winning position (might remove this part because no effect???)
+            if (!threefoldRepetition) {
                 // calculate search extension and reduction after making the wanted move.
                 extension = this.getSearchExtension(move);
                 reduction = this.getSearchReduction(extension, move, i, currentDepth);
                 // do the search
-                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
             };
 
             // if we reduced depth, but still got a better evaluation, need to do a full depth search
             if (reduction > 0 && currentEvaluation >= alpha) {
-                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
             };
             
             // update the amount of times a position has been seen in the search
@@ -258,7 +271,8 @@ class engine {
         return alpha;
     };
 
-    // determines if a position is good for white (positive) or black (negative) and returns evaluation always as a positive value
+    // determines if a position is good for white (positive) or black (negative) and returns the evaluation
+    // so that larger value is always good for current player given by colorPerspective
     evaluatePosition(colorPerspective) {
         let evaluation = 0;
         const endGameWeight = this.getEndGameWeight();
@@ -269,6 +283,12 @@ class engine {
         // calculate piece placement factor
         evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
         evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
+
+        // calculate king mobility factor in middlegames to encourage castling
+        evaluation += 100 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
+
+        // calculate pawnshield to discourage pushing pawns in front of the king too far
+        evaluation += 100 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"))
 
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
@@ -286,6 +306,31 @@ class engine {
         } else {
             return Math.sqrt(1 - Math.min(1, multiplier * numberOfWhitePieces))
         };
+    };
+
+    getKingSafetyFactor(owncolor) {
+        const oppositeColor = owncolor == "w" ? "b" : "w";
+        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const kingQueenMoves = this.board.getQueenMoves(ownKingLocation, oppositeColor);
+        const ownKingMobilityFactor = Math.min(1 / kingQueenMoves.length, 1);
+        return ownKingMobilityFactor;
+    };
+
+    getKingPawnShieldFactor(owncolor) {
+        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const positionKernel = owncolor == "w" ? [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1]] : [[2, -1], [2, 0], [2, 1], [1, -1], [1, 0], [1, 1]];
+        let ownPawnShieldCount = 0;
+        positionKernel.forEach(position => {
+            const [j, i] = position;
+            const possiblePawnPosition = [ownKingLocation[0] + i, ownKingLocation[1] + j];
+            if (this.board.boardUtility.positionOnBoard(possiblePawnPosition[1], possiblePawnPosition[0])) {
+                const possiblePawn = this.board.board[possiblePawnPosition[0]][possiblePawnPosition[1]];
+                if (possiblePawn[1] == "P" && possiblePawn[0] == owncolor) {
+                    ownPawnShieldCount++;
+                };
+            };
+        });
+        return Math.sqrt(ownPawnShieldCount / 3)
     };
 
     getKingPositionEndGameFactor(color) {
