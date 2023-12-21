@@ -3,9 +3,9 @@ const openingBook = require("./openingBook.js")
 const app = express();
 const port = 8383;
 
-app.use(express.static("engine"));
+app.use(express.static("./Javascript projects/Chess engine/engine"));
 
-app.get("/", (req, res) => {
+app.get("/move", (req, res) => {
     const [move, success] = openingBook.getBookMove("hi");
     if (success) {
         res.status(200).json({move: move});

@@ -20,11 +20,16 @@ class engine {
     // return the best move from current position from the opening book or iterative search
     async getBestMove() {
         if (this.board.moveLog.length < 14) {
-            const result = await fetch(BASE_URL + "info",
+            const result = await fetch(BASE_URL + "move",
             {
                 method: "GET"
             });
-            console.log(result)
+            if (result.ok) {
+                const data = await result.json();
+                const move = data.move;
+                console.log(move)
+                return 
+            }
             return
         };
 

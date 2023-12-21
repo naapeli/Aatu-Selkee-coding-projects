@@ -1,17 +1,25 @@
-const OpeningBooks = require('./node_modules/chess-tools/opening-books/index.js');
+const ChessTools = require('./node_modules/chess-tools');
+const OpeningBook = ChessTools.OpeningBooks.CTG;
 const fs = require('fs');
-const OpeningBook = OpeningBooks.Polyglot;
 const book = new OpeningBook();
+
+const dataStream = fs.createReadStream('Javascript projects/Chess engine/openingBook/H12Book.ctg', {encoding: 'hex'});
+
+book.load_book(dataStream);
+dataStream.on('end', () => {
+    console.log("here")
+    // This event is emitted when there is no more data to read
+    console.log('Finished reading the file');
+    console.log(book)
+});
+dataStream.on('error', (err) => {
+    // This event is emitted if there's an error reading the file
+    console.error('Error reading the file:', err);
+});
 /*
-try {
-    const data = fs.readFileSync('./book moves/baron30.bin', 'utf8');
-    console.log("success");
-    
-} catch (err) {
-    console.error('Error:', err);
-};*/
-
-
+book.on("loaded", ()=> {
+    let entries = book.find("rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq - 0 1");
+});*/
 
 
 function getBookMove(fen) {
