@@ -15,7 +15,7 @@ try {
 
 
 function getBookMove(fen) {
-    return [1000, false]
+    return [1000, true]
 };
 
 module.exports = {"getBookMove": getBookMove}
