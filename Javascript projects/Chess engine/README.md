@@ -11,4 +11,4 @@ This is an attempt of beating my friend at chess who is a lot better than me. Si
 9. null-move pruning
 10. (and maybe an opening book if I have time?)
 
-I estimate my bot to be around 1000 - 1500. It is good at recognizing tactics, however lacks knowledge of king safety. At the moment I usually lose to it due to a tactical oversight on my part. Sometimes I can win by attacking it's king aggressively.
+I estimate my bot to be around 1000 - 1500. It is good at recognizing tactics, however lacks knowledge of the opening stage of the game. At the moment I usually lose to it due to a tactical oversight on my part. Sometimes I can win by attacking it's king aggressively.
