@@ -16,3 +16,4 @@ In the beginning I wanted to use this project to learn Javascript while making a
 
 Here are some pictures from the project:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/60d64af9-78b2-40db-be9e-3967bcc40826)
+![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/5ce5f4ab-7473-4a6a-b1ff-bdd4c48c5086)
