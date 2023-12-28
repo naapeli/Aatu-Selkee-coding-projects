@@ -63,7 +63,7 @@ class engine {
                 };
                 // search the current position not allowing null-move-pruning at the first node
                 score = this.search(searchDepth, 0, alpha, beta, perspective, false);
-                if (this.searchCancelled) { // if search cancelled
+                if (this.searchCancelled) { // if search cancelled, store bestIterMove as bestMove if evaluation is inside alpha and beta
                     console.log("search cancelled");
                     if (alpha < score && score < beta) {
                         this.bestMove = this.bestIterMove;
@@ -96,6 +96,7 @@ class engine {
         };
     };
 
+    // bug in transposition table implementation...
     search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, allowNullMovePruning) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
@@ -231,7 +232,7 @@ class engine {
         } else { // exact node
             nodeType = 0
         };
-        this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
+        //this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
