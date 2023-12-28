@@ -221,7 +221,7 @@ class engine {
         };
 
         // store the best move into the history table
-        currentHistoryTable.add(positionBestMove, currentDepth * currentDepth)
+        currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
         // store the evaluation of the position to the transposition table
         let nodeType;
