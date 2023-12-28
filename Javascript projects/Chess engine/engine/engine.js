@@ -17,7 +17,7 @@ class engine {
         this.allowNullMovePruning = true;
     };
 
-    // return the best move from current position from the opening book or iterative search
+    // return the best move from current position from the opening book or iterative search (unfinished)
     async getBestMove() {
         if (this.board.moveLog.length < 14) {
             const result = await fetch(BASE_URL + "move",
@@ -115,6 +115,9 @@ class engine {
 
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
+        // bug, thus incorrect evaluations get stored into transposition table. Makes blunders if not commented and transposition table active
+        // still use position from transposition table to order the moves, since it seems to be mostly correct with an occational blunder
+        /*
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
             if (position.nodeType == 0) {
                 if (depthFromRoot == 0) {
@@ -130,7 +133,7 @@ class engine {
         };
         if (alpha >= beta) { // if found a value for the position from transposition table, return it
             return position.evaluation;
-        };
+        };*/
 
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
@@ -180,7 +183,7 @@ class engine {
             let extension = 0;
             let reduction = 0;
             if (!threefoldRepetition) {
-                // calculate search extension and reduction after making the wanted move.
+                // calculate search extension and late move reduction after making the wanted move.
                 extension = this.getSearchExtension(move);
                 reduction = this.getSearchReduction(extension, move, i, currentDepth);
                 // do the search
@@ -220,7 +223,7 @@ class engine {
             };
         };
 
-        // store the best move into the history table
+        // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
         // store the evaluation of the position to the transposition table
@@ -232,7 +235,7 @@ class engine {
         } else { // exact node
             nodeType = 0
         };
-        //this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
+        this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
