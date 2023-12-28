@@ -1,3 +1,4 @@
+// no point to this file yet
 const ChessTools = require('./node_modules/chess-tools');
 const OpeningBook = ChessTools.OpeningBooks.CTG;
 const fs = require('fs');
