@@ -10,7 +10,7 @@ This is an attempt of beating my friend at chess who is a lot better than me. Si
 8. History heuristic for quiet move ordering
 9. null-move pruning
 
-I estimate my bot to be around 1500. It is good at recognizing tactics, however lacks knowledge of the opening stage of the game. At the moment I usually lose to it due to a tactical oversight on my part. Sometimes I can win by attacking it's king aggressively.
+I estimate my bot to be around 1800. It is good at recognizing tactics, however lacks knowledge of the opening stage of the game. At the moment I usually lose to it due to a tactical oversight on my part. Sometimes I can win by attacking it's king aggressively.
 
 In the beginning I wanted to use this project to learn Javascript while making a fun project, however I found out that it probably would've been better to make this project in for example C# or Scala (from the languages I know). This would've allowed me to use 64-bit numbers for representing the board. This would've allowed me to use bit operations for move creation, which would've made my engine way faster. Also in the beginning I knew very little about frontends and backends. It would've been better to make the engine in the backend and request the engine moves to the frontend as that way I could've implemented an opening book easier. It would've been more elegant to do this project that way. That being said, I'm satisfied with my learning outcome from this project and overall I managed to make a pretty compenent bot using an unusual programming for this type of project.
 
