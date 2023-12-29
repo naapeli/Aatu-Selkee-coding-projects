@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 2000;
+        this.maxAllowedTime = 5000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -15,6 +15,9 @@ class engine {
         this.transpositionTable = new transpositionTable();
         this.R = 2;
         this.allowNullMovePruning = true;
+        this.EXACT_NODE = 0;
+        this.UPPERBOUND_NODE = 1;
+        this.LOWERBOUND_NODE = 2;
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -117,23 +120,23 @@ class engine {
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
         // bug, thus incorrect evaluations get stored into transposition table. Makes blunders if not commented and transposition table active
         // still use position from transposition table to order the moves, since it seems to be mostly correct with an occational blunder
-        /*
+        
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
-            if (position.nodeType == 0) {
+            if (position.nodeType == this.EXACT_NODE) {
                 if (depthFromRoot == 0) {
                     this.bestIterEvaluation = position.evaluation;
                     this.bestIterMove = position.bestMove;
                 };
                 return position.evaluation;
-            } else if (position.nodeType == 1) {
+            } else if (position.nodeType == this.LOWERBOUND_NODE) {
                 alpha = Math.max(alpha, position.evaluation);
-            } else if (position.nodeType == 2) {
+            } else if (position.nodeType == this.UPPERBOUND_NODE) {
                 beta = Math.min(beta, position.evaluation);
             };
         };
         if (alpha >= beta) { // if found a value for the position from transposition table, return it
             return position.evaluation;
-        };*/
+        };
 
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
@@ -148,7 +151,8 @@ class engine {
         };
 
         // null-move pruning (give opponent extra move and search resulting position with reduced depth)
-        if (currentDepth >= 3 && !this.board.inCheck() && allowNullMovePruning && this.board.whitePieces > 1) {
+        const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
+        if (currentDepth >= 3 && !this.board.inCheck() && allowNullMovePruning && movingPiecesRemaining > 1) {
             this.board.makeNullMove();
             const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
             this.board.undoNullMove();
@@ -228,12 +232,12 @@ class engine {
         
         // store the evaluation of the position to the transposition table
         let nodeType;
-        if (positionEvaluation <= alphaOriginal) { // upperbound node
-            nodeType = 1
-        } else if (positionEvaluation >= beta) { // lowerbound node
-            nodeType = 2
-        } else { // exact node
-            nodeType = 0
+        if (positionEvaluation <= alphaOriginal) {
+            nodeType = this.UPPERBOUND_NODE;
+        } else if (positionEvaluation >= beta) {
+            nodeType = this.LOWERBOUND_NODE;
+        } else {
+            nodeType = this.EXACT_NODE;
         };
         this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 

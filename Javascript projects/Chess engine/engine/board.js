@@ -708,6 +708,8 @@ class board {
     makeNullMove() {
         // update zobrist hash
         this.zobristHash = this.zobristHash ^ randomSideKey;
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
+        
 
         // update moving player
         this.whiteToMove = !this.whiteToMove;
@@ -720,15 +722,21 @@ class board {
         this.moveLog.push([new Move([0, 0], [0, 0], "wP", "--"), this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
 
         this.enPassant = [];
+        // update zobrist hash again to get correct en passant
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
     };
 
     undoNullMove() {
         // update zobrist hash back
         this.zobristHash = this.zobristHash ^ randomSideKey;
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
 
         // get old en passant back
         const [move, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
         this.enPassant = possibleEnPassant;
+
+        // update corrent zobrist hash
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
 
         // update moving player back
         this.whiteToMove = !this.whiteToMove;
