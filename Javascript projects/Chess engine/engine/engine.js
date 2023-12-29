@@ -186,21 +186,25 @@ class engine {
             let extension = 0;
             let reduction = 0;
             if (!threefoldRepetition) {
-                // calculate search extension and late move reduction after making the wanted move.
+                // calculate search extension after making the wanted move.
                 extension = this.getSearchExtension(move);
-                reduction = this.getSearchReduction(extension, move, i, currentDepth);
 
                 if (i == 0) { // do a full search for the first move (previous best move)
                     currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                 } else {
-                    // do the principal variation search with reduced depth for other moves
+                    // calculate late move reduction after making the wanted move.
+                    reduction = this.getSearchReduction(extension, move, i, currentDepth);
+
+                    /* Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
+                    i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
+                    with searching the same position without late move reduction and a full window.*/
                     currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
 
                     // if we got a better evaluation, need to do a full depth search
-                    if (currentEvaluation >= alpha) {
+                    if (currentEvaluation > alpha) {
                         // do still the principal variation search (null window)
                         currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
-                        // if PV search fails do the full search
+                        // if PV search fails to prove the position is bad, do the full search
                         if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
                             currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                         };
