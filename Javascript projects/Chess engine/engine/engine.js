@@ -99,7 +99,6 @@ class engine {
         };
     };
 
-    // bug in transposition table implementation...
     search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, allowNullMovePruning) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
@@ -118,9 +117,6 @@ class engine {
 
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
-        // bug, thus incorrect evaluations get stored into transposition table. Makes blunders if not commented and transposition table active
-        // still use position from transposition table to order the moves, since it seems to be mostly correct with an occational blunder
-        
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
             if (position.nodeType == this.EXACT_NODE) {
                 if (depthFromRoot == 0) {
@@ -134,7 +130,8 @@ class engine {
                 beta = Math.min(beta, position.evaluation);
             };
         };
-        if (alpha >= beta) { // if found a value for the position from transposition table, return it
+        // if found a value for the position from transposition table, return it
+        if (alpha >= beta) {
             return position.evaluation;
         };
 
@@ -146,6 +143,7 @@ class engine {
             return 0; // stalemate
         };
         if (currentDepth <= 0) {
+            // if end of depth, search captures to the end to reduce the horizon effect
             const evaluation = this.quiescenceSearch(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
             return evaluation;
         };
