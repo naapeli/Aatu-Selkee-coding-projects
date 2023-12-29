@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 5000;
+        this.maxAllowedTime = 2000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -18,6 +18,7 @@ class engine {
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
+        this.CHECKMATE = 100000;
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -83,10 +84,10 @@ class engine {
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     console.log(this.bestMove, this.bestMoveEval)
-                    if (this.bestMoveEval == Number.MAX_SAFE_INTEGER) {
+                    if (this.bestMoveEval >= this.CHECKMATE) {
                         console.log("Found own checkmate");
                         return this.bestMove;
-                    } else if (this.bestMoveEval == Number.MIN_SAFE_INTEGER) {
+                    } else if (this.bestMoveEval <= -this.CHECKMATE) {
                         console.log("Found opponent checkmate");
                         return this.bestMove;
                     };
@@ -138,7 +139,7 @@ class engine {
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return Number.MIN_SAFE_INTEGER; // checkmate
+                return -this.CHECKMATE; // checkmate
             };
             return 0; // stalemate
         };
@@ -188,13 +189,23 @@ class engine {
                 // calculate search extension and late move reduction after making the wanted move.
                 extension = this.getSearchExtension(move);
                 reduction = this.getSearchReduction(extension, move, i, currentDepth);
-                // do the search
-                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
-            };
 
-            // if we reduced depth, but still got a better evaluation, need to do a full depth search
-            if (reduction > 0 && currentEvaluation >= alpha) {
-                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                if (i == 0) { // do a full search for the first move (previous best move)
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                } else {
+                    // do the principal variation search with reduced depth for other moves
+                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
+
+                    // if we got a better evaluation, need to do a full depth search
+                    if (currentEvaluation >= alpha) {
+                        // do still the principal variation search (null window)
+                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
+                        // if PV search fails do the full search
+                        if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
+                            currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                        };
+                    };
+                };
             };
             
             // update the amount of times a position has been seen in the search
@@ -250,7 +261,7 @@ class engine {
     quiescenceSearch(depthFromSearchEnd, alpha, beta, colorPerspective) {
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return Number.MIN_SAFE_INTEGER;
+                return -this.CHECKMATE; // checkmate
             };
             return 0; // stalemate
         };
