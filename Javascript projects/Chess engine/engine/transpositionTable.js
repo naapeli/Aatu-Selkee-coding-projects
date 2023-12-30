@@ -36,8 +36,19 @@ class transpositionTable {
     storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove) {
         const index = this.getIndex(zobristHash);
         const overWritten = this.positionLookUp[index] != undefined;
-        if (!overWritten) {this.positionsInLookUp++};
-        this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
+        if (!overWritten) {
+            this.positionsInLookUp++;
+            this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
+        } else {
+            // if collision with the same position from lower depth (with some buffer to fend mysterious blunders?!?!?!) or some other position, store new evaluation
+            if (this.positionLookUp[index].zobristHash == zobristHash) {
+                if (this.positionLookUp[index].depth + 1 <= depthFromPosition) {
+                    this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
+                };
+            } else {
+                this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
+            };
+        };
     };
 
     printLookUpTable() {
