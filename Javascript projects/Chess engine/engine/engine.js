@@ -281,7 +281,7 @@ class engine {
         };
 
         // delta pruning
-        const BIG_DELTA = 1025; // queen value
+        const BIG_DELTA = 337 + 1025; // queen + knight value
         if ( stand_pat < alpha - BIG_DELTA ) {
             return alpha;
         };
@@ -398,7 +398,7 @@ class engine {
         } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
             extension = 1;
         } else if (this.board.possibleMoves.length == 1) { // one reply extension
-            reduction = 1;
+            extension = 1;
         }
         return extension;
     };
