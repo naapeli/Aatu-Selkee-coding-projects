@@ -397,7 +397,9 @@ class engine {
             extension = 1;
         } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
             extension = 1;
-        };
+        } else if (this.board.possibleMoves.length == 1) { // one reply extension
+            reduction = 1;
+        }
         return extension;
     };
 
