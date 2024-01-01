@@ -7,8 +7,8 @@ pygame.font.init()
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 600
 BG_SIZE = 600
-GAP = 200
-PIPE_VEL = 2.5
+GAP = 150
+PIPE_VEL = 3.0
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 BIRD_IMG = pygame.transform.scale(pygame.image.load(r"Python projects\flappy bird machine learning\pictures\bird.png").convert_alpha(), (150, 150))
 PIPE_IMG_BOTTOM = pygame.image.load(r"Python projects\flappy bird machine learning\pictures\pipe.png").convert_alpha()
