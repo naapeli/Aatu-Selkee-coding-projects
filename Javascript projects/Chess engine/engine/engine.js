@@ -18,7 +18,7 @@ class engine {
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
-        this.CHECKMATE = 100000;
+        this.CHECKMATE = Number.MIN_SAFE_INTEGER;
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -74,7 +74,7 @@ class engine {
                         this.bestMoveEval = this.bestIterEvaluation;
                         console.log("Evaluation of the last iteration used")
                     };
-                    console.log(this.bestMove);
+                    console.log(this.bestMove, this.bestMoveEval);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / 1000);
                     console.log("Depth: " + searchDepth);
                     console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
@@ -83,11 +83,12 @@ class engine {
                 } else if (alpha < score && score < beta) { // if score was inside alpha and beta
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
-                    console.log(this.bestMove, this.bestMoveEval)
-                    if (this.bestMoveEval >= this.CHECKMATE) {
+                    console.log(this.bestMove, this.bestMoveEval);
+                    if (this.bestMoveEval == -this.CHECKMATE) {
                         console.log("Found own checkmate");
                         return this.bestMove;
-                    } else if (this.bestMoveEval <= -this.CHECKMATE) {
+                    } else if (this.bestMoveEval == this.CHECKMATE) {
+                        console.log(this.bestMoveEval)
                         console.log("Found opponent checkmate");
                         return this.bestMove;
                     };
@@ -95,7 +96,7 @@ class engine {
                 };
                 // if we failed to find the score inside alpha and beta continue to the next aspiration window,
                 // else continue to the next iteration
-                console.log("Aspiration window failed!")
+                console.log("Aspiration window failed!");
             };
         };
     };
@@ -139,7 +140,7 @@ class engine {
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return -this.CHECKMATE; // checkmate
+                return this.CHECKMATE; // checkmate
             };
             return 0; // stalemate
         };
@@ -188,24 +189,34 @@ class engine {
             if (!threefoldRepetition) {
                 // calculate search extension after making the wanted move.
                 extension = this.getSearchExtension(move);
+                reduction = this.getSearchReduction(extension, move, i, currentDepth);
+                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
 
+                if (reduction > 0 && currentEvaluation >= alpha) {
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                };
+    
+
+                // principal variations search
+                /*
                 if (i == 0) { // do a full search for the first move (previous best move)
                     currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                 } else {
                     // calculate late move reduction after making the wanted move.
                     reduction = this.getSearchReduction(extension, move, i, currentDepth);
 
-                    /* Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
-                    i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
-                    with searching the same position without late move reduction and a full window.*/
+                    // Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
+                    // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
+                    // with searching the same position without late move reduction and a full window.
+                    let searchAgain = false;
                     if (reduction > 0) {
                         currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
-                    } else { // if we do not aplly reduction to this move, make sure to do a full search
-                        currentEvaluation = alpha + 1;
+                    } else { // if we do not apply reduction to this move, make sure to do a full search
+                        searchAgain = true;
                     };
                     
                     // if we got a better evaluation, need to do a full depth search
-                    if (currentEvaluation > alpha) {
+                    if (currentEvaluation > alpha || searchAgain) {
                         // do still the principal variation search (null window)
                         currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
                         // if PV search fails to prove the position is bad, do the full search
@@ -213,11 +224,19 @@ class engine {
                             currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                         };
                     };
-                };
+                };*/
             };
             
             // update the amount of times a position has been seen in the search
             repetitionTable[currentBoard.zobristHash] -= 1;
+
+            // if three fold repetition, don't store it into the transposition table
+            if (threefoldRepetition) {
+                if (depthFromRoot == 0) {
+                    this.bestIterEvaluation = 0;
+                };
+                return 0;
+            };
             
             this.board.undoMove();
 
@@ -269,7 +288,7 @@ class engine {
     quiescenceSearch(depthFromSearchEnd, alpha, beta, colorPerspective) {
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return -this.CHECKMATE; // checkmate
+                return this.CHECKMATE; // checkmate
             };
             return 0; // stalemate
         };
