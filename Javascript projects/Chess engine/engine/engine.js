@@ -235,7 +235,7 @@ class engine {
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
                 // update killer moves
-                //this.storeKillerMoves(positionBestMove, depthFromRoot);
+                this.storeKillerMoves(positionBestMove, depthFromRoot);
                 break;
             };
             if (currentEvaluation > alpha) {
