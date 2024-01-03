@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 2000;
+        this.maxAllowedTime = 60000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -18,7 +18,7 @@ class engine {
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
-        this.CHECKMATE = Number.MIN_SAFE_INTEGER;
+        this.CHECKMATE = -10000000;
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -84,11 +84,11 @@ class engine {
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     console.log(this.bestMove, this.bestMoveEval);
-                    if (this.bestMoveEval == -this.CHECKMATE) {
+                    
+                    if (this.bestMoveEval >= -this.CHECKMATE) {
                         console.log("Found own checkmate");
                         return this.bestMove;
-                    } else if (this.bestMoveEval == this.CHECKMATE) {
-                        console.log(this.bestMoveEval)
+                    } else if (this.bestMoveEval <= this.CHECKMATE) {
                         console.log("Found opponent checkmate");
                         return this.bestMove;
                     };
@@ -108,14 +108,6 @@ class engine {
         };
         
         const alphaOriginal = alpha;
-
-        // look if current position is a threefold repetition
-        if (repetitionTable[currentBoard.zobristHash] >= 3) {
-            if (depthFromRoot == 0) {
-                this.bestIterEvaluation = 0;
-            };
-            return 0;
-        };
 
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
@@ -167,15 +159,16 @@ class engine {
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         for (let i = 0; i < moves.length; i++) {
-            let threefoldRepetition = false;
             const move = moves[i];
             this.board.makeMove(move);
 
             // update the amount of times a position has been seen in the search
+            // set the value of the position to zero if we repeat even once
+            let threefoldRepetition = false;
             if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
                 repetitionTable[currentBoard.zobristHash] += 1
                 // if threefold repetition found, stop searching this position update it's value to 0
-                if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                if (repetitionTable[currentBoard.zobristHash] >= 2) {
                     threefoldRepetition = true;
                 };
             } else {
@@ -187,18 +180,10 @@ class engine {
             let extension = 0;
             let reduction = 0;
             if (!threefoldRepetition) {
-                // calculate search extension after making the wanted move.
+                // calculate search extension before PV logic
                 extension = this.getSearchExtension(move);
-                reduction = this.getSearchReduction(extension, move, i, currentDepth);
-                currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
-
-                if (reduction > 0 && currentEvaluation >= alpha) {
-                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
-                };
-    
 
                 // principal variations search
-                /*
                 if (i == 0) { // do a full search for the first move (previous best move)
                     currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                 } else {
@@ -224,21 +209,18 @@ class engine {
                             currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                         };
                     };
-                };*/
+                };
             };
             
             // update the amount of times a position has been seen in the search
             repetitionTable[currentBoard.zobristHash] -= 1;
-
-            // if three fold repetition, don't store it into the transposition table
-            if (threefoldRepetition) {
-                if (depthFromRoot == 0) {
-                    this.bestIterEvaluation = 0;
-                };
-                return 0;
-            };
             
             this.board.undoMove();
+
+            if (currentEvaluation > positionEvaluation) {
+                positionEvaluation = currentEvaluation;
+                positionBestMove = move;
+            };
 
             if (this.searchCancelled) {
                 // if played the first move from previous iteration or more, store the best move even if the search cancelled,
@@ -251,11 +233,6 @@ class engine {
                 return;
             };
 
-            if (currentEvaluation > positionEvaluation) {
-                positionEvaluation = currentEvaluation;
-                positionBestMove = move;
-            };
-
             // alpha-beta-pruning:
             alpha = Math.max(alpha, positionEvaluation);
             if (alpha >= beta) {
@@ -266,16 +243,18 @@ class engine {
         // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
-        // store the evaluation of the position to the transposition table
-        let nodeType;
-        if (positionEvaluation <= alphaOriginal) {
-            nodeType = this.UPPERBOUND_NODE;
-        } else if (positionEvaluation >= beta) {
-            nodeType = this.LOWERBOUND_NODE;
-        } else {
-            nodeType = this.EXACT_NODE;
+        // store the evaluation of the position to the transposition table (don't store checkmates for finishing won endgames)
+        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE) {
+            let nodeType;
+            if (positionEvaluation <= alphaOriginal) {
+                nodeType = this.UPPERBOUND_NODE;
+            } else if (positionEvaluation >= beta) {
+                nodeType = this.LOWERBOUND_NODE;
+            } else {
+                nodeType = this.EXACT_NODE;
+            };
+            this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
         };
-        this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
@@ -429,9 +408,7 @@ class engine {
         if (i < 4 || currentDepth < 3) {
             return reduction;
         };
-        if (!move.isCapture() && !move.promotion) {
-            reduction = 1;
-        } else if (extension == 0) {
+        if (!this.board.inCheck() && !move.isCapture() && !move.promotion && extension == 0) {
             reduction = 1;
         };
         return reduction;
