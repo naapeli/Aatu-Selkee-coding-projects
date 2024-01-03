@@ -13,7 +13,7 @@ class engine {
         this.bestIterMove;
         this.moveOrdering = new moveOrderer();
         this.transpositionTable = new transpositionTable();
-        this.R = 2;
+        this.R = 2; // null move pruning depth reduction constant
         this.allowNullMovePruning = true;
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
