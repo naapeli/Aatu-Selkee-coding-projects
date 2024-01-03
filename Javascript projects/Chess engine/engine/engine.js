@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 2000;
+        this.maxAllowedTime = 10000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -158,6 +158,7 @@ class engine {
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot);
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
+        let PVNodeFound = false;
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
@@ -183,7 +184,7 @@ class engine {
                 // calculate search extension before PV logic
                 extension = this.getSearchExtension(move);
                 // principal variations search
-                if (i == 0) { // do a full search for the first move (previous best move)
+                if (!PVNodeFound) { // do a full search for the first move (previous best move)
                     currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
                 } else {
                     // calculate late move reduction after making the wanted move.
@@ -240,6 +241,7 @@ class engine {
             };
             if (currentEvaluation > alpha) {
                 alpha = positionEvaluation;
+                PVNodeFound = true;
             };
         };
 
