@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 60000;
+        this.maxAllowedTime = 2000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -138,7 +138,7 @@ class engine {
         };
         if (currentDepth <= 0) {
             // if end of depth, search captures to the end to reduce the horizon effect
-            const evaluation = this.quiescenceSearch(0, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
+            const evaluation = this.quiescenceSearch(depthFromRoot, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
             return evaluation;
         };
 
@@ -155,7 +155,7 @@ class engine {
         
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove);
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot);
         let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         for (let i = 0; i < moves.length; i++) {
@@ -182,7 +182,6 @@ class engine {
             if (!threefoldRepetition) {
                 // calculate search extension before PV logic
                 extension = this.getSearchExtension(move);
-
                 // principal variations search
                 if (i == 0) { // do a full search for the first move (previous best move)
                     currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
@@ -233,10 +232,14 @@ class engine {
                 return;
             };
 
-            // alpha-beta-pruning:
-            alpha = Math.max(alpha, positionEvaluation);
-            if (alpha >= beta) {
+            // alpha-beta pruning
+            if (currentEvaluation >= beta) {
+                // update killer moves
+                //this.storeKillerMoves(positionBestMove, depthFromRoot);
                 break;
+            };
+            if (currentEvaluation > alpha) {
+                alpha = positionEvaluation;
             };
         };
 
@@ -264,7 +267,7 @@ class engine {
         return positionEvaluation;
     };
 
-    quiescenceSearch(depthFromSearchEnd, alpha, beta, colorPerspective) {
+    quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
                 return this.CHECKMATE; // checkmate
@@ -289,12 +292,12 @@ class engine {
             alpha = stand_pat;
         };
 
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves);
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             if (move.isCapture()) { // continue search if move is piece capture
                 this.board.makeMove(move);
-                const score = -this.quiescenceSearch(depthFromSearchEnd + 1, -beta, -alpha, -colorPerspective);
+                const score = -this.quiescenceSearch(depthFromRoot + 1, -beta, -alpha, -colorPerspective);
                 this.board.undoMove();
 
                 if (this.searchCancelled) {
@@ -414,6 +417,15 @@ class engine {
         return reduction;
     };
 
+    storeKillerMoves(move, depthFromRoot) {
+        if (!move.isCapture()) {
+            if (depthFromRoot < maxKillerMovePly) {
+                killerMoves[1][depthFromRoot] = killerMoves[0][depthFromRoot];
+                killerMoves[0][depthFromRoot] = move;
+            };
+        };
+    };
+
     getNumberOfMoves(currentDepth) {
         let numberOfMoves = 0;
         if (currentDepth === 0) {
@@ -492,13 +504,13 @@ class engine {
 };
 
 class moveOrderer {
-    orderMoves(moves, previousBestMove) {
-        this.calculateAssumedMoveScores(moves, previousBestMove);
+    orderMoves(moves, previousBestMove, depthFromRoot) {
+        this.calculateAssumedMoveScores(moves, previousBestMove, depthFromRoot);
         const sortedMoves = this.sort(moves);
         return sortedMoves;
     };
 
-    calculateAssumedMoveScores(moves, previousBestMove) {
+    calculateAssumedMoveScores(moves, previousBestMove, depthFromRoot) {
         moves.forEach(move => {
             const movingPieceType = move.movingPiece[1];
             const takenPieceType = move.takenPiece[1];
@@ -507,10 +519,18 @@ class moveOrderer {
 
             if (previousBestMove != undefined && move.equals(previousBestMove)) {
                 move.assumedMoveScore += 1000000000;
-            };
+            }; 
 
             if (takenPieceType != "-") {
                 move.assumedMoveScore += 10000000 * (2 * pieceValues[takenPieceType] - pieceValues[movingPieceType]);
+            };
+
+            if (!move.isCapture()) {
+                if (killerMoves[0][depthFromRoot] != undefined && move.equals(killerMoves[0][depthFromRoot])) {
+                    move.assumedMoveScore += 1000001;
+                } else if (killerMoves[1][depthFromRoot] != undefined && move.equals(killerMoves[1][depthFromRoot])) {
+                    move.assumedMoveScore += 1000000;
+                };
             };
 
             if (move.promotion) {

@@ -12,6 +12,8 @@ let movingEndSquare;
 const currentBoard = new board();
 const gameEngine = new engine(currentBoard);
 const currentHistoryTable = new historyTable();
+const maxKillerMovePly = 32;
+const killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
 function startGame() {
