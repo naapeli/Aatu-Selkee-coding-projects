@@ -5,6 +5,7 @@ const undoButton = document.querySelector("#undo-button");
 const positionInput = document.querySelector("#position-input");
 const updateButton = document.querySelector("#update-button");
 const engineCheckBox = document.querySelector("#engine-input");
+engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
 let movingPieceStartElement;
