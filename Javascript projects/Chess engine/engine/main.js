@@ -117,6 +117,9 @@ function dropPiece(event) {
                     };
                     if (repetitionTable[currentBoard.zobristHash] >= 3) {
                         console.log("---------------DRAW---------------");
+                    } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                        const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                        console.log("---------------" + winner + "---------------");
                     };
                     
                     if (playAgainstEngine) {
@@ -131,6 +134,9 @@ function dropPiece(event) {
                             };
                             if (repetitionTable[currentBoard.zobristHash] >= 3) {
                                 console.log("---------------DRAW---------------");
+                            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                                console.log("---------------" + winner + "---------------");
                             };
                         };
                     };
@@ -154,6 +160,9 @@ function dropPiece(event) {
             };
             if (repetitionTable[currentBoard.zobristHash] >= 3) {
                 console.log("---------------DRAW---------------");
+            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                console.log("---------------" + winner + "---------------");
             };
             
             if (playAgainstEngine) {
@@ -168,6 +177,9 @@ function dropPiece(event) {
                     };
                     if (repetitionTable[currentBoard.zobristHash] >= 3) {
                         console.log("---------------DRAW---------------");
+                    } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                        const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                        console.log("---------------" + winner + "---------------");
                     };
                 };
             };

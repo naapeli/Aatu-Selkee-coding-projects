@@ -55,10 +55,10 @@ class engine {
         if (this.board.possibleMoves.length == 0) {
             return;
         };
-        console.log("Search running")
+        console.log("Search running");
         const perspective = this.board.whiteToMove ? 1 : -1;
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
-            console.log("Iteration: " + searchDepth)
+            console.log("Iteration: " + searchDepth);
             for (let i = 0; i < aspirationWindows.length; i++) {
                 if (score != undefined) {
                     const window = aspirationWindows[i];
@@ -68,11 +68,9 @@ class engine {
                 // search the current position not allowing null-move-pruning at the first node
                 score = this.search(searchDepth, 0, alpha, beta, perspective, false);
                 if (this.searchCancelled) { // if search cancelled, store bestIterMove as bestMove if evaluation is inside alpha and beta
-                    console.log("search cancelled");
                     if (alpha < score && score < beta) {
                         this.bestMove = this.bestIterMove;
                         this.bestMoveEval = this.bestIterEvaluation;
-                        console.log("Evaluation of the last iteration used")
                     };
                     console.log(this.bestMove, this.bestMoveEval);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / 1000);
@@ -86,10 +84,10 @@ class engine {
                     console.log(this.bestMove, this.bestMoveEval);
                     
                     if (this.bestMoveEval >= -this.CHECKMATE) {
-                        console.log("Found own checkmate");
+                        console.log("Found engine checkmate");
                         return this.bestMove;
                     } else if (this.bestMoveEval <= this.CHECKMATE) {
-                        console.log("Found opponent checkmate");
+                        console.log("Found player checkmate");
                         return this.bestMove;
                     };
                     break;
