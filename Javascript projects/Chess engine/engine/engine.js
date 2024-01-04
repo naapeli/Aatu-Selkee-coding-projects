@@ -3,7 +3,7 @@ class engine {
         this.maxDepth = Number.MAX_SAFE_INTEGER;
         this.openingTheory = [];
         this.board = board;
-        this.maxAllowedTime = 10000;
+        this.maxAllowedTime = 2000;
 
         this.searchStartTime;
         this.searchCancelled = false;
@@ -248,8 +248,8 @@ class engine {
         // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
-        // store the evaluation of the position to the transposition table (don't store checkmates for finishing won endgames)
-        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE) {
+        // store the evaluation of the position to the transposition table (don't store checkmates or exact draws for finishing won endgames and perpetual checks)
+        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE && positionEvaluation == 0) {
             let nodeType;
             if (positionEvaluation <= alphaOriginal) {
                 nodeType = this.UPPERBOUND_NODE;

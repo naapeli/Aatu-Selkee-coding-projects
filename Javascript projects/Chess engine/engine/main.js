@@ -1,9 +1,11 @@
-const gameBoard = document.querySelector("#gameboard")
-const player = document.querySelector("#player")
-const infoDisplay = document.querySelector("#info-display")
-const undoButton = document.querySelector("#undo-button")
-const positionInput = document.querySelector("#position-input")
-const updateButton = document.querySelector("#update-button")
+const gameBoard = document.querySelector("#gameboard");
+const player = document.querySelector("#player");
+const infoDisplay = document.querySelector("#info-display");
+const undoButton = document.querySelector("#undo-button");
+const positionInput = document.querySelector("#position-input");
+const updateButton = document.querySelector("#update-button");
+const engineCheckBox = document.querySelector("#engine-input");
+let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
 let movingPieceStartElement;
 let movingStartSquare;
@@ -64,6 +66,9 @@ function startGame() {
             console.log("Remember to input a valid fen string!")
         }
     });
+    engineCheckBox.addEventListener("change", () => {
+        playAgainstEngine = engineCheckBox.checked;
+    });
 };
 
 function dragPiece(event) {
@@ -110,20 +115,22 @@ function dropPiece(event) {
                         repetitionTable[currentBoard.zobristHash] = 1
                     };
                     if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                        console.log("draw");
+                        console.log("---------------DRAW---------------");
                     };
                     
-                    const engineMove = gameEngine.iterativeSearch();
-                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                    if (engineMoveMade) {
-                        updateSquares(engineSquaresToBeUpdated);
-                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                            repetitionTable[currentBoard.zobristHash] += 1
-                        } else {
-                            repetitionTable[currentBoard.zobristHash] = 1
-                        };
-                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                            console.log("draw");
+                    if (playAgainstEngine) {
+                        const engineMove = gameEngine.iterativeSearch();
+                        const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                        if (engineMoveMade) {
+                            updateSquares(engineSquaresToBeUpdated);
+                            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                                repetitionTable[currentBoard.zobristHash] += 1
+                            } else {
+                                repetitionTable[currentBoard.zobristHash] = 1
+                            };
+                            if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                                console.log("---------------DRAW---------------");
+                            };
                         };
                     };
                 };
@@ -145,21 +152,23 @@ function dropPiece(event) {
                 repetitionTable[currentBoard.zobristHash] = 1
             };
             if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                console.log("draw");
+                console.log("---------------DRAW---------------");
             };
             
-            const engineMove = gameEngine.iterativeSearch();
-            const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-            if (engineMoveMade) {
-                updateSquares(engineSquaresToBeUpdated);
-                if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                    repetitionTable[currentBoard.zobristHash] += 1
-                } else {
-                    repetitionTable[currentBoard.zobristHash] = 1
+            if (playAgainstEngine) {
+                const engineMove = gameEngine.iterativeSearch();
+                const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                if (engineMoveMade) {
+                    updateSquares(engineSquaresToBeUpdated);
+                    if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                        repetitionTable[currentBoard.zobristHash] += 1
+                    } else {
+                        repetitionTable[currentBoard.zobristHash] = 1
+                    };
+                    if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                        console.log("---------------DRAW---------------");
+                    };
                 };
-            };
-            if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                console.log("draw");
             };
         };
     };
