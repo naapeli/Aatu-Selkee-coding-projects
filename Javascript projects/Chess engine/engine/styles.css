@@ -3,8 +3,8 @@ body {
 }
 
 #gameboard {
-    width: calc(100% - 40px);
-    height: calc(100% - 40px);
+    width: calc(100vw - 40px);
+    height: calc(100vw - 40px);
     display: flex;
     flex-wrap: wrap;
     flex-shrink: 0;
@@ -12,14 +12,68 @@ body {
 }
 
 #main-container {
-    width: 100vw;
-    height: 100vw;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 #sidepanel {
     width: auto;
+    height: auto;
+    font-family: Arial, sans-serif;
+    border: 30px solid #B4D4FF;
+    border-radius: 40px;
+    padding: 20px;
+    background-color: #EEF5FF; 
+    margin: 20px;
+    color: #333;
+    text-align: center;
+}
+
+#button-container {
+    display: flex;
+    margin: 10px;
+}
+
+.button {
+    width: 50%;
+    background-color: #86B6F6;
+    color: #fff;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-left: 5px;
+    margin-right: 5px;
+    transition: background-color 0.3s ease;
+}
+.button:hover {
+    background-color: #176B87;
+}
+
+#input-container {
+    display: flex;
+    margin: 10px;
+}
+
+.input {
+    background-color: #86B6F6;
+    width: 100%;
+    margin: 5px;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+.input:hover {
+    background-color: #176B87;
+}
+.input::placeholder {
+    color: #fff;
+}
+
+.checkbox-container {
+    padding-top: 10px;
 }
 
 .pawn-promotion-container {
@@ -63,15 +117,20 @@ body {
         width: 800px;
         height: 800px;
     }
+    #sidepanel {
+        width: 700px;
+        height: 250px;
+    }
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 1170px) {
     #main-container {
         flex-direction: row;
     }
 
     #sidepanel {
-        width: 190px;
+        width: 200px;
+        height: 250px;
         margin-left: 10px;
     }
 }

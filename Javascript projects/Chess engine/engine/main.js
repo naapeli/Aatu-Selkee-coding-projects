@@ -54,6 +54,9 @@ function startGame() {
     undoButton.addEventListener("click", () => {
         repetitionTable[currentBoard.zobristHash] -= 1;
         let squaresToBeUpdated = currentBoard.undoMove();
+        if (squaresToBeUpdated.length == 0) {
+            console.log("No moves in the movelog!")
+        };
         updateSquares(squaresToBeUpdated);
     });
     updateButton.addEventListener("click", () => {

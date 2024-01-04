@@ -10,11 +10,17 @@
         <div id="sidepanel">
             <h1 id="info-display">Info display</h1>
             <p>It is <span id ="player">white</span> to move.</p>
-            <button id="undo-button">Undo move</button>
-            <button id="update-button">Update board</button>
-            <input id="position-input" placeholder="fen-string eg. rbnqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RBNQKBNR">
-            <input id="engine-input" type="checkbox">
-            <label for="engine-input">Play against engine</label>
+            <div id="button-container">
+                <button class="button" id="undo-button">Undo move</button>
+                <button class="button" id="update-button">Update board</button>
+            </div>
+            <div id="input-container">
+                <input class="input" id="position-input" placeholder="fen-string eg. rbnqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RBNQKBNR">
+            </div>
+            <div id="checkbox-container">
+                <input id="engine-input" type="checkbox">
+                <label for="engine-input">Play against engine</label>
+            </div>
         </div>
         <script src="pieces.js"></script>
         <script src="zobristHashGenerator.js"></script>
