@@ -19,6 +19,9 @@ const maxKillerMovePly = 64;
 const killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
+const moveAudio = new Audio("./sounds/move-self.mp3");
+const captureAudio = new Audio("./sounds/capture.mp3");
+
 function startGame() {
     currentBoard.board.forEach((row, j) => {
         row.forEach((piece, i) => {
@@ -112,6 +115,11 @@ async function dropPiece(event) {
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
             let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
             if (moveMade) {
+                if (currentMove.isCapture()) {
+                    captureAudio.play();
+                } else {
+                    moveAudio.play();
+                };
                 updateSquares(squaresToBeUpdated);
                 if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
                     repetitionTable[currentBoard.zobristHash] += 1
@@ -156,6 +164,11 @@ async function dropPiece(event) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
+            if (currentMove.isCapture()) {
+                captureAudio.play();
+            } else {
+                moveAudio.play();
+            };
             updateSquares(squaresToBeUpdated);
             if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
                 repetitionTable[currentBoard.zobristHash] += 1
