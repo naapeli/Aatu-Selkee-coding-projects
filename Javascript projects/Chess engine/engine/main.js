@@ -5,6 +5,8 @@ const undoButton = document.querySelector("#undo-button");
 const positionInput = document.querySelector("#position-input");
 const updateButton = document.querySelector("#update-button");
 const engineCheckBox = document.querySelector("#engine-input");
+const engineThinkTimeSlider = document.querySelector("#think-time-slider");
+const engineThinkTime = document.querySelector("#think-time");
 engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
@@ -81,6 +83,10 @@ function startGame() {
     engineCheckBox.addEventListener("change", () => {
         playAgainstEngine = engineCheckBox.checked;
     });
+    engineThinkTimeSlider.oninput = function() {
+        engineThinkTime.innerHTML = engineThinkTimeSlider.value;
+        gameEngine.maxAllowedTime = parseInt(engineThinkTimeSlider.value);
+    };
 };
 
 function dragPiece(event) {
