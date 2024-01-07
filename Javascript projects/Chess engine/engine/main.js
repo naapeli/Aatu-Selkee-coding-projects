@@ -126,22 +126,24 @@ async function dropPiece(event) {
                 };
                 
                 if (playAgainstEngine) {
-                    const engineMove = gameEngine.iterativeSearch();
-                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                    if (engineMoveMade) {
-                        updateSquares(engineSquaresToBeUpdated);
-                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                            repetitionTable[currentBoard.zobristHash] += 1
-                        } else {
-                            repetitionTable[currentBoard.zobristHash] = 1
+                    window.setTimeout(() => {
+                        const engineMove = gameEngine.iterativeSearch();
+                        const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                        if (engineMoveMade) {
+                            updateSquares(engineSquaresToBeUpdated);
+                            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                                repetitionTable[currentBoard.zobristHash] += 1
+                            } else {
+                                repetitionTable[currentBoard.zobristHash] = 1
+                            };
+                            if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                                console.log("---------------DRAW---------------");
+                            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                                console.log("---------------" + winner + "---------------");
+                            };
                         };
-                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                            console.log("---------------DRAW---------------");
-                        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                            const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                            console.log("---------------" + winner + "---------------");
-                        };
-                    };
+                    }, 1);
                 };
             };
         };
@@ -168,22 +170,24 @@ async function dropPiece(event) {
             };
             
             if (playAgainstEngine) {
-                const engineMove = gameEngine.iterativeSearch();
-                const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                if (engineMoveMade) {
-                    updateSquares(engineSquaresToBeUpdated);
-                    if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                        repetitionTable[currentBoard.zobristHash] += 1
-                    } else {
-                        repetitionTable[currentBoard.zobristHash] = 1
+                window.setTimeout(() => {
+                    const engineMove = gameEngine.iterativeSearch();
+                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                    if (engineMoveMade) {
+                        updateSquares(engineSquaresToBeUpdated);
+                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                            repetitionTable[currentBoard.zobristHash] += 1
+                        } else {
+                            repetitionTable[currentBoard.zobristHash] = 1
+                        };
+                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                            console.log("---------------DRAW---------------");
+                        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                            const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                            console.log("---------------" + winner + "---------------");
+                        };
                     };
-                    if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                        console.log("---------------DRAW---------------");
-                    } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                        const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                        console.log("---------------" + winner + "---------------");
-                    };
-                };
+                }, 1);
             };
         };
     };
@@ -194,8 +198,8 @@ function updateSquares(squaresToBeUpdated) {
     squaresToBeUpdated.forEach((pos) => {
         let [i, j] = pos;
         let id = i + j * 8;
-        let squareToBeUppdated = document.querySelector(`[id="${id}"]`)
-        let piece = currentBoard.board[j][i]
+        let squareToBeUppdated = document.querySelector(`[id="${id}"]`);
+        let piece = currentBoard.board[j][i];
         if (piece != "--") {
             squareToBeUppdated.innerHTML = pieceImages[piece];
         } else {
