@@ -22,7 +22,8 @@ class engine {
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
-    async getBestMove() {
+    getBestMove() {
+        /*
         if (this.board.moveLog.length < 14) {
             const result = await fetch(BASE_URL + "move",
             {
@@ -35,10 +36,13 @@ class engine {
                 return 
             }
             return
-        };
+        };*/
 
         // if position not in the opening book, return the move from iterative search
-        return this.iterativeSearch();
+        return new Promise((resolve, reject) => {
+            const bestMove = this.iterativeSearch()
+            resolve(bestMove);
+        });
     };
 
     iterativeSearch() {
@@ -246,8 +250,8 @@ class engine {
         // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
-        // store the evaluation of the position to the transposition table (don't store checkmates or exact draws for finishing won endgames and perpetual checks)
-        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE && positionEvaluation == 0) {
+        // store the evaluation of the position to the transposition table (don't store checkmates for finishing won endgames)
+        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE) {
             let nodeType;
             if (positionEvaluation <= alphaOriginal) {
                 nodeType = this.UPPERBOUND_NODE;

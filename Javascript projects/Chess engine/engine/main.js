@@ -15,7 +15,7 @@ let movingEndSquare;
 const currentBoard = new board();
 const gameEngine = new engine(currentBoard);
 const currentHistoryTable = new historyTable();
-const maxKillerMovePly = 32;
+const maxKillerMovePly = 64;
 const killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
@@ -63,12 +63,12 @@ function startGame() {
         const fenString = positionInput.value;
         try {
             currentBoard.positionFromFen(fenString);
-            gameEngine.transpositionTable.clearTable()
-            repetitionTable = {}
-            updateAllSquares()
+            gameEngine.transpositionTable.clearTable();
+            repetitionTable = {};
+            updateAllSquares();
         } catch (error) {
-            console.log("Remember to input a valid fen string!")
-        }
+            console.log("Remember to input a valid fen string!");
+        };
     });
     engineCheckBox.addEventListener("change", () => {
         playAgainstEngine = engineCheckBox.checked;
@@ -82,7 +82,7 @@ function dragPiece(event) {
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
 };
 
-function dropPiece(event) {
+async function dropPiece(event) {
     let target;
     let targetIsImage = false;
     if (event.target.tagName == "IMG") {
@@ -108,43 +108,42 @@ function dropPiece(event) {
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
         if (isPromotion) {
-             askForPawnPromotion(playerToMove).then((promotedPiece) => {
-                let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
-                let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
-                if (moveMade) {
-                    updateSquares(squaresToBeUpdated);
-                    if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                        repetitionTable[currentBoard.zobristHash] += 1
-                    } else {
-                        repetitionTable[currentBoard.zobristHash] = 1
-                    };
-                    if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                        console.log("---------------DRAW---------------");
-                    } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                        const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                        console.log("---------------" + winner + "---------------");
-                    };
-                    
-                    if (playAgainstEngine) {
-                        const engineMove = gameEngine.iterativeSearch();
-                        const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                        if (engineMoveMade) {
-                            updateSquares(engineSquaresToBeUpdated);
-                            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                                repetitionTable[currentBoard.zobristHash] += 1
-                            } else {
-                                repetitionTable[currentBoard.zobristHash] = 1
-                            };
-                            if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                                console.log("---------------DRAW---------------");
-                            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                                console.log("---------------" + winner + "---------------");
-                            };
+            const promotedPiece = await askForPawnPromotion(playerToMove);
+            let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
+            let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
+            if (moveMade) {
+                updateSquares(squaresToBeUpdated);
+                if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                    repetitionTable[currentBoard.zobristHash] += 1
+                } else {
+                    repetitionTable[currentBoard.zobristHash] = 1
+                };
+                if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                    console.log("---------------DRAW---------------");
+                } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                    const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                    console.log("---------------" + winner + "---------------");
+                };
+                
+                if (playAgainstEngine) {
+                    const engineMove = gameEngine.iterativeSearch();
+                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
+                    if (engineMoveMade) {
+                        updateSquares(engineSquaresToBeUpdated);
+                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+                            repetitionTable[currentBoard.zobristHash] += 1
+                        } else {
+                            repetitionTable[currentBoard.zobristHash] = 1
+                        };
+                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+                            console.log("---------------DRAW---------------");
+                        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+                            const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+                            console.log("---------------" + winner + "---------------");
                         };
                     };
                 };
-             });
+            };
         };
     } else if (movingPieceIsKing) {
         isCastleStart = movingStartSquare[0] == 4 && (movingStartSquare[1] == 0 || movingStartSquare[1] == 7);
@@ -155,7 +154,7 @@ function dropPiece(event) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
         let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
         if (moveMade) {
-            window.setTimeout(updateSquares, 0, squaresToBeUpdated);
+            updateSquares(squaresToBeUpdated);
             if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
                 repetitionTable[currentBoard.zobristHash] += 1
             } else {
