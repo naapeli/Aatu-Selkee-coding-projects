@@ -63,15 +63,15 @@ body {
 
 #input-container {
     display: flex;
-    flex-direction: column;
     margin: 10px;
 }
 
 .input {
     background-color: var(--col3);
-    width: 100%;
-    margin: 5px;
     color: var(--textcollight);
+    width: 100%;
+    margin-left: 5px;
+    margin-right: 5px;
     padding: 10px;
     border-radius: 5px;
     border: none;
@@ -82,6 +82,17 @@ body {
 }
 .input::placeholder {
     color: var(--textcollight);
+}
+
+#slider-container {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+}
+#think-time-slider {
+    width: 100%;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 .checkbox-container {
@@ -135,7 +146,7 @@ body {
     }
     #sidepanel {
         width: 700px;
-        height: 250px;
+        height: 305px;
     }
 }
 
@@ -146,7 +157,7 @@ body {
 
     #sidepanel {
         width: 200px;
-        height: 250px;
+        height: 340px;
         margin-left: 10px;
     }
 }
