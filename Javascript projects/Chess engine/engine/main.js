@@ -21,6 +21,7 @@ let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
 const moveAudio = new Audio("./sounds/move-self.mp3");
 const captureAudio = new Audio("./sounds/capture.mp3");
+let lastMoveHighlight = [];
 
 function startGame() {
     currentBoard.board.forEach((row, j) => {
@@ -113,46 +114,13 @@ async function dropPiece(event) {
         if (isPromotion) {
             const promotedPiece = await askForPawnPromotion(playerToMove);
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
-            let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
-            if (moveMade) {
-                if (currentMove.isCapture()) {
-                    captureAudio.play();
-                } else {
-                    moveAudio.play();
-                };
-                updateSquares(squaresToBeUpdated);
-                if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                    repetitionTable[currentBoard.zobristHash] += 1
-                } else {
-                    repetitionTable[currentBoard.zobristHash] = 1
-                };
-                if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                    console.log("---------------DRAW---------------");
-                } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                    const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                    console.log("---------------" + winner + "---------------");
-                };
+            const playerMoveMade = makeMove(currentMove);
                 
-                if (playAgainstEngine) {
-                    window.setTimeout(() => {
-                        const engineMove = gameEngine.iterativeSearch();
-                        const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                        if (engineMoveMade) {
-                            updateSquares(engineSquaresToBeUpdated);
-                            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                                repetitionTable[currentBoard.zobristHash] += 1
-                            } else {
-                                repetitionTable[currentBoard.zobristHash] = 1
-                            };
-                            if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                                console.log("---------------DRAW---------------");
-                            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                                console.log("---------------" + winner + "---------------");
-                            };
-                        };
-                    }, 1);
-                };
+            if (playAgainstEngine && playerMoveMade) {
+                window.setTimeout(() => {
+                    const engineMove = gameEngine.iterativeSearch();
+                    makeMove(engineMove);
+                }, 1);
             };
         };
     } else if (movingPieceIsKing) {
@@ -162,51 +130,50 @@ async function dropPiece(event) {
     };
     if (!isPromotion) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
-        let [moveMade, squaresToBeUpdated] = currentBoard.makeMove(currentMove);
-        if (moveMade) {
-            if (currentMove.isCapture()) {
-                captureAudio.play();
-            } else {
-                moveAudio.play();
-            };
-            updateSquares(squaresToBeUpdated);
-            if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                repetitionTable[currentBoard.zobristHash] += 1
-            } else {
-                repetitionTable[currentBoard.zobristHash] = 1
-            };
-            if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                console.log("---------------DRAW---------------");
-            } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                console.log("---------------" + winner + "---------------");
-            };
+        const playerMoveMade = makeMove(currentMove);
             
-            if (playAgainstEngine) {
-                window.setTimeout(() => {
-                    const engineMove = gameEngine.iterativeSearch();
-                    const [engineMoveMade, engineSquaresToBeUpdated] = currentBoard.makeMove(engineMove);
-                    if (engineMoveMade) {
-                        updateSquares(engineSquaresToBeUpdated);
-                        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
-                            repetitionTable[currentBoard.zobristHash] += 1
-                        } else {
-                            repetitionTable[currentBoard.zobristHash] = 1
-                        };
-                        if (repetitionTable[currentBoard.zobristHash] >= 3) {
-                            console.log("---------------DRAW---------------");
-                        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
-                            const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
-                            console.log("---------------" + winner + "---------------");
-                        };
-                    };
-                }, 1);
-            };
+        if (playAgainstEngine && playerMoveMade) {
+            window.setTimeout(() => {
+                const engineMove = gameEngine.iterativeSearch();
+                makeMove(engineMove);
+            }, 1);
         };
     };
 };
 
-function updateSquares(squaresToBeUpdated) {
+function makeMove(move) {
+    const [moveMade, squaresToBeUpdated] = currentBoard.makeMove(move);
+    if (moveMade) {
+        playSound(move.isCapture());
+        newHighlight = [move.startPos, move.endPos];
+        updateSquares(squaresToBeUpdated, newHighlight);
+
+        if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
+            repetitionTable[currentBoard.zobristHash] += 1
+        } else {
+            repetitionTable[currentBoard.zobristHash] = 1
+        };
+        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+            console.log("---------------DRAW---------------");
+        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+            const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
+            console.log("---------------" + winner + "---------------");
+        };
+    };
+    return moveMade;
+};
+
+function playSound(isCapture) {
+    if (isCapture) {
+        captureAudio.currentTime = 0;
+        captureAudio.play();
+    } else {
+        moveAudio.currentTime = 0;
+        moveAudio.play();
+    };
+};
+
+function updateSquares(squaresToBeUpdated, newHighlight) {
     player.textContent = currentBoard.whiteToMove ? "white" : "black";
     squaresToBeUpdated.forEach((pos) => {
         let [i, j] = pos;
@@ -219,6 +186,21 @@ function updateSquares(squaresToBeUpdated) {
             squareToBeUppdated.innerHTML = "";
         };
     });
+    // update old highlight
+    lastMoveHighlight.forEach((pos) => {
+        let [i, j] = pos;
+        let id = i + j * 8;
+        let squareToBeUppdated = document.querySelector(`[id="${id}"]`);
+        squareToBeUppdated.classList.remove("highLight");
+    });
+    // update new highlight
+    newHighlight.forEach((pos) => {
+        let [i, j] = pos;
+        let id = i + j * 8;
+        let squareToBeUppdated = document.querySelector(`[id="${id}"]`);
+        squareToBeUppdated.classList.add("highLight");
+    });
+    lastMoveHighlight = newHighlight;
 };
 
 function updateAllSquares() {

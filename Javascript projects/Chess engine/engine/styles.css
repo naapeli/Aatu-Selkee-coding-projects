@@ -1,3 +1,14 @@
+:root {
+    --col1: #EEF5FF;
+    --col2: #B4D4FF;
+    --col3: #86B6F6;
+    --col4: #176B87;
+    --colhighlight: #139ee3;
+    --textcoldark: #333;
+    --textcollight: #fff;
+    --squarehovercol: #146ab5;
+}
+
 body {
     margin: 0px;
 }
@@ -21,12 +32,12 @@ body {
     width: auto;
     height: auto;
     font-family: Arial, sans-serif;
-    border: 30px solid #B4D4FF;
+    border: 30px solid var(--col2);
     border-radius: 40px;
     padding: 20px;
-    background-color: #EEF5FF; 
+    background-color: var(--col1); 
     margin: 20px;
-    color: #333;
+    color: var(--textcoldark);
     text-align: center;
 }
 
@@ -37,8 +48,8 @@ body {
 
 .button {
     width: 50%;
-    background-color: #86B6F6;
-    color: #fff;
+    background-color: var(--col3);
+    color: var(--textcollight);
     padding: 10px;
     border: none;
     border-radius: 5px;
@@ -47,7 +58,7 @@ body {
     transition: background-color 0.3s ease;
 }
 .button:hover {
-    background-color: #176B87;
+    background-color: var(--col4);
 }
 
 #input-container {
@@ -56,20 +67,20 @@ body {
 }
 
 .input {
-    background-color: #86B6F6;
+    background-color: var(--col3);
     width: 100%;
     margin: 5px;
-    color: #fff;
+    color: var(--textcollight);
     padding: 10px;
     border-radius: 5px;
     border: none;
     transition: background-color 0.3s ease;
 }
 .input:hover {
-    background-color: #176B87;
+    background-color: var(--col4);
 }
 .input::placeholder {
-    color: #fff;
+    color: var(--textcollight);
 }
 
 .checkbox-container {
@@ -95,7 +106,7 @@ body {
 }
 
 .square:hover {
-    background-color: #de8e4d;
+    background-color: var(--squarehovercol);
 }
 
 .square img {
@@ -105,11 +116,15 @@ body {
 }
 
 .white {
-    background-color: #f0d9b5;
+    background-color: var(--col1);
 }
 
-.black{
-    background-color: #b58863;
+.black {
+    background-color: var(--col3);
+}
+
+.highLight {
+    background-color: var(--colhighlight);
 }
 
 @media (min-width: 840px) {
