@@ -697,6 +697,49 @@ class board {
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
     };
 
+    getFen() {
+        let fen = "";
+        for (let row = 0; row < 8; row++) {
+            let space = 0;
+            for (let column = 0; column < 8; column++) {
+                const piece = this.board[row][column];
+                if (piece == "--") {
+                    space++;
+                } else {
+                    let number = "";
+                    if (space > 0) {
+                        number = space.toString();
+                        space = 0;
+                    } ;
+                    const nextElement = number + (piece[0] == "w" ? piece[1] : piece[1].toLowerCase());
+                    fen = fen + nextElement;
+                };
+                if (space > 0 && column == 7) {
+                    fen = fen + space.toString();
+                };
+            };
+            fen = fen + (row < 7 ? "/" : "");
+        };
+
+        fen = fen + " " + (this.whiteToMove ? "w" : "b");
+        fen = fen + " " + (this.whiteCanCastle[0] ? "K" : "");
+        fen = fen + (this.whiteCanCastle[1] ? "Q" : "");
+        fen = fen + (this.blackCanCastle[0] ? "k" : "");
+        fen = fen + (this.blackCanCastle[1] ? "q" : "");
+
+        if (this.enPassant.length > 0 && this.whiteToMove) {
+            fen = fen + " " + boardPositions[this.enPassant[0]] + (8 - (this.enPassant[1] - 1));
+        } else if (this.enPassant.length > 0 && !this.whiteToMove) {
+            fen = fen + " " + (boardPositions[this.enPassant[0]] + (this.enPassant[1] - 1));
+        } else {
+            fen = fen + " -";
+        };
+
+        fen = fen + " - -";
+
+        return fen;
+    };
+
     inCheck() {
         return this.currentCheckingPieces.length > 0;
     };
