@@ -1,6 +1,7 @@
 :root {
     --col1: #EEF5FF;
     --col2: #B4D4FF;
+    --col2: #5677a2;
     --col3: #86B6F6;
     --col4: #176B87;
     --colhighlight: #139ee3;
@@ -8,6 +9,7 @@
     --textcollight: #fff;
     --squarehovercol: #146ab5;
     --colpossiblemovehighlight: rgba(40, 177, 218, 0.5);
+    --boardWidth: calc(100vw - 60px);
 }
 
 body {
@@ -15,12 +17,13 @@ body {
 }
 
 #gameboard {
-    width: calc(100vw - 40px);
-    height: calc(100vw - 40px);
+    width: var(--boardWidth);
+    height: var(--boardWidth);
     display: flex;
     flex-wrap: wrap;
     flex-shrink: 0;
     margin: 20px;
+    border: 5px solid var(--col2);
 }
 
 #main-container {
@@ -60,6 +63,11 @@ body {
 }
 .button:hover {
     background-color: var(--col4);
+}
+
+#move-log {
+    height: 380px;
+    padding: 10px;
 }
 
 #input-container {
@@ -162,14 +170,22 @@ body {
     }
 }
 
-@media (min-width: 1170px) {
+@media (min-width: 1255px) {
     #main-container {
         flex-direction: row;
     }
 
+    #gameboard {
+        margin-right: 0px;
+    }
+
     #sidepanel {
-        width: 200px;
-        height: 340px;
-        margin-left: 10px;
+        width: 400px;
+        height: 800px;
+        margin-left: 0px;
+        border: 5px solid var(--col2);
+        border-left: 0px;
+        border-radius: 0px;
+        padding: 0px;
     }
 }

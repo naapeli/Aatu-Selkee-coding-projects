@@ -11,6 +11,7 @@ class board {
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
         ];
         this.boardUtility = new boardUtils();
+        this.ply = 0;
         this.whiteToMove = true
         this.blackKingPosition = [4, 0];
         this.whiteKingPosition = [4, 7];
@@ -49,6 +50,7 @@ class board {
             let [i, j] = move.startPos;
             let movingPiece = move.movingPiece;
             let [iNew, jNew] = move.endPos;
+            this.ply++;
             this.moveLog.push([move, this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
             if (movingPiece[1] == "K") {
                 switch(movingPiece[0]) {
@@ -147,6 +149,7 @@ class board {
             this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
             this.whiteToMove = !this.whiteToMove
             let squaresToBeUpdated = [];
+            this.ply--;
             let [move, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
             this.board[move.startPos[1]][move.startPos[0]] = move.movingPiece;
             this.board[move.endPos[1]][move.endPos[0]] = move.takenPiece;
@@ -1179,5 +1182,9 @@ class Move {
 
     isPieceCapture() {
         return pieces.has(this.takenPiece[1]);
+    };
+
+    convertToString() {
+        return boardPositions[this.startPos[0]] + (8 - this.startPos[1]) + boardPositions[this.endPos[0]] + (8 - this.endPos[1]);
     };
 };

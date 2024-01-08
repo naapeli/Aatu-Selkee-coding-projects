@@ -7,6 +7,7 @@ const updateButton = document.querySelector("#update-button");
 const engineCheckBox = document.querySelector("#engine-input");
 const engineThinkTimeSlider = document.querySelector("#think-time-slider");
 const engineThinkTime = document.querySelector("#think-time");
+const moveLog = document.querySelector("#move-log");
 engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
@@ -67,6 +68,8 @@ function startGame() {
         let squaresToBeUpdated = currentBoard.undoMove();
         if (squaresToBeUpdated.length == 0) {
             console.log("No moves in the movelog!")
+        } else {
+            removeMoveFromMoveLog();
         };
         updateSquares(squaresToBeUpdated, []);
     });
@@ -136,12 +139,16 @@ async function dropPiece(event) {
 
             if (playerMoveMade) {
                 removeTargetHighlights();
+                addMoveToMoveLog(currentMove);
             };
                 
             if (playAgainstEngine && playerMoveMade) {
                 window.setTimeout(() => {
                     const engineMove = gameEngine.iterativeSearch();
-                    makeMove(engineMove);
+                    const engineMoveMade = makeMove(engineMove);
+                    if (engineMoveMade) {
+                        addMoveToMoveLog(engineMove);
+                    };
                 }, 1);
             };
         };
@@ -156,12 +163,16 @@ async function dropPiece(event) {
 
         if (playerMoveMade) {
             removeTargetHighlights();
+            addMoveToMoveLog(currentMove);
         };
             
         if (playAgainstEngine && playerMoveMade) {
             window.setTimeout(() => {
                 const engineMove = gameEngine.iterativeSearch();
-                makeMove(engineMove);
+                const engineMoveMade = makeMove(engineMove);
+                if (engineMoveMade) {
+                    addMoveToMoveLog(engineMove);
+                };
             }, 1);
         };
     };
@@ -218,6 +229,7 @@ async function clickPiece(event) {
                 if (playerMoveMade) {
                     selectedSquare = [];
                     removeTargetHighlights();
+                    addMoveToMoveLog(currentMove);
                 } else {
                     const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
                     if (moves.length > 0) {
@@ -230,7 +242,10 @@ async function clickPiece(event) {
                 if (playAgainstEngine && playerMoveMade) {
                     window.setTimeout(() => {
                         const engineMove = gameEngine.iterativeSearch();
-                        makeMove(engineMove);
+                        const engineMoveMade = makeMove(engineMove);
+                        if (engineMoveMade) {
+                            addMoveToMoveLog(engineMove);
+                        };
                     }, 1);
                 };
             };
@@ -245,6 +260,7 @@ async function clickPiece(event) {
             if (playerMoveMade) {
                 selectedSquare = [];
                 removeTargetHighlights();
+                addMoveToMoveLog(currentMove);
             } else {
                 const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
                 if (moves.length > 0) {
@@ -257,7 +273,10 @@ async function clickPiece(event) {
             if (playAgainstEngine && playerMoveMade) {
                 window.setTimeout(() => {
                     const engineMove = gameEngine.iterativeSearch();
-                    makeMove(engineMove);
+                    const engineMoveMade = makeMove(engineMove);
+                    if (engineMoveMade) {
+                        addMoveToMoveLog(engineMove);
+                    };
                 }, 1);
             };
         };
@@ -314,6 +333,21 @@ function addTargetHighlight(moves) {
         possibleMoveSquare.append(highLight);
         possibleMoveSquareHighlight.push([possibleMoveSquare, highLight]);
     });
+};
+
+function addMoveToMoveLog(playedMove) {
+    const text = moveLog.textContent;
+    const prefix = !currentBoard.whiteToMove ? Math.ceil(currentBoard.ply / 2) + ". ": "";
+    const newMoveText = prefix + playedMove.convertToString();
+    const newText = text + " " + newMoveText;
+    moveLog.textContent = newText;
+};
+
+function removeMoveFromMoveLog() {
+    const text = moveLog.textContent;
+    const removeLength = !currentBoard.whiteToMove ? 5 : 8;
+    const newText = text.substring(0, text.length - removeLength);
+    moveLog.textContent = newText;
 };
 
 function playSound(isCapture) {
