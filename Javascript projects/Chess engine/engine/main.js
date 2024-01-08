@@ -155,7 +155,6 @@ async function dropPiece(event) {
         const playerMoveMade = makeMove(currentMove);
 
         if (playerMoveMade) {
-            console.log(possibleMoveSquareHighlight)
             removeTargetHighlights();
         };
             
@@ -220,10 +219,12 @@ async function clickPiece(event) {
                     selectedSquare = [];
                     removeTargetHighlights();
                 } else {
-                    selectedSquare = newSelectedSquare;
                     const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
-                    removeTargetHighlights();
-                    addTargetHighlight(moves);
+                    if (moves.length > 0) {
+                        selectedSquare = newSelectedSquare;
+                        removeTargetHighlights();
+                        addTargetHighlight(moves);
+                    };
                 };
                     
                 if (playAgainstEngine && playerMoveMade) {
@@ -245,10 +246,12 @@ async function clickPiece(event) {
                 selectedSquare = [];
                 removeTargetHighlights();
             } else {
-                selectedSquare = newSelectedSquare;
                 const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
-                removeTargetHighlights();
-                addTargetHighlight(moves);
+                if (moves.length > 0) {
+                    selectedSquare = newSelectedSquare;
+                    removeTargetHighlights();
+                    addTargetHighlight(moves);
+                };
             };
                 
             if (playAgainstEngine && playerMoveMade) {
