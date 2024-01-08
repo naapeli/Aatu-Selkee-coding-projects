@@ -97,7 +97,7 @@ function dragPiece(event) {
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
     const moves = currentBoard.getPossibleMovesSquare(movingStartSquare);
 
-    removeTargetHighlight(-1);
+    removeTargetHighlights();
     addTargetHighlight(moves);
 };
 
@@ -135,7 +135,7 @@ async function dropPiece(event) {
             const playerMoveMade = makeMove(currentMove);
 
             if (playerMoveMade) {
-                removeTargetHighlight(parentID);
+                removeTargetHighlights();
             };
                 
             if (playAgainstEngine && playerMoveMade) {
@@ -156,7 +156,7 @@ async function dropPiece(event) {
 
         if (playerMoveMade) {
             console.log(possibleMoveSquareHighlight)
-            removeTargetHighlight(parentID);
+            removeTargetHighlights();
         };
             
         if (playAgainstEngine && playerMoveMade) {
@@ -174,6 +174,8 @@ async function clickPiece(event) {
     if (event.target.tagName == "IMG") {
         target = event.target.parentNode;
         targetIsImage = true;
+    } else if (event.target.classList.contains("possible-target")) {
+        target = event.target.parentNode;
     } else {
         target = event.target;
     };
@@ -185,11 +187,11 @@ async function clickPiece(event) {
         };
         selectedSquare = newSelectedSquare;
         const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
-        removeTargetHighlight(-1);
+        removeTargetHighlights();
         addTargetHighlight(moves);
     } else if (squaresEqual(selectedSquare, newSelectedSquare)) {
         selectedSquare = [];
-        removeTargetHighlight(-1);
+        removeTargetHighlights();
     } else {
         const movingStartSquare = selectedSquare;
         const movingStartSquareID = movingStartSquare[1] * 8 + movingStartSquare[0];
@@ -216,11 +218,11 @@ async function clickPiece(event) {
                 const playerMoveMade = makeMove(currentMove);
                 if (playerMoveMade) {
                     selectedSquare = [];
-                    removeTargetHighlight(parentID);
+                    removeTargetHighlights();
                 } else {
                     selectedSquare = newSelectedSquare;
                     const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
-                    removeTargetHighlight(-1);
+                    removeTargetHighlights();
                     addTargetHighlight(moves);
                 };
                     
@@ -241,11 +243,11 @@ async function clickPiece(event) {
             const playerMoveMade = makeMove(currentMove);
             if (playerMoveMade) {
                 selectedSquare = [];
-                removeTargetHighlight(parentID);
+                removeTargetHighlights();
             } else {
                 selectedSquare = newSelectedSquare;
                 const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
-                removeTargetHighlight(-1);
+                removeTargetHighlights();
                 addTargetHighlight(moves);
             };
                 
@@ -289,10 +291,10 @@ function makeMove(move) {
     return moveMade;
 };
 
-function removeTargetHighlight(currentMoveEndPosID) {
+function removeTargetHighlights() {
     possibleMoveSquareHighlight.forEach(element => {
         const [targetSquare, highLight] = element;
-        if (targetSquare.id != currentMoveEndPosID) {
+        if (targetSquare.firstChild == highLight) {
             targetSquare.removeChild(highLight);
         };
     });
