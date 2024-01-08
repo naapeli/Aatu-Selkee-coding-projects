@@ -24,6 +24,7 @@ const moveAudio = new Audio("./sounds/move-self.mp3");
 const captureAudio = new Audio("./sounds/capture.mp3");
 let lastMoveHighlight = [];
 let selectedSquare = [];
+let possibleMoveSquareHighlight = [];
 
 function startGame() {
     currentBoard.board.forEach((row, j) => {
@@ -58,7 +59,7 @@ function startGame() {
                 event.stopPropagation();
                 clickPiece(event);
             });
-            gameBoard.append(square)
+            gameBoard.append(square);
         });
     });
     undoButton.addEventListener("click", () => {
@@ -94,6 +95,10 @@ function dragPiece(event) {
     const movingPieceStartElement = event.target.parentNode;
     let parentID = movingPieceStartElement.id;
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
+    const moves = currentBoard.getPossibleMovesSquare(movingStartSquare);
+
+    removeTargetHighlight(-1);
+    addTargetHighlight(moves);
 };
 
 async function dropPiece(event) {
@@ -102,6 +107,8 @@ async function dropPiece(event) {
     if (event.target.tagName == "IMG") {
         target = event.target.parentNode;
         targetIsImage = true;
+    } else if (event.target.classList.contains("possible-target")) {
+        target = event.target.parentNode;
     } else {
         target = event.target;
     };
@@ -126,6 +133,10 @@ async function dropPiece(event) {
             const promotedPiece = await askForPawnPromotion(playerToMove);
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
             const playerMoveMade = makeMove(currentMove);
+
+            if (playerMoveMade) {
+                removeTargetHighlight(parentID);
+            };
                 
             if (playAgainstEngine && playerMoveMade) {
                 window.setTimeout(() => {
@@ -142,6 +153,11 @@ async function dropPiece(event) {
     if (!isPromotion) {
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
         const playerMoveMade = makeMove(currentMove);
+
+        if (playerMoveMade) {
+            console.log(possibleMoveSquareHighlight)
+            removeTargetHighlight(parentID);
+        };
             
         if (playAgainstEngine && playerMoveMade) {
             window.setTimeout(() => {
@@ -168,8 +184,12 @@ async function clickPiece(event) {
             return;
         };
         selectedSquare = newSelectedSquare;
+        const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+        removeTargetHighlight(-1);
+        addTargetHighlight(moves);
     } else if (squaresEqual(selectedSquare, newSelectedSquare)) {
         selectedSquare = [];
+        removeTargetHighlight(-1);
     } else {
         const movingStartSquare = selectedSquare;
         const movingStartSquareID = movingStartSquare[1] * 8 + movingStartSquare[0];
@@ -196,8 +216,12 @@ async function clickPiece(event) {
                 const playerMoveMade = makeMove(currentMove);
                 if (playerMoveMade) {
                     selectedSquare = [];
+                    removeTargetHighlight(parentID);
                 } else {
                     selectedSquare = newSelectedSquare;
+                    const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                    removeTargetHighlight(-1);
+                    addTargetHighlight(moves);
                 };
                     
                 if (playAgainstEngine && playerMoveMade) {
@@ -217,8 +241,12 @@ async function clickPiece(event) {
             const playerMoveMade = makeMove(currentMove);
             if (playerMoveMade) {
                 selectedSquare = [];
+                removeTargetHighlight(parentID);
             } else {
                 selectedSquare = newSelectedSquare;
+                const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                removeTargetHighlight(-1);
+                addTargetHighlight(moves);
             };
                 
             if (playAgainstEngine && playerMoveMade) {
@@ -259,6 +287,28 @@ function makeMove(move) {
         };
     };
     return moveMade;
+};
+
+function removeTargetHighlight(currentMoveEndPosID) {
+    possibleMoveSquareHighlight.forEach(element => {
+        const [targetSquare, highLight] = element;
+        if (targetSquare.id != currentMoveEndPosID) {
+            targetSquare.removeChild(highLight);
+        };
+    });
+    possibleMoveSquareHighlight = [];
+};
+
+function addTargetHighlight(moves) {
+    moves.forEach(move => {
+        const endPos = move.endPos;
+        const endID = endPos[1] * 8 + endPos[0];
+        const possibleMoveSquare = document.getElementById(endID);
+        const highLight = document.createElement("div");
+        highLight.classList.add("possible-target");
+        possibleMoveSquare.append(highLight);
+        possibleMoveSquareHighlight.push([possibleMoveSquare, highLight]);
+    });
 };
 
 function playSound(isCapture) {

@@ -7,6 +7,7 @@
     --textcoldark: #333;
     --textcollight: #fff;
     --squarehovercol: #146ab5;
+    --colpossiblemovehighlight: rgba(40, 177, 218, 0.5);
 }
 
 body {
@@ -115,6 +116,9 @@ body {
 .square {
     height: 12.5%;
     width: 12.5%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .square:hover {
@@ -137,6 +141,14 @@ body {
 
 .highLight {
     background-color: var(--colhighlight);
+}
+
+.possible-target {
+    background-color: var(--colpossiblemovehighlight);
+    width: 25%;
+    height: 25%;
+    border-radius: 50%;
+    position: relative;
 }
 
 @media (min-width: 840px) {

@@ -306,44 +306,37 @@ class board {
     };
 
     getPossibleMoves() {
-        // maybe add variables for all piece positions so that do not need to loop over whole board???
         let moves = [];
-        let color = this.whiteToMove ? "w" : "b";
-        let oppositeColor = this.whiteToMove ? "b" : "w";
         for (var j = 0; j < 8; j++) {
             for (var i = 0; i < 8; i++) {
-                var currentPiece = this.board[j][i];
-                if (currentPiece[0] == color) {
-                    switch(currentPiece[1]) {
-                        case "P":
-                            let newPawnMoves = this.getPawnMoves([i, j], color, oppositeColor);
-                            moves = moves.concat(newPawnMoves);
-                            break;
-                        case "N":
-                            let newKnightMoves = this.getKnightMoves([i, j], color);
-                            moves = moves.concat(newKnightMoves);
-                            break;
-                        case "B":
-                            let newBishopMoves = this.getBishopMoves([i, j], oppositeColor);
-                            moves = moves.concat(newBishopMoves);
-                            break;
-                        case "R":
-                            let newRookMoves = this.getRookMoves([i, j], oppositeColor);
-                            moves = moves.concat(newRookMoves);
-                            break;
-                        case "Q":
-                            let newQueenMoves = this.getQueenMoves([i, j], oppositeColor);
-                            moves = moves.concat(newQueenMoves);
-                            break;
-                        case "K":
-                            let newKingMoves = this.getKingMoves([i, j], color);
-                            moves = moves.concat(newKingMoves);
-                            break;
-                    };
-                };
+                moves = moves.concat(this.getPossibleMovesSquare([i, j]));
             };
         };
-        return moves
+        return moves;
+    };
+
+    getPossibleMovesSquare(pos) {
+        const [i, j] = pos;
+        var currentPiece = this.board[j][i];
+        let color = this.whiteToMove ? "w" : "b";
+        let oppositeColor = this.whiteToMove ? "b" : "w";
+        if (currentPiece[0] == color) {
+            switch(currentPiece[1]) {
+                case "P":
+                    return this.getPawnMoves(pos, color, oppositeColor);
+                case "N":
+                    return this.getKnightMoves(pos, color);
+                case "B":
+                    return this.getBishopMoves(pos, oppositeColor);
+                case "R":
+                    return this.getRookMoves(pos, oppositeColor);
+                case "Q":
+                    return this.getQueenMoves(pos, oppositeColor);
+                case "K":
+                    return this.getKingMoves(pos, color);
+            };
+        };
+        return [];
     };
 
     getPawnMoves(pieceLocation, color, oppositeColor) {
