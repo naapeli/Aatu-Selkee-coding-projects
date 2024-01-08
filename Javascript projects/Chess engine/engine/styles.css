@@ -1,5 +1,8 @@
 :root {
-    --col1: #EEF5FF;
+    --bg1: #EEF5FF;
+    --bg2: #d3e3f8;
+    --bg3: #c4ddff;
+    --bg4: #aed0ff;
     --col2: #B4D4FF;
     --col2: #5677a2;
     --col3: #86B6F6;
@@ -38,8 +41,7 @@ body {
     font-family: Arial, sans-serif;
     border: 30px solid var(--col2);
     border-radius: 40px;
-    padding: 20px;
-    background-color: var(--col1); 
+    background-color: var(--bg1); 
     margin: 20px;
     color: var(--textcoldark);
     text-align: center;
@@ -47,7 +49,8 @@ body {
 
 #button-container {
     display: flex;
-    margin: 10px;
+    padding: 10px;
+    background-color: var(--bg2);
 }
 
 .button {
@@ -67,13 +70,17 @@ body {
 
 #move-log {
     padding: 10px;
+    background-color: var(--bg2);
+}
+#move-log-content {
     text-align: left;
 }
 
 #fen-data {
-    margin: 10px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
+    background-color: var(--bg3);
 }
 #current-fen-header {
     margin-left: 5px;
@@ -89,7 +96,8 @@ body {
 #input-container {
     display: flex;
     flex-direction: column;
-    margin: 10px;
+    padding: 10px;
+    background-color: var(--bg3);
 }
 
 .input {
@@ -109,10 +117,17 @@ body {
     color: var(--textcollight);
 }
 
+#engine-header {
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
 #slider-container {
     display: flex;
     flex-direction: column;
-    margin: 10px;
+    padding: 10px;
+    background-color: var(--bg4);
 }
 #think-time-slider {
     width: 100%;
@@ -120,8 +135,11 @@ body {
     margin-right: 5px;
 }
 
-.checkbox-container {
-    padding-top: 10px;
+#checkbox-container {
+    padding-top: 0px;
+    padding-bottom: 3px;
+    background-color: var(--bg4);
+    border-radius: 0px 0px 5px 5px;
 }
 
 .pawn-promotion-container {
@@ -152,11 +170,12 @@ body {
 .square img {
     position: relative;
     width: 100%;
-    height: 100%
+    height: 100%;
+    z-index: 1;
 }
 
 .white {
-    background-color: var(--col1);
+    background-color: var(--bg1);
 }
 
 .black {
@@ -175,14 +194,23 @@ body {
     position: relative;
 }
 
+.possible-capture {
+    border: 10px solid var(--colpossiblemovehighlight);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 0;
+}
+
 @media (min-width: 850px) {
     #gameboard {
         width: 800px;
         height: 800px;
     }
     #sidepanel {
-        width: 700px;
-        height: 500px;
+        width: 750px;
+        height: 592px;
     }
 }
 
@@ -207,5 +235,9 @@ body {
 
     #move-log {
         height: 260px;
+    }
+
+    #checkbox-container {
+        border-radius: 0px;
     }
 }

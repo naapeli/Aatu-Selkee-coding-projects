@@ -326,9 +326,12 @@ function makeMove(move) {
 function removeTargetHighlights() {
     possibleMoveSquareHighlight.forEach(element => {
         const [targetSquare, highLight] = element;
-        if (targetSquare.firstChild == highLight) {
-            targetSquare.removeChild(highLight);
-        };
+        for (let i = 0; i < targetSquare.children.length; i++) {
+            if (targetSquare.children[i] == highLight) {
+                targetSquare.removeChild(targetSquare.children[i]);
+                break;
+            };
+        }
     });
     possibleMoveSquareHighlight = [];
 };
@@ -340,7 +343,11 @@ function addTargetHighlight(moves) {
             const endID = endPos[1] * 8 + endPos[0];
             const possibleMoveSquare = document.getElementById(endID);
             const highLight = document.createElement("div");
-            highLight.classList.add("possible-target");
+            if (move.isCapture()) {
+                highLight.classList.add("possible-capture");
+            } else {
+                highLight.classList.add("possible-target");
+            };
             possibleMoveSquare.append(highLight);
             possibleMoveSquareHighlight.push([possibleMoveSquare, highLight]);
         };
