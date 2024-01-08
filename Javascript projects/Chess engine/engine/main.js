@@ -8,6 +8,7 @@ const engineCheckBox = document.querySelector("#engine-input");
 const engineThinkTimeSlider = document.querySelector("#think-time-slider");
 const engineThinkTime = document.querySelector("#think-time");
 const moveLog = document.querySelector("#move-log");
+const currentFen = document.querySelector("#current-fen");
 engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
@@ -15,6 +16,7 @@ let movingStartSquare;
 let movingEndSquare;
 
 const currentBoard = new board();
+currentFen.textContent = currentBoard.getFen();
 const gameEngine = new engine(currentBoard);
 const currentHistoryTable = new historyTable();
 const maxKillerMovePly = 64;
@@ -70,6 +72,7 @@ function startGame() {
             console.log("No moves in the movelog!")
         } else {
             removeMoveFromMoveLog();
+            currentFen.textContent = currentBoard.getFen();
         };
         updateSquares(squaresToBeUpdated, []);
     });
@@ -127,8 +130,8 @@ async function dropPiece(event) {
     let playerToMove = currentBoard.whiteToMove ? "w" : "b";
     let promotedPiece = null;
     if (movingPieceIsPawn) {
-        isPromotion = (parentID < 8 || parentID > 55) && (currentBoard.whiteToMove && movingStartSquare[0] == movingEndSquare[0] + 1) ||
-                      (!currentBoard.whiteToMove && movingStartSquare[0] == movingEndSquare[0] - 1);
+        isPromotion = ((parentID < 8 && movingPiece[0] == "w") || (parentID > 55 && movingPiece[0] == "b")) &&
+                      (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
         let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
@@ -217,8 +220,8 @@ async function clickPiece(event) {
         let playerToMove = currentBoard.whiteToMove ? "w" : "b";
         let promotedPiece = null;
         if (movingPieceIsPawn) {
-            isPromotion = (parentID < 8 || parentID > 55) && (currentBoard.whiteToMove && movingStartSquare[0] == movingEndSquare[0] + 1) ||
-                          (!currentBoard.whiteToMove && movingStartSquare[0] == movingEndSquare[0] - 1);
+            isPromotion = ((parentID < 8 && movingPiece[0] == "w") || (parentID > 55 && movingPiece[0] == "b")) &&
+                          (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
             let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
             let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
             isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
@@ -236,6 +239,9 @@ async function clickPiece(event) {
                         selectedSquare = newSelectedSquare;
                         removeTargetHighlights();
                         addTargetHighlight(moves);
+                    } else {
+                        selectedSquare = [];
+                        removeTargetHighlights();
                     };
                 };
                     
@@ -267,6 +273,9 @@ async function clickPiece(event) {
                     selectedSquare = newSelectedSquare;
                     removeTargetHighlights();
                     addTargetHighlight(moves);
+                } else {
+                    selectedSquare = [];
+                    removeTargetHighlights();
                 };
             };
                 
@@ -297,6 +306,7 @@ function makeMove(move) {
         playSound(move.isCapture());
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
+        currentFen.textContent = currentBoard.getFen();
 
         if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
             repetitionTable[currentBoard.zobristHash] += 1
@@ -325,13 +335,16 @@ function removeTargetHighlights() {
 
 function addTargetHighlight(moves) {
     moves.forEach(move => {
-        const endPos = move.endPos;
-        const endID = endPos[1] * 8 + endPos[0];
-        const possibleMoveSquare = document.getElementById(endID);
-        const highLight = document.createElement("div");
-        highLight.classList.add("possible-target");
-        possibleMoveSquare.append(highLight);
-        possibleMoveSquareHighlight.push([possibleMoveSquare, highLight]);
+        if (!move.promotion || move.promotedPiece[1] == "Q") {
+            const endPos = move.endPos;
+            const endID = endPos[1] * 8 + endPos[0];
+            const possibleMoveSquare = document.getElementById(endID);
+            const highLight = document.createElement("div");
+            highLight.classList.add("possible-target");
+            possibleMoveSquare.append(highLight);
+            possibleMoveSquareHighlight.push([possibleMoveSquare, highLight]);
+        };
+        
     });
 };
 
