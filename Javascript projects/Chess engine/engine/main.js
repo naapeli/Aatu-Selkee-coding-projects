@@ -7,7 +7,8 @@ const updateButton = document.querySelector("#update-button");
 const engineCheckBox = document.querySelector("#engine-input");
 const engineThinkTimeSlider = document.querySelector("#think-time-slider");
 const engineThinkTime = document.querySelector("#think-time");
-const moveLog = document.querySelector("#move-log");
+const moveLog = document.querySelector("#move-log-content");
+let fullMoveLogString = "";
 const currentFen = document.querySelector("#current-fen");
 engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
@@ -102,6 +103,7 @@ function dragPiece(event) {
     let parentID = movingPieceStartElement.id;
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
     const moves = currentBoard.getPossibleMovesSquare(movingStartSquare);
+    selectedSquare = movingStartSquare;
 
     removeTargetHighlights();
     addTargetHighlight(moves);
@@ -356,18 +358,34 @@ function addTargetHighlight(moves) {
 };
 
 function addMoveToMoveLog(playedMove) {
-    const text = moveLog.textContent;
     const prefix = !currentBoard.whiteToMove ? Math.ceil(currentBoard.ply / 2) + ". ": "";
     const newMoveText = prefix + playedMove.convertToString();
-    const newText = text + " " + newMoveText;
-    moveLog.textContent = newText;
+    fullMoveLogString = fullMoveLogString + " " + newMoveText;
+    moveLog.textContent = getMoveLogEnd();
 };
 
 function removeMoveFromMoveLog() {
-    const text = moveLog.textContent;
-    const removeLength = !currentBoard.whiteToMove ? 5 : 8;
-    const newText = text.substring(0, text.length - removeLength);
-    moveLog.textContent = newText;
+    const plyDigits = Math.ceil(currentBoard.ply / 2).toString().length;
+    const removeLength = !currentBoard.whiteToMove ? 5 : 7 + plyDigits;
+    fullMoveLogString = fullMoveLogString.substring(0, fullMoveLogString.length - removeLength);
+    moveLog.textContent = getMoveLogEnd();
+};
+
+function getMoveLogEnd() {
+    const moveLogArray = fullMoveLogString.split(" ");
+    let result = "";
+    let i = moveLogArray.length - 1
+    while (i >= 2 && i >= moveLogArray.length - 90) {
+        result = moveLogArray[i] + " " + result;
+        result = moveLogArray[i - 1] + " " + result;
+        result = moveLogArray[i - 2] + " " + result;
+        i -= 3;
+    };
+    if (i % 3 == 2 && i > 0) {
+        result = moveLogArray[i] + " " + result;
+        result = moveLogArray[i - 1] + " " + result;
+    };
+    return result
 };
 
 function playSound(isCapture) {
