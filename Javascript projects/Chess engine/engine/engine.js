@@ -338,7 +338,7 @@ class engine {
         evaluation += 100 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
 
         // calculate pawnshield to discourage pushing pawns in front of the king too far
-        evaluation += 100 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"))
+        evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
 
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
@@ -366,7 +366,7 @@ class engine {
         return ownKingMobilityFactor;
     };
 
-    getKingPawnShieldFactor(owncolor) {
+    getKingPawnShieldFactor(owncolor) { // maybe differentiate between rows?
         const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
         const positionKernel = owncolor == "w" ? [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1]] : [[2, -1], [2, 0], [2, 1], [1, -1], [1, 0], [1, 1]];
         let ownPawnShieldCount = 0;

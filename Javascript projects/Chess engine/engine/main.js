@@ -115,7 +115,7 @@ async function dropPiece(event) {
     if (event.target.tagName == "IMG") {
         target = event.target.parentNode;
         targetIsImage = true;
-    } else if (event.target.classList.contains("possible-target")) {
+    } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
         target = event.target.parentNode;
     } else {
         target = event.target;
@@ -189,7 +189,7 @@ async function clickPiece(event) {
     if (event.target.tagName == "IMG") {
         target = event.target.parentNode;
         targetIsImage = true;
-    } else if (event.target.classList.contains("possible-target")) {
+    } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
         target = event.target.parentNode;
     } else {
         target = event.target;
