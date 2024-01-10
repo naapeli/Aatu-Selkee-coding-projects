@@ -336,8 +336,8 @@ class engine {
         // calculate pawnshield to discourage pushing pawns in front of the king too far
         evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
 
-        evaluation += 50 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
-        console.log(50 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w")))
+        // calculate a penalty for king being far away from safe positions to encourage castling
+        evaluation += 100 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
 
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
