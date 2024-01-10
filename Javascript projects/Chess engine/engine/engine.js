@@ -87,11 +87,13 @@ class engine {
                     this.bestMoveEval = this.bestIterEvaluation;
                     console.log(this.bestMove, this.bestMoveEval);
                     
-                    if (this.bestMoveEval >= -this.CHECKMATE) {
-                        console.log("Found engine checkmate");
+                    if (this.bestMoveEval >= -this.CHECKMATE - 20) {
+                        console.log("Found engine checkmate in " + (-this.bestMoveEval - this.CHECKMATE) + " ply");
+                        console.log(this.bestMoveEval)
                         return this.bestMove;
-                    } else if (this.bestMoveEval <= this.CHECKMATE) {
-                        console.log("Found player checkmate");
+                    } else if (this.bestMoveEval <= this.CHECKMATE + 20) {
+                        console.log("Found player checkmate in " + (this.bestMoveEval - this.CHECKMATE) + " ply");
+                        console.log(this.bestMoveEval)
                         return this.bestMove;
                     };
                     break;
@@ -109,8 +111,6 @@ class engine {
             return;
         };
         
-        const alphaOriginal = alpha;
-
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
@@ -134,7 +134,7 @@ class engine {
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return this.CHECKMATE; // checkmate
+                return this.CHECKMATE + depthFromRoot; // checkmate
             };
             return 0; // stalemate
         };
@@ -158,9 +158,9 @@ class engine {
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot);
-        let positionEvaluation = Number.MIN_SAFE_INTEGER;
         let positionBestMove = moves[0];
         let PVNodeFound = false;
+        let nodeType = this.UPPERBOUND_NODE;
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
@@ -219,56 +219,52 @@ class engine {
             
             this.board.undoMove();
 
-            if (currentEvaluation > positionEvaluation) {
-                positionEvaluation = currentEvaluation;
-                positionBestMove = move;
-            };
-
             if (this.searchCancelled) {
                 // if played the first move from previous iteration or more, store the best move even if the search cancelled,
                 // not to waste the calculation time of the last iteration
-                if (depthFromRoot == 0 && i > 0) {
-                    this.bestIterEvaluation = positionEvaluation;
-                    this.bestIterMove = positionBestMove;
-                    return positionEvaluation;
+                if (depthFromRoot == 0) {
+                    return this.bestIterEvaluation;
                 };
                 return;
             };
 
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
+                // store best move as lower bound
+                if (beta >= this.CHECKMATE + 21 && beta <= -this.CHECKMATE - 21) {
+                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
+                };
+
                 // update killer moves
                 this.storeKillerMoves(positionBestMove, depthFromRoot);
-                break;
+                if (depthFromRoot == 0) {
+                    this.bestIterMove = positionBestMove;
+                    this.bestIterEvaluation = beta;
+                };
+                return beta;
             };
             if (currentEvaluation > alpha) {
-                alpha = positionEvaluation;
+                alpha = currentEvaluation;
+                positionBestMove = move;
                 PVNodeFound = true;
+                nodeType = this.EXACT_NODE;
             };
         };
 
         // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
-        // store the evaluation of the position to the transposition table (don't store checkmates for finishing won endgames)
-        if (positionEvaluation != this.CHECKMATE && positionEvaluation != -this.CHECKMATE) {
-            let nodeType;
-            if (positionEvaluation <= alphaOriginal) {
-                nodeType = this.UPPERBOUND_NODE;
-            } else if (positionEvaluation >= beta) {
-                nodeType = this.LOWERBOUND_NODE;
-            } else {
-                nodeType = this.EXACT_NODE;
-            };
-            this.transpositionTable.storeEvaluation(this.board.zobristHash, positionEvaluation, currentDepth, nodeType, positionBestMove);
+        // store the evaluation of the position to the transposition table (don't store checkmate scores for finding mate plies)
+        if (alpha >= this.CHECKMATE + 21 && alpha <= -this.CHECKMATE - 21) {
+            this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove);
         };
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
-            this.bestIterEvaluation = positionEvaluation;
             this.bestIterMove = positionBestMove;
+            this.bestIterEvaluation = alpha;
         };
-        return positionEvaluation;
+        return alpha;
     };
 
     quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
@@ -340,6 +336,9 @@ class engine {
         // calculate pawnshield to discourage pushing pawns in front of the king too far
         evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
 
+        evaluation += 50 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
+        console.log(50 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w")))
+
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
 
@@ -381,6 +380,14 @@ class engine {
             };
         });
         return Math.sqrt(ownPawnShieldCount / 3)
+    };
+
+    getNotCastlingPenalty(owncolor) {
+        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const targetKingLocations = owncolor == "w" ? [[1, 7], [6, 7]] : [[1, 0], [6, 0]];
+        const minL1NormFromTargets = Math.min(Math.abs(ownKingLocation[0] - targetKingLocations[0][0]) + Math.abs(ownKingLocation[1] - targetKingLocations[0][1]),
+                                     Math.abs(ownKingLocation[0] - targetKingLocations[1][0]) + Math.abs(ownKingLocation[1] - targetKingLocations[1][1]));
+        return Math.sqrt(minL1NormFromTargets);
     };
 
     getKingPositionEndGameFactor(color) {

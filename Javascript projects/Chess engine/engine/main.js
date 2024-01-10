@@ -73,6 +73,7 @@ function startGame() {
             console.log("No moves in the movelog!")
         } else {
             removeMoveFromMoveLog();
+            removeTargetHighlights();
             currentFen.textContent = currentBoard.getFen();
         };
         updateSquares(squaresToBeUpdated, []);
@@ -81,6 +82,7 @@ function startGame() {
         const fenString = positionInput.value;
         try {
             currentBoard.positionFromFen(fenString);
+            currentFen.textContent = currentBoard.getFen();
             gameEngine.transpositionTable.clearTable();
             repetitionTable = {};
             updateAllSquares();

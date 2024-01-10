@@ -1,0 +1,11 @@
+Endgames:
+3k4/3r4/8/8/8/8/8/3K4 w - - engine finally wins this as white!!!
+8/3K4/4P3/8/8/8/6k1/7q w - - engine finally wins this as white!!!
+3K4/4P3/8/8/8/3q4/6k1/8 w - - engine finally wins this as white!!!
+8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -
+
+Tricky positions:
+r3kb1r/p1qb1ppp/4pn2/6N1/1nBQ4/2N1B2P/1PP2PP1/3RR1K1 b - -
+6k1/6p1/8/6KQ/1r6/q2b4/8/8 w - -
+2bk1b1r/2p1p1pp/4pn2/R1N1N3/1p1P4/1P2B3/1PP2PPP/6K1 b - -
+2rk1br1/pbqppp2/p7/2p4p/4P3/1N5p/PPPB1PP1/R3QRK1 w - -
