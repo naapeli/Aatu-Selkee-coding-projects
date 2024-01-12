@@ -19,6 +19,7 @@ class engine {
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
         this.CHECKMATE = -10000000;
+        this.ALPABETA = 100000000;
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -49,8 +50,8 @@ class engine {
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
-        let alpha = Number.MIN_SAFE_INTEGER;
-        let beta = Number.MAX_SAFE_INTEGER;
+        let alpha = -this.ALPABETA;
+        let beta = this.ALPABETA;
         let score;
 
         // clear historytable from previous search
@@ -86,7 +87,6 @@ class engine {
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     console.log(this.bestMove, this.bestMoveEval);
-                    
                     if (this.bestMoveEval >= -this.CHECKMATE - 20) {
                         console.log("Found engine checkmate in " + (-this.bestMoveEval - this.CHECKMATE) + " ply");
                         console.log(this.bestMoveEval)
@@ -139,8 +139,8 @@ class engine {
             return 0; // stalemate
         };
         if (currentDepth <= 0) {
-            // if end of depth, search captures to the end to reduce the horizon effect
-            const evaluation = this.quiescenceSearch(depthFromRoot, Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, colorPerspective);
+            // if end of depth, search captures to the end to reduce the horizon effect 
+            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
             return evaluation;
         };
 
@@ -230,13 +230,14 @@ class engine {
 
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
-                // store best move as lower bound
+                // store best move as lower bound (since exiting search early)
                 if (beta >= this.CHECKMATE + 21 && beta <= -this.CHECKMATE - 21) {
                     this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
                 };
 
                 // update killer moves
                 this.storeKillerMoves(positionBestMove, depthFromRoot);
+                
                 if (depthFromRoot == 0) {
                     this.bestIterMove = positionBestMove;
                     this.bestIterEvaluation = beta;
@@ -268,13 +269,6 @@ class engine {
     };
 
     quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
-        if (this.board.possibleMoves.length === 0) {
-            if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return this.CHECKMATE; // checkmate
-            };
-            return 0; // stalemate
-        };
-
         // check if evaluation of this position causes beta cutoff
         let stand_pat = this.evaluatePosition(colorPerspective);
         if (stand_pat >= beta) {
@@ -339,6 +333,8 @@ class engine {
         // calculate a penalty for king being far away from safe positions to encourage castling
         evaluation += 100 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
 
+        evaluation += 25 * (1 - endGameWeight) * this.getCenterPawnBonus();
+
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
 
@@ -379,7 +375,7 @@ class engine {
                 };
             };
         });
-        return Math.sqrt(ownPawnShieldCount / 3)
+        return Math.sqrt(ownPawnShieldCount / 3);
     };
 
     getNotCastlingPenalty(owncolor) {
@@ -401,6 +397,21 @@ class engine {
             return 5 * enemyDistFromCenter - 10 * L1DistBetweenKings;
         };
         return 0;
+    };
+
+    getCenterPawnBonus() {
+        const centerSquares = [[2, 3], [3, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [5, 4]];
+        let bonus = 0;
+        for (let index = 0; index < centerSquares.length; index++) {
+            const [i, j] = centerSquares[index];
+            const piece = this.board.board[j][i];
+            if (piece == "wP") {
+                bonus++;
+            } else if (piece == "bP") {
+                bonus--;
+            };
+        };
+        return bonus;
     };
 
     getSearchExtension(move) {
