@@ -93,11 +93,13 @@ class engine {
                     this.aspirationWindowFailed = false;
                     console.log(this.bestMove, this.bestMoveEval);
                     if (this.bestMoveEval >= this.CHECKMATE - 20) {
-                        console.log("Found engine checkmate in " + (-this.bestMoveEval + this.CHECKMATE) + " ply");
+                        const matePly = -this.bestMoveEval + this.CHECKMATE;
+                        console.log("Found engine checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
                         console.log(this.bestMoveEval)
                         return this.bestMove;
                     } else if (this.bestMoveEval <= -this.CHECKMATE + 20) {
-                        console.log("Found player checkmate in " + (this.bestMoveEval + this.CHECKMATE) + " ply");
+                        const matePly = this.bestMoveEval + this.CHECKMATE;
+                        console.log("Found player checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
                         console.log(this.bestMoveEval)
                         return this.bestMove;
                     };
@@ -154,7 +156,7 @@ class engine {
         const staticEvaluation = this.evaluatePosition(colorPerspective);
         const isPvNode = beta > alpha + 1;
         if (!this.board.inCheck() && !isPvNode) {
-            // evalution pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
+            // reverse futility pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
             // prune node if we are winning so much that the opponent won't select this line
             if (currentDepth < 3 && this.notCheckMateScore(beta)) {
                 let delta = 2 * pieceValues["P"] * currentDepth;
@@ -162,40 +164,40 @@ class engine {
                     return staticEvaluation - delta;
                 };
             };
+        };
 
-            // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
+        // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
+        if (allowNullMovePruningAndRazoring && !this.board.inCheck()) {
             const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
-            if (allowNullMovePruningAndRazoring) {
-                if (currentDepth >= 3 && movingPiecesRemaining > 1) {
-                    this.board.makeNullMove();
-                    const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
-                    this.board.undoNullMove();
-                    if (val >= beta) {
-                        return beta;
-                    };
+            if (currentDepth >= 3 && movingPiecesRemaining > 1) {
+                this.board.makeNullMove();
+                const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
+                this.board.undoNullMove();
+                if (val >= beta) {
+                    return beta;
                 };
+            };
 
-                // razoring
-                let nodeValue = staticEvaluation + pieceValues["P"];
-                if (nodeValue < beta) {
-                    if (currentDepth == 1) {
-                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+            // razoring
+            let nodeValue = staticEvaluation + pieceValues["P"];
+            if (nodeValue < beta) {
+                if (currentDepth == 1) {
+                    const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                    return Math.max(newNodeValue, nodeValue);
+                };
+                
+                nodeValue += 2 * pieceValues["P"];
+                if (nodeValue < beta && currentDepth < 4) {
+                    const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                    if (newNodeValue < beta) {
                         return Math.max(newNodeValue, nodeValue);
-                    };
-                    
-                    nodeValue += 2 * pieceValues["P"];
-                    if (nodeValue < beta && currentDepth < 4) {
-                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
-                        if (newNodeValue < beta) {
-                            return Math.max(newNodeValue, nodeValue);
-                        };
                     };
                 };
             };
         };
 
         
-        // futility pruning condition
+        // extended futility pruning condition
         const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha;
         
         // search through all moves and select the best one
@@ -208,7 +210,7 @@ class engine {
             const move = moves[i];
             this.board.makeMove(move);
 
-            // futility pruning
+            // extended futility pruning
             if (futilityPruning && PVNodeFound && !move.isCapture() && !move.promotion && !this.board.inCheck()) {
                 this.board.undoMove();
                 continue;
