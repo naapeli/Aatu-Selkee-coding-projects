@@ -7,6 +7,7 @@ class engine {
 
         this.searchStartTime;
         this.searchCancelled = false;
+        this.aspirationWindowFailed = false;
         this.bestMove;
         this.bestMoveEval;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
@@ -74,9 +75,10 @@ class engine {
                 // search the current position not allowing null-move-pruning at the first node
                 score = this.search(searchDepth, 0, alpha, beta, perspective, false);
                 if (this.searchCancelled) { // if search cancelled, store bestIterMove as bestMove if evaluation is inside alpha and beta
-                    if (alpha < score && score < beta) {
+                    if (!this.aspirationWindowFailed && alpha < score && score < beta) {
                         this.bestMove = this.bestIterMove;
                         this.bestMoveEval = this.bestIterEvaluation;
+                        console.log("Evaluation of last iteration used")
                     };
                     console.log(this.bestMove, this.bestMoveEval);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / 1000);
@@ -87,6 +89,7 @@ class engine {
                 } else if (alpha < score && score < beta) { // if score was inside alpha and beta
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
+                    this.aspirationWindowFailed = false;
                     console.log(this.bestMove, this.bestMoveEval);
                     if (this.bestMoveEval >= this.CHECKMATE - 20) {
                         console.log("Found engine checkmate in " + (-this.bestMoveEval + this.CHECKMATE) + " ply");
@@ -102,6 +105,7 @@ class engine {
                 // if we failed to find the score inside alpha and beta continue to the next aspiration window,
                 // else continue to the next iteration
                 console.log("Aspiration window failed!");
+                this.aspirationWindowFailed = true;
             };
         };
     };
@@ -229,29 +233,27 @@ class engine {
             };
 
             // alpha-beta pruning
+            if (currentEvaluation >= beta) {
+                // store best move as lower bound (since exiting search early), (don't store checkmate scores for finding mate plies)
+                if (beta >= -this.CHECKMATE + 21 && beta <= this.CHECKMATE - 21) {
+                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
+                };
+
+                // update killer moves
+                this.storeKillerMoves(positionBestMove, depthFromRoot);
+                
+                if (depthFromRoot == 0) {
+                    this.bestIterMove = positionBestMove;
+                    this.bestIterEvaluation = beta;
+                    return this.bestIterEvaluation;
+                };
+                return beta;
+            };
             if (currentEvaluation > alpha) {
                 alpha = currentEvaluation;
                 positionBestMove = move;
                 PVNodeFound = true;
                 nodeType = this.EXACT_NODE;
-
-                if (currentEvaluation >= beta) {
-                    // store best move as lower bound (since exiting search early), (don't store checkmate scores for finding mate plies)
-                    if (beta >= -this.CHECKMATE + 21 && beta <= this.CHECKMATE - 21) {
-                        this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
-                    };
-    
-                    // update killer moves
-                    this.storeKillerMoves(positionBestMove, depthFromRoot);
-                    
-                    // if original position, evaluation is alpha, else return 
-                    if (depthFromRoot == 0) {
-                        this.bestIterMove = positionBestMove;
-                        this.bestIterEvaluation = alpha;
-                        return alpha;
-                    };
-                    return beta;
-                };
             };
         };
 
