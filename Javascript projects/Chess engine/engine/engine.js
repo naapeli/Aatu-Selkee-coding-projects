@@ -18,7 +18,7 @@ class engine {
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
-        this.CHECKMATE = -10000000;
+        this.CHECKMATE = 10000000;
         this.ALPABETA = 100000000;
     };
 
@@ -87,12 +87,12 @@ class engine {
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     console.log(this.bestMove, this.bestMoveEval);
-                    if (this.bestMoveEval >= -this.CHECKMATE - 20) {
-                        console.log("Found engine checkmate in " + (-this.bestMoveEval - this.CHECKMATE) + " ply");
+                    if (this.bestMoveEval >= this.CHECKMATE - 20) {
+                        console.log("Found engine checkmate in " + (-this.bestMoveEval + this.CHECKMATE) + " ply");
                         console.log(this.bestMoveEval)
                         return this.bestMove;
-                    } else if (this.bestMoveEval <= this.CHECKMATE + 20) {
-                        console.log("Found player checkmate in " + (this.bestMoveEval - this.CHECKMATE) + " ply");
+                    } else if (this.bestMoveEval <= -this.CHECKMATE + 20) {
+                        console.log("Found player checkmate in " + (this.bestMoveEval + this.CHECKMATE) + " ply");
                         console.log(this.bestMoveEval)
                         return this.bestMove;
                     };
@@ -134,7 +134,7 @@ class engine {
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
-                return this.CHECKMATE + depthFromRoot; // checkmate
+                return -this.CHECKMATE + depthFromRoot; // checkmate
             };
             return 0; // stalemate
         };
@@ -146,7 +146,7 @@ class engine {
 
         // null-move pruning (give opponent extra move and search resulting position with reduced depth)
         const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
-        if (currentDepth >= 3 && !this.board.inCheck() && allowNullMovePruning && movingPiecesRemaining > 1) {
+        if (allowNullMovePruning && currentDepth >= 3 && !this.board.inCheck() && movingPiecesRemaining > 1) {
             this.board.makeNullMove();
             const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
             this.board.undoNullMove();
@@ -195,15 +195,14 @@ class engine {
                     // Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
                     // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
                     // with searching the same position without late move reduction and a full window.
-                    let searchAgain = false;
                     if (reduction > 0) {
                         currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
                     } else { // if we do not apply reduction to this move, make sure to do a full search
-                        searchAgain = true;
+                        currentEvaluation = alpha + 1;
                     };
                     
                     // if we got a better evaluation, need to do a full depth search
-                    if (currentEvaluation > alpha || searchAgain) {
+                    if (currentEvaluation > alpha) {
                         // do still the principal variation search (null window)
                         currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
                         // if PV search fails to prove the position is bad, do the full search
@@ -229,26 +228,29 @@ class engine {
             };
 
             // alpha-beta pruning
-            if (currentEvaluation >= beta) {
-                // store best move as lower bound (since exiting search early)
-                if (beta >= this.CHECKMATE + 21 && beta <= -this.CHECKMATE - 21) {
-                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
-                };
-
-                // update killer moves
-                this.storeKillerMoves(positionBestMove, depthFromRoot);
-                
-                if (depthFromRoot == 0) {
-                    this.bestIterMove = positionBestMove;
-                    this.bestIterEvaluation = beta;
-                };
-                return beta;
-            };
             if (currentEvaluation > alpha) {
                 alpha = currentEvaluation;
                 positionBestMove = move;
                 PVNodeFound = true;
                 nodeType = this.EXACT_NODE;
+
+                if (currentEvaluation >= beta) {
+                    // store best move as lower bound (since exiting search early), (don't store checkmate scores for finding mate plies)
+                    if (beta >= -this.CHECKMATE + 21 && beta <= this.CHECKMATE - 21) {
+                        this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
+                    };
+    
+                    // update killer moves
+                    this.storeKillerMoves(positionBestMove, depthFromRoot);
+                    
+                    // if original position, evaluation is alpha, else return 
+                    if (depthFromRoot == 0) {
+                        this.bestIterMove = positionBestMove;
+                        this.bestIterEvaluation = alpha;
+                        return alpha;
+                    };
+                    return beta;
+                };
             };
         };
 
@@ -256,7 +258,7 @@ class engine {
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
         // store the evaluation of the position to the transposition table (don't store checkmate scores for finding mate plies)
-        if (alpha >= this.CHECKMATE + 21 && alpha <= -this.CHECKMATE - 21) {
+        if (alpha >= -this.CHECKMATE + 21 && alpha <= this.CHECKMATE - 21) {
             this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove);
         };
 
@@ -269,14 +271,16 @@ class engine {
     };
 
     quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
+        
         // check if evaluation of this position causes beta cutoff
         let stand_pat = this.evaluatePosition(colorPerspective);
+        
         if (stand_pat >= beta) {
             return beta;
         };
-
+        
         // delta pruning
-        const BIG_DELTA = 337 + 1025; // queen + knight value
+        const BIG_DELTA = 11070; // 10 * (queen + pawn value)
         if ( stand_pat < alpha - BIG_DELTA ) {
             return alpha;
         };
@@ -285,7 +289,6 @@ class engine {
         if (alpha < stand_pat) {
             alpha = stand_pat;
         };
-
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
@@ -307,7 +310,6 @@ class engine {
                 };
             };
         };
-
         return alpha;
     };
 
