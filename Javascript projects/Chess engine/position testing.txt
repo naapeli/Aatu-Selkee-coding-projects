@@ -13,3 +13,4 @@ r3kb1r/p1qb1ppp/4pn2/6N1/1nBQ4/2N1B2P/1PP2PP1/3RR1K1 b - -
 Checkmates:
 https://chess.stackexchange.com/questions/19633/chess-problem-database-with-pgn-or-fen
 2rk1br1/p3pppp/5n2/1pp5/1n2P3/BPQPKP1b/P2NB1Pq/R1R5 b - - mate in 9 ply
+8/1b3r1k/7p/p3Q1rp/1p3p2/3R1P2/qP3K2/4R3 w - - - mate in 10 ply (according to stockfish not my engine)
