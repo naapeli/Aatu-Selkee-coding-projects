@@ -14,6 +14,7 @@ class engine {
         this.moveOrdering = new moveOrderer();
         this.transpositionTable = new transpositionTable();
         this.R = 2; // null move pruning depth reduction constant
+        this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
@@ -280,7 +281,7 @@ class engine {
         };
         
         // delta pruning
-        const BIG_DELTA = 11070; // 10 * (queen + pawn value)
+        const BIG_DELTA = this.materialMultiplier * (1107); // this.materialMultiplier * (queen + pawn value)
         if ( stand_pat < alpha - BIG_DELTA ) {
             return alpha;
         };
@@ -320,7 +321,7 @@ class engine {
         const endGameWeight = this.getEndGameWeight();
 
         // calculate material
-        evaluation += 10 * (this.board.whiteMaterial - this.board.blackMaterial);
+        evaluation += this.materialMultiplier * (this.board.whiteMaterial - this.board.blackMaterial);
 
         // calculate piece placement factor
         evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
