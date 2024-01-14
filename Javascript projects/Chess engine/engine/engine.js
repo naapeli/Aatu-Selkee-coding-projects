@@ -24,7 +24,9 @@ class engine {
         this.LOWERBOUND_NODE = 2;
         this.CHECKMATE = 10000000;
         this.ALPABETA = 100000000;
-        this.futilityMargins = [0, this.materialMultiplier * pieceValues["P"], this.materialMultiplier * pieceValues["B"], this.materialMultiplier * pieceValues["R"]];
+        this.futilityMargins = [0, this.materialMultiplier * pieceValues["P"],
+                                this.materialMultiplier * pieceValues["B"],
+                                this.materialMultiplier * pieceValues["R"]];
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
