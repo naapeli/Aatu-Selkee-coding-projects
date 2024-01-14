@@ -164,7 +164,7 @@ class engine {
         if (!this.board.inCheck() && notPvNode && currentDepth < 3 && this.notCheckMateScore(beta) && this.allowReverseFutilityPruning) {
             // reverse futility pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
             // prune node if we are winning so much that the opponent won't select this line
-            let delta = 5 * pieceValues["P"] * currentDepth;
+            let delta = this.materialMultiplier * pieceValues["P"] * currentDepth;
             if (staticEvaluation - delta >= beta) {
                 return staticEvaluation - delta;
             };
