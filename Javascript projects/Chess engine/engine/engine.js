@@ -153,7 +153,7 @@ class engine {
             // reverse futility pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
             // prune node if we are winning so much that the opponent won't select this line
             if (currentDepth < 3 && this.notCheckMateScore(beta)) {
-                let delta = 2 * pieceValues["P"] * currentDepth;
+                let delta = 5 * pieceValues["P"] * currentDepth;
                 if (staticEvaluation - delta >= beta) {
                     return staticEvaluation - delta;
                 };
@@ -174,17 +174,17 @@ class engine {
 
             // razoring
             let nodeValue = staticEvaluation + pieceValues["P"];
-            if (nodeValue < beta) {
+            if (nodeValue < beta && false) {
                 if (currentDepth == 1) {
                     const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
-                    return Math.max(newNodeValue, nodeValue);
+                    //return Math.max(newNodeValue, nodeValue);
                 };
                 
-                nodeValue += 2 * pieceValues["P"];
+                nodeValue += pieceValues["P"];
                 if (nodeValue < beta && currentDepth < 4) {
                     const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
                     if (newNodeValue < beta) {
-                        return Math.max(newNodeValue, nodeValue);
+                        //return Math.max(newNodeValue, nodeValue);
                     };
                 };
             };
