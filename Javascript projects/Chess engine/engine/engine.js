@@ -522,7 +522,7 @@ class engine {
         return [false];
     };
 
-    isRepetition() {
+    isRepetition() { // add fifty move rule in future
         return repetitionTable[this.board.zobristHash] >= 2;
     };
 
