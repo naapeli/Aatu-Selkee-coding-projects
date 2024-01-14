@@ -114,6 +114,14 @@ class engine {
         if (this.searchCancelled) {
             return;
         };
+
+        // check for repetition
+        if (this.isRepetition()) {
+            if (depthFromRoot == 0) {
+                this.bestIterEvaluation = 0;
+            };
+            return 0;
+        };
         
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
@@ -142,7 +150,6 @@ class engine {
             };
             return 0; // stalemate
         };
-        
         if (currentDepth <= 0) {
             // if end of depth, search captures to the end to reduce the horizon effect 
             const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
@@ -212,53 +219,41 @@ class engine {
             };
 
             // update the amount of times a position has been seen in the search
-            // set the value of the position to zero if we repeat even once
-            let threefoldRepetition = false;
-            if (repetitionTable[this.board.zobristHash] != 0 && repetitionTable[this.board.zobristHash] != undefined) {
-                repetitionTable[this.board.zobristHash] += 1
-                // if threefold repetition found, stop searching this position update it's value to 0
-                if (repetitionTable[this.board.zobristHash] >= 2) {
-                    threefoldRepetition = true;
-                };
-            } else {
-                repetitionTable[this.board.zobristHash] = 1
-            };
+            this.incrementRepetition();
             
             // starts from 0 because of the threefold repetition
-            let currentEvaluation = 0;
-            if (!threefoldRepetition) {
-                // calculate search extension before PV logic
-                const extension = this.getSearchExtension(move);
-                // principal variations search
-                if (!PVNodeFound) { // do a full search for the first move (previous best move)
-                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
-                } else {
-                    // calculate late move reduction after making the wanted move.
-                    const reduction = this.getSearchReduction(extension, move, i, currentDepth);
+            let currentEvaluation;
+            // calculate search extension before PV logic
+            const extension = this.getSearchExtension(move);
+            // principal variations search
+            if (!PVNodeFound) { // do a full search for the first move (previous best move)
+                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
+            } else {
+                // calculate late move reduction after making the wanted move.
+                const reduction = this.getSearchReduction(extension, move, i, currentDepth);
 
-                    // Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
-                    // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
-                    // with searching the same position without late move reduction and a full window.
-                    if (reduction > 0) {
-                        currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
-                    } else { // if we do not apply reduction to this move, make sure to do a full search
-                        currentEvaluation = alpha + 1;
-                    };
-                    
-                    // if we got a better evaluation, need to do a full depth search
-                    if (currentEvaluation > alpha) {
-                        // do still the principal variation search (null window)
-                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
-                        // if PV search fails to prove the position is bad, do the full search
-                        if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
-                            currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
-                        };
+                // Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
+                // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
+                // with searching the same position without late move reduction and a full window.
+                if (reduction > 0) {
+                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
+                } else { // if we do not apply reduction to this move, make sure to do a full search
+                    currentEvaluation = alpha + 1;
+                };
+                
+                // if we got a better evaluation, need to do a full depth search
+                if (currentEvaluation > alpha) {
+                    // do still the principal variation search (null window)
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
+                    // if PV search fails to prove the position is bad, do the full search
+                    if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
+                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
                     };
                 };
             };
             
             // update the amount of times a position has been seen in the search
-            repetitionTable[this.board.zobristHash] -= 1;
+            this.decrementRepetition();
             
             this.board.undoMove();
 
