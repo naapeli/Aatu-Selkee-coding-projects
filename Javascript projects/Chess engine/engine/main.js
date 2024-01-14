@@ -9,6 +9,7 @@ const engineThinkTimeSlider = document.querySelector("#think-time-slider");
 const engineThinkTime = document.querySelector("#think-time");
 const moveLog = document.querySelector("#move-log-content");
 let fullMoveLogString = "";
+const moveLogArray = [];
 const currentFen = document.querySelector("#current-fen");
 engineCheckBox.checked = true;
 let playAgainstEngine = engineCheckBox.checked;
@@ -26,9 +27,12 @@ let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
 const moveAudio = new Audio("./sounds/move-self.mp3");
 const captureAudio = new Audio("./sounds/capture.mp3");
+const checkAudio = new Audio("./sounds/move-check.mp3");
+const promotionAudio = new Audio("./sounds/promote.mp3");
 let lastMoveHighlight = [];
 let selectedSquare = [];
 let possibleMoveSquareHighlight = [];
+const openingBook = JSON.parse(JSON.stringify(book));
 
 function startGame() {
     currentBoard.board.forEach((row, j) => {
@@ -85,6 +89,7 @@ function startGame() {
             currentFen.textContent = currentBoard.getFen();
             gameEngine.transpositionTable.clearTable();
             repetitionTable = {};
+            moveLogArray = [];
             updateAllSquares();
         } catch (error) {
             console.log("Remember to input a valid fen string!");
@@ -151,7 +156,7 @@ async function dropPiece(event) {
                 
             if (playAgainstEngine && playerMoveMade) {
                 window.setTimeout(() => {
-                    const engineMove = gameEngine.iterativeSearch();
+                    const engineMove = gameEngine.getBestMove();
                     const engineMoveMade = makeMove(engineMove);
                     if (engineMoveMade) {
                         addMoveToMoveLog(engineMove);
@@ -175,7 +180,7 @@ async function dropPiece(event) {
             
         if (playAgainstEngine && playerMoveMade) {
             window.setTimeout(() => {
-                const engineMove = gameEngine.iterativeSearch();
+                const engineMove = gameEngine.getBestMove();
                 const engineMoveMade = makeMove(engineMove);
                 if (engineMoveMade) {
                     addMoveToMoveLog(engineMove);
@@ -307,7 +312,7 @@ function squaresEqual(arr1, arr2) {
 function makeMove(move) {
     const [moveMade, squaresToBeUpdated] = currentBoard.makeMove(move);
     if (moveMade) {
-        playSound(move.isCapture());
+        playSound(move.isCapture(), currentBoard.inCheck(), move.promotion);
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
         currentFen.textContent = currentBoard.getFen();
@@ -364,6 +369,7 @@ function addMoveToMoveLog(playedMove) {
     const newMoveText = prefix + playedMove.convertToString();
     fullMoveLogString = fullMoveLogString + " " + newMoveText;
     moveLog.textContent = getMoveLogEnd();
+    moveLogArray.push(playedMove.convertToString());
 };
 
 function removeMoveFromMoveLog() {
@@ -371,6 +377,7 @@ function removeMoveFromMoveLog() {
     const removeLength = !currentBoard.whiteToMove ? 5 : 7 + plyDigits;
     fullMoveLogString = fullMoveLogString.substring(0, fullMoveLogString.length - removeLength);
     moveLog.textContent = getMoveLogEnd();
+    moveLogArray.pop();
 };
 
 function getMoveLogEnd() {
@@ -390,8 +397,14 @@ function getMoveLogEnd() {
     return result
 };
 
-function playSound(isCapture) {
-    if (isCapture) {
+function playSound(isCapture, isCheck, isPromotion) {
+    if (isCheck) {
+        checkAudio.currentTime = 0;
+        checkAudio.play();
+    } else if (isPromotion) {
+        promotionAudio.currentTime = 0;
+        promotionAudio.play();
+    } else if (isCapture) {
         captureAudio.currentTime = 0;
         captureAudio.play();
     } else {

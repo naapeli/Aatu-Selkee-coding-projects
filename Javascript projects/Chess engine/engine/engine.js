@@ -27,26 +27,20 @@ class engine {
 
     // return the best move from current position from the opening book or iterative search (unfinished)
     getBestMove() {
-        /*
-        if (this.board.moveLog.length < 14) {
-            const result = await fetch(BASE_URL + "move",
-            {
-                method: "GET"
-            });
-            if (result.ok) {
-                const data = await result.json();
-                const move = data.move;
-                console.log(move)
-                return 
-            }
-            return
-        };*/
-
+        let gotMove = false;
+        let move;
+        if (moveLogArray.length < 30) {
+            const startTime = performance.now();
+            [gotMove, move] = this.getBookMove();
+            if (gotMove) {
+                console.log("Evaluation: book move");
+                console.log(move);
+                console.log("Time taken: " + (performance.now() - startTime));
+                return move;
+            };
+        };
         // if position not in the opening book, return the move from iterative search
-        return new Promise((resolve, reject) => {
-            const bestMove = this.iterativeSearch()
-            resolve(bestMove);
-        });
+        return this.iterativeSearch();
     };
 
     iterativeSearch() {
@@ -499,6 +493,45 @@ class engine {
 
     notCheckMateScore(evaluation) {
         return evaluation >= -this.CHECKMATE + 21 && evaluation <= this.CHECKMATE - 21;
+    };
+
+    // returns either [true, move] or [false]
+    getBookMove() {
+        const lines = [];
+        const currentLine = moveLogArray.join(" ");
+
+        if (moveLogArray.length == 0) {
+            // select first move
+            let randomLine = openingBook[Math.floor(Math.random() * openingBook.length)];
+            let firstMove = randomLine.split(" ")[0];
+            return this.getMoveFromString(firstMove);
+        } else {
+            // go through all possible lines
+            for (let line = 0; line < openingBook.length; line++) {
+                if (openingBook[line].includes(currentLine) && openingBook[line].split(currentLine)[0] == "") {
+                    lines.push(openingBook[line]);
+                };
+            };
+        };
+        
+        // select one line from all possible lines
+        if (lines.length) {
+            const randomLine = lines[Math.floor(Math.random() * lines.length)];
+            const bookMove = randomLine.split(currentLine)[1].split(" ")[1];
+            return this.getMoveFromString(bookMove);
+        }
+        
+        return [false];
+    };
+
+    getMoveFromString(move) {
+        for (let i = 0; i < this.board.possibleMoves.length; i++) {
+            const currentMove = this.board.possibleMoves[i];
+            if (currentMove.convertToString() == move) {
+                    return [true, currentMove];
+                };
+        };
+        return [false];
     };
 
     getNumberOfMoves(currentDepth) {
