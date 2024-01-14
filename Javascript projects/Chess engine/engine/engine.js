@@ -80,7 +80,7 @@ class engine {
                         console.log("Evaluation of last iteration used")
                     };
                     console.log(this.bestMove, this.bestMoveEval);
-                    console.log("Evaluation: " + perspective * this.bestMoveEval / 1000);
+                    console.log("Evaluation: " + perspective * this.bestMoveEval / (100 * this.materialMultiplier));
                     console.log("Depth: " + searchDepth);
                     console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
                     console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp / parseInt(this.transpositionTable.size) * 100 + " %");
