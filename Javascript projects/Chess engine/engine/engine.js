@@ -17,12 +17,14 @@ class engine {
         this.R = 2; // null move pruning depth reduction constant
         this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
+        this.allowRazoring = true;
+        this.allowReverseFutilityPruning = true;
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
         this.CHECKMATE = 10000000;
         this.ALPABETA = 100000000;
-        this.futilityMargins = [0, pieceValues["P"], pieceValues["B"], pieceValues["R"]];
+        this.futilityMargins = [0, this.materialMultiplier * pieceValues["P"], this.materialMultiplier * pieceValues["B"], this.materialMultiplier * pieceValues["R"]];
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -63,7 +65,7 @@ class engine {
             console.log("Iteration: " + searchDepth);
             for (let i = 0; i < aspirationWindows.length; i++) {
                 if (score != undefined) {
-                    const window = aspirationWindows[i];
+                    const window = this.materialMultiplier * aspirationWindows[i];
                     alpha = score - window;
                     beta = score + window;
                 };
@@ -140,6 +142,7 @@ class engine {
             };
             return 0; // stalemate
         };
+        
         if (currentDepth <= 0) {
             // if end of depth, search captures to the end to reduce the horizon effect 
             const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
@@ -148,22 +151,20 @@ class engine {
 
         // static evaluation for pruning purposes
         const staticEvaluation = this.evaluatePosition(colorPerspective);
-        const isPvNode = beta > alpha + 1;
-        if (!this.board.inCheck() && !isPvNode) {
+        const notPvNode = beta == alpha + 1;
+        if (!this.board.inCheck() && notPvNode && currentDepth < 3 && this.notCheckMateScore(beta) && this.allowReverseFutilityPruning) {
             // reverse futility pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
             // prune node if we are winning so much that the opponent won't select this line
-            if (currentDepth < 3 && this.notCheckMateScore(beta)) {
-                let delta = 5 * pieceValues["P"] * currentDepth;
-                if (staticEvaluation - delta >= beta) {
-                    return staticEvaluation - delta;
-                };
+            let delta = 5 * pieceValues["P"] * currentDepth;
+            if (staticEvaluation - delta >= beta) {
+                return staticEvaluation - delta;
             };
         };
 
         // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
-        if (allowNullMovePruningAndRazoring && !this.board.inCheck()) {
+        if (allowNullMovePruningAndRazoring && !this.board.inCheck() && notPvNode) {
             const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
-            if (currentDepth >= 3 && movingPiecesRemaining > 1) {
+            if (currentDepth >= 3 && movingPiecesRemaining > 1 && this.allowNullMovePruning) {
                 this.board.makeNullMove();
                 const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
                 this.board.undoNullMove();
@@ -173,18 +174,18 @@ class engine {
             };
 
             // razoring
-            let nodeValue = staticEvaluation + pieceValues["P"];
-            if (nodeValue < beta && false) {
+            let nodeValue = staticEvaluation + this.materialMultiplier * pieceValues["P"];
+            if (nodeValue < beta && this.allowRazoring) {
                 if (currentDepth == 1) {
                     const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
-                    //return Math.max(newNodeValue, nodeValue);
+                    return Math.max(newNodeValue, nodeValue);
                 };
                 
-                nodeValue += pieceValues["P"];
+                nodeValue += this.materialMultiplier * pieceValues["P"];
                 if (nodeValue < beta && currentDepth < 4) {
                     const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
                     if (newNodeValue < beta) {
-                        //return Math.max(newNodeValue, nodeValue);
+                        return Math.max(newNodeValue, nodeValue);
                     };
                 };
             };
@@ -230,7 +231,7 @@ class engine {
                 const extension = this.getSearchExtension(move);
                 // principal variations search
                 if (!PVNodeFound) { // do a full search for the first move (previous best move)
-                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
                 } else {
                     // calculate late move reduction after making the wanted move.
                     const reduction = this.getSearchReduction(extension, move, i, currentDepth);
@@ -239,7 +240,7 @@ class engine {
                     // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
                     // with searching the same position without late move reduction and a full window.
                     if (reduction > 0) {
-                        currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
+                        currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
                     } else { // if we do not apply reduction to this move, make sure to do a full search
                         currentEvaluation = alpha + 1;
                     };
@@ -247,10 +248,10 @@ class engine {
                     // if we got a better evaluation, need to do a full depth search
                     if (currentEvaluation > alpha) {
                         // do still the principal variation search (null window)
-                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, this.allowNullMovePruning);
+                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
                         // if PV search fails to prove the position is bad, do the full search
                         if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
-                            currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, this.allowNullMovePruning);
+                            currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
                         };
                     };
                 };
@@ -522,6 +523,22 @@ class engine {
         }
         
         return [false];
+    };
+
+    isRepetition() {
+        return repetitionTable[this.board.zobristHash] >= 2;
+    };
+
+    incrementRepetition() {
+        if (repetitionTable[this.board.zobristHash] != 0 && repetitionTable[this.board.zobristHash] != undefined) {
+            repetitionTable[this.board.zobristHash] += 1;
+        } else {
+            repetitionTable[this.board.zobristHash] = 1;
+        };
+    };
+
+    decrementRepetition() {
+        repetitionTable[this.board.zobristHash] -= 1;
     };
 
     getMoveFromString(move) {

@@ -197,4 +197,4 @@ const endPieceSquareValues = {
     ]
 };
 
-const aspirationWindows = [40, 1025, 1000000000];
+const aspirationWindows = [40, 477, 1025, 1000000000];
