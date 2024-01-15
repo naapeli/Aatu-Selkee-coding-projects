@@ -47,9 +47,7 @@ class engine {
                 console.log(move);
                 console.log("Time taken: " + (performance.now() - startTime));
                 return move;
-            } else {
-                console.log("-----------------------")
-            }
+            };
         };
         // if position not in the opening book, return the move from iterative search
         return this.iterativeSearch();

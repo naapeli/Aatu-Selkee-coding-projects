@@ -16,6 +16,7 @@ let playAgainstEngine = engineCheckBox.checked;
 let movingPieceImageElement;
 let movingStartSquare;
 let movingEndSquare;
+let gameEnded = false;
 
 const currentBoard = new board();
 currentFen.textContent = currentBoard.getFen();
@@ -73,10 +74,11 @@ function startGame() {
     undoButton.addEventListener("click", () => {
         repetitionTable[currentBoard.zobristHash] -= 1;
         let squaresToBeUpdated = currentBoard.undoMove();
-        gameEngine.transpositionTable.clearTable();
         if (squaresToBeUpdated.length == 0) {
             console.log("No moves in the movelog!")
         } else {
+            selectedSquare = [];
+            gameEngine.transpositionTable.clearTable();
             removeMoveFromMoveLog();
             removeTargetHighlights();
             currentFen.textContent = currentBoard.getFen();
@@ -155,7 +157,7 @@ async function dropPiece(event) {
                 addMoveToMoveLog(currentMove);
             };
                 
-            if (playAgainstEngine && playerMoveMade) {
+            if (playAgainstEngine && playerMoveMade && !gameEnded) {
                 window.setTimeout(() => {
                     const engineMove = gameEngine.getBestMove();
                     const engineMoveMade = makeMove(engineMove);
@@ -179,7 +181,7 @@ async function dropPiece(event) {
             addMoveToMoveLog(currentMove);
         };
             
-        if (playAgainstEngine && playerMoveMade) {
+        if (playAgainstEngine && playerMoveMade && !gameEnded) {
             window.setTimeout(() => {
                 const engineMove = gameEngine.getBestMove();
                 const engineMoveMade = makeMove(engineMove);
@@ -255,7 +257,7 @@ async function clickPiece(event) {
                     };
                 };
                     
-                if (playAgainstEngine && playerMoveMade) {
+                if (playAgainstEngine && playerMoveMade && !gameEnded) {
                     window.setTimeout(() => {
                         const engineMove = gameEngine.getBestMove();
                         const engineMoveMade = makeMove(engineMove);
@@ -289,7 +291,7 @@ async function clickPiece(event) {
                 };
             };
                 
-            if (playAgainstEngine && playerMoveMade) {
+            if (playAgainstEngine && playerMoveMade && !gameEnded) {
                 window.setTimeout(() => {
                     const engineMove = gameEngine.getBestMove();
                     const engineMoveMade = makeMove(engineMove);
@@ -317,20 +319,31 @@ function makeMove(move) {
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
         currentFen.textContent = currentBoard.getFen();
+        const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces);
 
         if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
             repetitionTable[currentBoard.zobristHash] += 1
         } else {
             repetitionTable[currentBoard.zobristHash] = 1
         };
-        if (repetitionTable[currentBoard.zobristHash] >= 3) {
+        if (repetitionTable[currentBoard.zobristHash] >= 3 || (currentBoard.possibleMoves.length === 0 && !checkMate)) {
             console.log("---------------DRAW---------------");
-        } else if (currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces)) {
+            endGameScreen(true, "");
+        } else if (checkMate) {
             const winner = currentBoard.whiteToMove ? "BLACK WINS" : "WHITE WINS";
             console.log("---------------" + winner + "---------------");
+            endGameScreen(false, winner);
         };
     };
     return moveMade;
+};
+
+function endGameScreen(isDraw, winner) {
+    const endGameDiv = document.createElement("div");
+    endGameDiv.classList.add("end-game-container");
+    gameBoard.appendChild(endGameDiv);
+    endGameDiv.textContent = isDraw ? "Draw" : winner;
+    gameEnded = true;
 };
 
 function removeTargetHighlights() {
