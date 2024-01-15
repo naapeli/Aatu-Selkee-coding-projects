@@ -223,7 +223,7 @@ class engine {
 
         
         // extended futility pruning condition
-        const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha;
+        const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
         
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
