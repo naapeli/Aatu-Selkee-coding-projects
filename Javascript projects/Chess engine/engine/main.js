@@ -73,6 +73,7 @@ function startGame() {
     undoButton.addEventListener("click", () => {
         repetitionTable[currentBoard.zobristHash] -= 1;
         let squaresToBeUpdated = currentBoard.undoMove();
+        gameEngine.transpositionTable.clearTable();
         if (squaresToBeUpdated.length == 0) {
             console.log("No moves in the movelog!")
         } else {

@@ -26,6 +26,7 @@ class engine {
         this.LOWERBOUND_NODE = 2;
         this.CHECKMATE = 10000000;
         this.ALPABETA = 100000000;
+        this.noHashEntry = Number.MAX_SAFE_INTEGER;
         this.futilityMargins = [0, this.materialMultiplier * pieceValues["P"],
                                 this.materialMultiplier * pieceValues["B"],
                                 this.materialMultiplier * pieceValues["R"]];
@@ -135,23 +136,35 @@ class engine {
         
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
+        let ttEvaluation;
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
+            ttEvaluation = position.evaluation;
+
+            // adjust mating scores
+            if (ttEvaluation < -this.CHECKMATE + 21) {
+                ttEvaluation -= depthFromRoot + 1;
+            };
+            if (ttEvaluation > this.CHECKMATE - 21) {
+                ttEvaluation += depthFromRoot + 1;
+            };
+
             if (position.nodeType == this.EXACT_NODE) {
                 if (depthFromRoot == 0) {
-                    this.bestIterEvaluation = position.evaluation;
+                    this.bestIterEvaluation = ttEvaluation;
                     this.bestIterMove = position.bestMove;
                 };
-                return position.evaluation;
+                return ttEvaluation;
             } else if (position.nodeType == this.LOWERBOUND_NODE) {
-                alpha = Math.max(alpha, position.evaluation);
+                alpha = Math.max(alpha, ttEvaluation);
             } else if (position.nodeType == this.UPPERBOUND_NODE) {
-                beta = Math.min(beta, position.evaluation);
+                beta = Math.min(beta, ttEvaluation);
             };
         };
         // if found a value for the position from transposition table, return it
         if (alpha >= beta) {
-            return position.evaluation;
+            return ttEvaluation;
         };
+
 
         // if found a terminal node, return the corresponding evaluation
         if (this.board.possibleMoves.length === 0) {
@@ -279,9 +292,7 @@ class engine {
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
                 // store best move as lower bound (since exiting search early), (don't store checkmate scores for finding mate plies)
-                if (this.notCheckMateScore(beta)) {
-                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move);
-                };
+                this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move, depthFromRoot);
 
                 // update killer moves
                 this.storeKillerMoves(positionBestMove, depthFromRoot);
@@ -305,9 +316,7 @@ class engine {
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
         // store the evaluation of the position to the transposition table (don't store checkmate scores for finding mate plies)
-        if (this.notCheckMateScore(alpha)) {
-            this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove);
-        };
+        this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {

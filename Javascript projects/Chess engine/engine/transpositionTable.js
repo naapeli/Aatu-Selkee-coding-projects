@@ -3,6 +3,7 @@ class transpositionTable {
         this.size = this.getSizeOfArray();
         this.positionLookUp = new Array(parseInt(this.size));
         this.positionsInLookUp = 0;
+        this.CHECKMATE = 10000000;
     };
 
     getSizeOfArray() { // for now use 4 000 000 positions
@@ -33,10 +34,18 @@ class transpositionTable {
         };
     };
 
-    storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove) {
+    storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove, depthFromRoot) {
         const index = this.getIndex(zobristHash);
         const overWritten = this.positionLookUp[index] != undefined;
         if (!overWritten) {this.positionsInLookUp++};
+
+        if (evaluation < -this.CHECKMATE + 21) {
+            evaluation -= depthFromRoot;
+        };
+        if (evaluation > this.CHECKMATE - 21) {
+            evaluation += depthFromRoot;
+        };
+
         this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
 
 
