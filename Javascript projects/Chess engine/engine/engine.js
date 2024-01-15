@@ -291,7 +291,7 @@ class engine {
 
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
-                // store best move as lower bound (since exiting search early), (don't store checkmate scores for finding mate plies)
+                // store best move as lower bound (since exiting search early)
                 this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move, depthFromRoot);
 
                 // update killer moves
@@ -315,7 +315,7 @@ class engine {
         // store the best move into the history table (to help with move ordering)
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
-        // store the evaluation of the position to the transposition table (don't store checkmate scores for finding mate plies)
+        // store the evaluation of the position to the transposition table
         this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
 
         // remember the best moves if the position is the original one, then return the evaluation
