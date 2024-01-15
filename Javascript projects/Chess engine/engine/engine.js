@@ -20,7 +20,10 @@ class engine {
         this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
         this.allowRazoring = true;
+        this.allowDeepRazoring = false; //deep razoring is disabled not because it doesn't work, but it prunes a little too many nodes for my liking. For example it
+        //doesn't find mate in 5 in this position if this feature is enabled: 2rk1br1/p3pppp/5n2/1pp5/1n2P3/BPQPKP1b/P2NB1Pq/R1R5 b - -
         this.allowReverseFutilityPruning = true;
+        this.aspirationWindows = true;
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
@@ -44,7 +47,9 @@ class engine {
                 console.log(move);
                 console.log("Time taken: " + (performance.now() - startTime));
                 return move;
-            };
+            } else {
+                console.log("-----------------------")
+            }
         };
         // if position not in the opening book, return the move from iterative search
         return this.iterativeSearch();
@@ -54,8 +59,8 @@ class engine {
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
-        let alpha = -this.ALPABETA;
-        let beta = this.ALPABETA;
+        let alpha;
+        let beta;
         let score;
 
         // clear historytable from previous search
@@ -69,10 +74,13 @@ class engine {
         for (let searchDepth = 1; searchDepth <= this.maxDepth; searchDepth++) {
             console.log("Iteration: " + searchDepth);
             for (let i = 0; i < aspirationWindows.length; i++) {
-                if (score != undefined) {
+                if (score != undefined && this.aspirationWindows) {
                     const window = this.materialMultiplier * aspirationWindows[i];
                     alpha = score - window;
                     beta = score + window;
+                } else {
+                    alpha = -this.ALPABETA;
+                    beta = this.ALPABETA;
                 };
                 // search the current position not allowing null-move-pruning at the first node
                 score = this.search(searchDepth, 0, alpha, beta, perspective, false);
@@ -126,43 +134,36 @@ class engine {
         // increment node counter
         this.numberOfNodesSearchedPerIteration++;
 
+        // look if position exists in the transposition table
+        const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
+
         // check for repetition
         if (this.isRepetition()) {
             if (depthFromRoot == 0) {
                 this.bestIterEvaluation = 0;
+                this.bestIterMove = position.bestMove;
+                this.searchCancelled = true;
             };
             return 0;
         };
         
-        // look if position exists in the transposition table
-        const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
-        let ttEvaluation;
+        // if position from transposition table allows getting the evaluation, return it
         if (position != undefined && position.zobristHash == this.board.zobristHash && Math.max(currentDepth, 0) <= position.depth) {
-            ttEvaluation = position.evaluation;
-
-            // adjust mating scores
-            if (ttEvaluation < -this.CHECKMATE + 21) {
-                ttEvaluation -= depthFromRoot + 1;
-            };
-            if (ttEvaluation > this.CHECKMATE - 21) {
-                ttEvaluation += depthFromRoot + 1;
-            };
-
             if (position.nodeType == this.EXACT_NODE) {
                 if (depthFromRoot == 0) {
-                    this.bestIterEvaluation = ttEvaluation;
+                    this.bestIterEvaluation = position.evaluation;
                     this.bestIterMove = position.bestMove;
                 };
-                return ttEvaluation;
+                return position.evaluation;
             } else if (position.nodeType == this.LOWERBOUND_NODE) {
-                alpha = Math.max(alpha, ttEvaluation);
+                alpha = Math.max(alpha, position.evaluation);
             } else if (position.nodeType == this.UPPERBOUND_NODE) {
-                beta = Math.min(beta, ttEvaluation);
+                beta = Math.min(beta, position.evaluation);
             };
         };
         // if found a value for the position from transposition table, return it
         if (alpha >= beta) {
-            return ttEvaluation;
+            return position.evaluation;
         };
 
 
@@ -211,11 +212,13 @@ class engine {
                     return Math.max(newNodeValue, nodeValue);
                 };
                 
-                nodeValue += this.materialMultiplier * pieceValues["P"];
-                if (nodeValue < beta && currentDepth < 4) {
-                    const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
-                    if (newNodeValue < beta) {
-                        return Math.max(newNodeValue, nodeValue);
+                if (this.allowDeepRazoring) {
+                    nodeValue += 2 * this.materialMultiplier * pieceValues["P"];
+                    if (nodeValue < beta && currentDepth < 4) {
+                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                        if (newNodeValue < beta) {
+                            return newNodeValue;
+                        };
                     };
                 };
             };
@@ -292,7 +295,9 @@ class engine {
             // alpha-beta pruning
             if (currentEvaluation >= beta) {
                 // store best move as lower bound (since exiting search early)
-                this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move, depthFromRoot);
+                if (this.notCheckMateScore(beta)) {
+                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move, depthFromRoot);
+                };
 
                 // update killer moves
                 this.storeKillerMoves(positionBestMove, depthFromRoot);
@@ -316,7 +321,9 @@ class engine {
         currentHistoryTable.add(positionBestMove, currentDepth * currentDepth);
         
         // store the evaluation of the position to the transposition table
-        this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
+        if (this.notCheckMateScore(alpha)) {
+            this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
+        };
 
         // remember the best moves if the position is the original one, then return the evaluation
         if (depthFromRoot == 0) {
@@ -327,6 +334,9 @@ class engine {
     };
 
     quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
+
+        // increment node counter
+        this.numberOfNodesSearchedPerIteration++;
         
         // check if evaluation of this position causes beta cutoff
         let stand_pat = this.evaluatePosition(colorPerspective);
@@ -507,7 +517,7 @@ class engine {
     };
 
     notCheckMateScore(evaluation) {
-        return evaluation >= -this.CHECKMATE + 21 && evaluation <= this.CHECKMATE - 21;
+        return evaluation >= -this.CHECKMATE + 1000 && evaluation <= this.CHECKMATE - 1000;
     };
 
     // returns either [true, move] or [false]

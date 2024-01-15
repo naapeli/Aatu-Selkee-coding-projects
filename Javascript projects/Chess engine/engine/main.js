@@ -257,7 +257,7 @@ async function clickPiece(event) {
                     
                 if (playAgainstEngine && playerMoveMade) {
                     window.setTimeout(() => {
-                        const engineMove = gameEngine.iterativeSearch();
+                        const engineMove = gameEngine.getBestMove();
                         const engineMoveMade = makeMove(engineMove);
                         if (engineMoveMade) {
                             addMoveToMoveLog(engineMove);
@@ -291,7 +291,7 @@ async function clickPiece(event) {
                 
             if (playAgainstEngine && playerMoveMade) {
                 window.setTimeout(() => {
-                    const engineMove = gameEngine.iterativeSearch();
+                    const engineMove = gameEngine.getBestMove();
                     const engineMoveMade = makeMove(engineMove);
                     if (engineMoveMade) {
                         addMoveToMoveLog(engineMove);

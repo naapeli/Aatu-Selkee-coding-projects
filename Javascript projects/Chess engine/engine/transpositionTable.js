@@ -37,20 +37,6 @@ class transpositionTable {
     storeEvaluation(zobristHash, evaluation, depthFromPosition, nodeType, bestMove, depthFromRoot) {
         const index = this.getIndex(zobristHash);
         const overWritten = this.positionLookUp[index] != undefined;
-        if (!overWritten) {this.positionsInLookUp++};
-
-        if (evaluation < -this.CHECKMATE + 21) {
-            evaluation -= depthFromRoot;
-        };
-        if (evaluation > this.CHECKMATE - 21) {
-            evaluation += depthFromRoot;
-        };
-
-        this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
-
-
-        /*
-        I don't know why this doesn't work!?!?!?
         if (!overWritten) {
             this.positionsInLookUp++;
             this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
@@ -58,12 +44,14 @@ class transpositionTable {
             // if collision with the same position from lower depth or some other position, store new evaluation
             if (this.positionLookUp[index].zobristHash == zobristHash) {
                 if (this.positionLookUp[index].depth <= depthFromPosition) {
+                    this.positionsInLookUp++;
                     this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
                 };
             } else {
+                this.positionsInLookUp++;
                 this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
             };
-        };*/
+        };
     };
 
     printLookUpTable() {
