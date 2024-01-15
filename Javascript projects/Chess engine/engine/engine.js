@@ -6,6 +6,8 @@ class engine {
         this.maxAllowedTime = 2000;
 
         this.searchStartTime;
+        this.numberOfNodesSearchedPerIteration = 0;
+        this.totalNumberOfNodesSearched = 0;
         this.searchCancelled = false;
         this.aspirationWindowFailed = false;
         this.bestMove;
@@ -79,26 +81,30 @@ class engine {
                         this.bestMoveEval = this.bestIterEvaluation;
                         console.log("Evaluation of last iteration used")
                     };
-                    console.log(this.bestMove, this.bestMoveEval);
+                    this.totalNumberOfNodesSearched += this.numberOfNodesSearchedPerIteration;
+                    console.log(this.bestMove, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / (100 * this.materialMultiplier));
                     console.log("Depth: " + searchDepth);
                     console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
+                    console.log("Nodes searched: " + this.totalNumberOfNodesSearched);
                     console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp / parseInt(this.transpositionTable.size) * 100 + " %");
+                    this.numberOfNodesSearchedPerIteration = 0;
+                    this.totalNumberOfNodesSearched = 0;
                     return this.bestMove;
                 } else if (alpha < score && score < beta) { // if score was inside alpha and beta
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     this.aspirationWindowFailed = false;
-                    console.log(this.bestMove, this.bestMoveEval);
+                    console.log(this.bestMove, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
+                    this.totalNumberOfNodesSearched += this.numberOfNodesSearchedPerIteration;
+                    this.numberOfNodesSearchedPerIteration = 0;
                     if (this.bestMoveEval >= this.CHECKMATE - 20) {
                         const matePly = -this.bestMoveEval + this.CHECKMATE;
                         console.log("Found engine checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
-                        console.log(this.bestMoveEval)
                         return this.bestMove;
                     } else if (this.bestMoveEval <= -this.CHECKMATE + 20) {
                         const matePly = this.bestMoveEval + this.CHECKMATE;
                         console.log("Found player checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
-                        console.log(this.bestMoveEval)
                         return this.bestMove;
                     };
                     break;
@@ -116,6 +122,8 @@ class engine {
         if (this.searchCancelled) {
             return;
         };
+        // increment node counter
+        this.numberOfNodesSearchedPerIteration++;
 
         // check for repetition
         if (this.isRepetition()) {
