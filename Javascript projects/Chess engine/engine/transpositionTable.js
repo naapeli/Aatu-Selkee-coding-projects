@@ -44,11 +44,9 @@ class transpositionTable {
             // if collision with the same position from lower depth or some other position, store new evaluation
             if (this.positionLookUp[index].zobristHash == zobristHash) {
                 if (this.positionLookUp[index].depth <= depthFromPosition) {
-                    this.positionsInLookUp++;
                     this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
                 };
             } else {
-                this.positionsInLookUp++;
                 this.positionLookUp[index] = new Entry(zobristHash, evaluation, depthFromPosition, nodeType, bestMove);
             };
         };

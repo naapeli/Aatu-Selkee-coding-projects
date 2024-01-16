@@ -118,7 +118,7 @@ class engine {
                 };
                 // if we failed to find the score inside alpha and beta continue to the next aspiration window,
                 // else continue to the next iteration
-                console.log("Aspiration window failed!");
+                console.log("Aspiration window failed!", this.numberOfNodesSearchedPerIteration);
                 this.aspirationWindowFailed = true;
             };
         };

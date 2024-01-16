@@ -79,6 +79,7 @@ function startGame() {
         } else {
             selectedSquare = [];
             gameEngine.transpositionTable.clearTable();
+            repetitionTable = {};
             removeMoveFromMoveLog();
             removeTargetHighlights();
             currentFen.textContent = currentBoard.getFen();
