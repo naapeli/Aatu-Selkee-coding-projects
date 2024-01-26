@@ -2,13 +2,13 @@ import helper as h
 import numpy as np
 from tkinter import messagebox
 from queue import PriorityQueue
-from math import inf
+from math import inf, sqrt
 import time
 import pygame
 import UI
 
 
-def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
+def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path, w_constant):
 	open_set = PriorityQueue()
 	in_open_set = set()
 	closed_set = set()
@@ -30,7 +30,7 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 	if start == None or end == None:
 		messagebox.showwarning(title="Warning", message="Remember to set starting- and endingpoints!")
 		return []
-	start.h = (start.i - end.i) ** 2 + (start.j - end.j) ** 2 + (start.k - end.k) ** 2
+	start.h = w_constant * sqrt((start.i - end.i) ** 2 + (start.j - end.j) ** 2 + (start.k - end.k) ** 2)
 	start.g = 0
 	start.f = start.h
 	open_set.put(start)
@@ -60,9 +60,9 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 				neighbour.g = potential_g
 				neighbour.came_from = current
 				# l2 norm between point indeces used as the heuristic
-				neighbour.h = (neighbour.i - end.i) ** 2 + (neighbour.j - end.j) ** 2 + (neighbour.k - end.k) ** 2
+				neighbour.h = w_constant * sqrt((neighbour.i - end.i) ** 2 + (neighbour.j - end.j) ** 2 + (neighbour.k - end.k) ** 2)
 				neighbour.f = neighbour.g + neighbour.h
-				if neighbour not in in_open_set:
+				if neighbour not in in_open_set and neighbour not in closed_set:
 					in_open_set.add(neighbour)
 					open_set.put(neighbour)
 

@@ -120,9 +120,23 @@ class optionMenu:
 		preset_2 = tk.Button(wall_preset_grid, text="Preset 2", font=('Arial', 12), command=self.wall_preset_2)
 		preset_2.grid(row=2, column=0)
 
+		# W constant
+		w_constant = tk.LabelFrame(window)
+		w_constant.grid(row=4, column=0)
+		w_constant_mainlabel = tk.Label(w_constant, font=('Arial', 22), text="Algorithm options")
+		w_constant_mainlabel.grid(row=0, column=0)
+
+		w_constant_content_frame = tk.LabelFrame(w_constant)
+		w_constant_content_frame.grid(row=1, column=0)
+		w_constant_label = tk.Label(w_constant_content_frame, font=('Arial', 12), text="W constant for WA*:")
+		w_constant_label.grid(row=0, column=0)
+		self.w = tk.Scale(w_constant_content_frame, from_=1, to_=50)
+		self.w.set(h.w_constant)
+		self.w.grid(row=0, column=1)
+
 		# save options
 		save_button = tk.Button(window, text="Save options", font=('Arial', 18), command=self.save_options)
-		save_button.grid(row=4, column=0)
+		save_button.grid(row=5, column=0)
 
 		window.mainloop()
 
@@ -156,6 +170,7 @@ class optionMenu:
 		h.draw_closed = (self.draw_closed_value.get() == "True")
 		h.draws_path = (self.draw_path_value.get() == "True")
 		h.probability_of_wall = self.wall_probability_option.get()
+		h.w_constant = self.w.get()
 		if not self.preset_used and self.dimensions_changed():
 			h.rows = self.rows_option.get()
 			h.columns = self.columns_option.get()

@@ -4,7 +4,7 @@ from sys import exit
 from math import floor
 from cube import cell
 from random import random
-import a_star_algorithm as a_star
+import wa_star_algorithm as wa_star
 import dijkstras_algorithm as dijkstras
 from option_menu import optionMenu
 from help_menu import helpMenu
@@ -30,6 +30,7 @@ SCREEN_HEIGHT = 800
 SCREEN_WIDTH = 1200
 scale = 50
 colors = [(255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255), (169, 62, 232)]
+w_constant = 10
 
 # Variables
 angle_x = 0
@@ -164,7 +165,7 @@ def detect_event(screen, clock):
 							if not cubes[i][j][k].is_start and not cubes[i][j][k].is_end:
 								cubes[i][j][k].is_wall = random() < probability_of_wall
 			if button_5.collidepoint(mouse_pos):
-				path = a_star.run(screen, rows, columns, depth, clock, draw_open, draw_closed, draws_path)
+				path = wa_star.run(screen, rows, columns, depth, clock, draw_open, draw_closed, draws_path, w_constant)
 			if button_6.collidepoint(mouse_pos):
 				show_walls = not show_walls
 			if button_7.collidepoint(mouse_pos):

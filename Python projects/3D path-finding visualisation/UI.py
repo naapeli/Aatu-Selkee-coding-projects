@@ -60,9 +60,9 @@ def draw_ui(screen, clock):
 	screen.blit(algorithms, algorithmsrect)
 	pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT, 285, UI_LEFT - 10, 85), width=2)
 
-	# run A* algorithm
+	# run WA* algorithm
 	h.button_5 = pygame.draw.rect(screen, (68, 68, 68), pygame.Rect(h.SCREEN_WIDTH - UI_LEFT + 10, 295, UI_LEFT - 30, 30))
-	text5 = h.UI_FONT.render('Run A-star', True, (255, 255, 255, 0.5))
+	text5 = h.UI_FONT.render('Run WA-star', True, (255, 255, 255, 0.5))
 	text5rect = text5.get_rect()
 	text5rect.center = (h.SCREEN_WIDTH - UI_LEFT + 10 + (UI_LEFT - 30) / 2, 310)
 	screen.blit(text5, text5rect)
