@@ -130,7 +130,7 @@ class optionMenu:
 		w_constant_content_frame.grid(row=1, column=0)
 		w_constant_label = tk.Label(w_constant_content_frame, font=('Arial', 12), text="W constant for WA*:")
 		w_constant_label.grid(row=0, column=0)
-		self.w = tk.Scale(w_constant_content_frame, from_=1, to_=50)
+		self.w = tk.Scale(w_constant_content_frame, from_=1, to_=5)
 		self.w.set(h.w_constant)
 		self.w.grid(row=0, column=1)
 

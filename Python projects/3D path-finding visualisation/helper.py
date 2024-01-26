@@ -30,7 +30,7 @@ SCREEN_HEIGHT = 800
 SCREEN_WIDTH = 1200
 scale = 50
 colors = [(255, 255, 255), (0, 0, 0), (255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255), (169, 62, 232)]
-w_constant = 10
+w_constant = 2
 
 # Variables
 angle_x = 0
