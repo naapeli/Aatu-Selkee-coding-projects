@@ -1,16 +1,21 @@
 import helper as h
 import numpy as np
 from tkinter import messagebox
+from queue import PriorityQueue
 import time
 import pygame
 import UI
 
 
 def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
-	open_set = []
-	closed_set = []
+	open_set = PriorityQueue()
+	in_open_set = set()
+	closed_set = set()
 	start = None
 	end = None
+
+	def peek():
+		return open_set.queue[0]
 
 	for i in range(1, rows + 1):
 		for j in range(1, columns + 1):
@@ -25,17 +30,15 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 				if cube.is_end:
 					end = cube
 
-	open_set.append(start)
+	open_set.put(start)
+	in_open_set.add(start)
 
-	while len(open_set) > 0:
+	while not open_set.empty():
 		if start == None or end == None:
 			messagebox.showwarning(title="Warning", message="Remember to set starting- and endingpoints!")
 			return []
 		# find lowest f in open set
-		current = open_set[0]
-		for cell in open_set:
-			if cell.f < current.f:
-				current = cell
+		current = peek()
 
 		# check if we have found the end
 		if current.is_end:
@@ -47,26 +50,30 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 			return path
 
 		# transfer current from open_set to closed_set
-		open_set.remove(current)
-		closed_set.append(current)
+		open_set.get()
+		in_open_set.remove(current)
+		closed_set.add(current)
 
 		# add neighbours of current to open_set (if not in closed_set)
 		neighbours = h.get_neighbours(current)
 		for neighbour in neighbours:
 			if neighbour not in closed_set:
 				potential_g = current.g + 1
-				if neighbour in open_set:
+				if neighbour in in_open_set:
 					if potential_g < neighbour.g:
 						neighbour.g = potential_g
 						neighbour.came_from = current
+						# l2 norm between point indeces used as the heuristic
+						neighbour.h = (neighbour.i - end.i) ** 2 + (neighbour.j - end.j) ** 2 + (neighbour.k - end.k) ** 2
+						neighbour.f = neighbour.g + neighbour.h
 				else:
 					neighbour.g = potential_g
-					open_set.append(neighbour)
+					# l2 norm between point indeces used as the heuristic
+					neighbour.h = (neighbour.i - end.i) ** 2 + (neighbour.j - end.j) ** 2 + (neighbour.k - end.k) ** 2
+					neighbour.f = neighbour.g + neighbour.h
+					open_set.put(neighbour)
+					in_open_set.add(neighbour)
 					neighbour.came_from = current
-				# l1 norm between point indeces used as the heuristic
-				# neighbour.h = np.linalg.norm(neighbour.corners.T[0] - end.corners.T[0], ord=1) / h.scale
-				neighbour.h = abs(neighbour.i - end.i) + abs(neighbour.j - end.j) + abs(neighbour.k - end.k)
-				neighbour.f = neighbour.g + neighbour.h
 
 		# drawing
 		if draw_open or draw_closed or draw_path:
@@ -79,7 +86,7 @@ def run(screen, rows, columns, depth, clock, draw_open, draw_closed, draw_path):
 
 		# drawing open and closed sets
 		if draw_open:
-			for cell in open_set:
+			for cell in in_open_set:
 				if not cell.is_end and not cell.is_start:
 					cell.draw_cell(screen, h.colors[3])
 		if draw_closed:

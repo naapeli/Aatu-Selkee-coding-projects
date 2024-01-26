@@ -35,6 +35,9 @@ class cell:
 		self.g = 0
 		self.h = 0
 		self.came_from = None
+
+	def __lt__(self, another):
+		return self.f < another.f
 	
 	def rotate(self, matrix):
 		self.corners = np.dot(matrix, self.corners)
