@@ -320,6 +320,7 @@ function makeMove(move) {
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
         currentFen.textContent = currentBoard.getFen();
+        selectedSquare = [];
         const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces);
 
         if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
