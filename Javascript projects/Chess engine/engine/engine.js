@@ -253,7 +253,7 @@ class engine {
             };
 
             // update the amount of times a position has been seen in the search
-            this.incrementRepetition();
+            this.incrementRepetition(move.movingPiece[1] == "P" || move.isCapture());
             
             // starts from 0 because of the threefold repetition
             let currentEvaluation;
@@ -565,20 +565,32 @@ class engine {
         return [false];
     };
 
-    isRepetition() { // add fifty move rule in future
-        return repetitionTable[this.board.zobristHash] >= 2;
+    isRepetition() {
+        return repetitionTable[this.board.zobristHash] >= 2 || fiftyMoveCounter[fiftyMoveCounter.length - 1] > 99;
     };
 
-    incrementRepetition() {
+    incrementRepetition(isCaptureOrPawnMove) {
+        // three fold repetition
         if (repetitionTable[this.board.zobristHash] != 0 && repetitionTable[this.board.zobristHash] != undefined) {
             repetitionTable[this.board.zobristHash] += 1;
         } else {
             repetitionTable[this.board.zobristHash] = 1;
         };
+
+        // fifty move rule
+        if (isCaptureOrPawnMove) {
+            fiftyMoveCounter.push(0);
+        } else {
+            fiftyMoveCounter.push(fiftyMoveCounter[fiftyMoveCounter.length - 1] + 1);
+        };
     };
 
     decrementRepetition() {
+        // three fold repetition
         repetitionTable[this.board.zobristHash] -= 1;
+
+        // fifty move rule
+        fiftyMoveCounter.pop();
     };
 
     getMoveFromString(move) {

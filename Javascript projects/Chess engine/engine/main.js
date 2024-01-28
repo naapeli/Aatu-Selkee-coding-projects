@@ -23,6 +23,7 @@ currentFen.textContent = currentBoard.getFen();
 const gameEngine = new engine(currentBoard);
 const currentHistoryTable = new historyTable();
 const maxKillerMovePly = 64;
+let fiftyMoveCounter = [0];
 const killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
@@ -83,6 +84,7 @@ function startGame() {
             removeMoveFromMoveLog();
             removeTargetHighlights();
             currentFen.textContent = currentBoard.getFen();
+            fiftyMoveCounter.pop();
         };
         updateSquares(squaresToBeUpdated, []);
     });
@@ -323,12 +325,18 @@ function makeMove(move) {
         selectedSquare = [];
         const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces);
 
+        if (move.movingPiece[1] == "P" || move.isCapture()) {
+            fiftyMoveCounter.push(0);
+        } else {
+            fiftyMoveCounter.push(fiftyMoveCounter[fiftyMoveCounter.length - 1] + 1);
+        };
+
         if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
             repetitionTable[currentBoard.zobristHash] += 1
         } else {
             repetitionTable[currentBoard.zobristHash] = 1
         };
-        if (repetitionTable[currentBoard.zobristHash] >= 3 || (currentBoard.possibleMoves.length === 0 && !checkMate)) {
+        if (repetitionTable[currentBoard.zobristHash] >= 3 || (currentBoard.possibleMoves.length === 0 && !checkMate) || fiftyMoveCounter[fiftyMoveCounter.length - 1] > 99) {
             console.log("---------------DRAW---------------");
             endGameScreen(true, "");
         } else if (checkMate) {
