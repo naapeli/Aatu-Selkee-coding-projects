@@ -39,7 +39,7 @@ class engine {
         this.principalVariation = "";
     };
 
-    // return the best move from current position from the opening book or iterative search (unfinished)
+    // return the best move from current position from the opening book or iterative search
     getBestMove() {
         let gotMove = false;
         let move;
