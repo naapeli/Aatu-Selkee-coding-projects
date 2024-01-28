@@ -8,10 +8,12 @@ class historyTable {
     };
 
     add(move, increment) {
-        const piece = move.movingPiece;
-        const square = move.endPos;
-        const squareIndex = square[0] + 8 * square[1];
-        this.table[pieceToIndex[piece]][squareIndex] += increment;
+        if (!move.isCapture()) {
+            const piece = move.movingPiece;
+            const square = move.endPos;
+            const squareIndex = square[0] + 8 * square[1];
+            this.table[pieceToIndex[piece]][squareIndex] += increment;
+        };
     };
 
     get(move) {

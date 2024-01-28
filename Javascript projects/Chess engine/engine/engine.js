@@ -33,6 +33,10 @@ class engine {
         this.futilityMargins = [0, this.materialMultiplier * pieceValues["P"],
                                 this.materialMultiplier * pieceValues["B"],
                                 this.materialMultiplier * pieceValues["R"]];
+
+        this.pvLength = new Array(64)
+        this.pvTable = Array.from({ length: 64 }, () => new Array(64));
+        this.principalVariation = "";
     };
 
     // return the best move from current position from the opening book or iterative search (unfinished)
@@ -44,7 +48,7 @@ class engine {
             [gotMove, move] = this.getBookMove();
             if (gotMove) {
                 console.log("Evaluation: book move");
-                console.log(move);
+                console.log("Move: ", move.convertToString());
                 console.log("Time taken: " + (performance.now() - startTime));
                 return move;
             };
@@ -57,6 +61,7 @@ class engine {
         this.searchStartTime = performance.now();
         this.searchCancelled = false;
         this.bestIterEvaluation = Number.MIN_SAFE_INTEGER;
+        this.totalNumberOfNodesSearched = 0;
         let alpha;
         let beta;
         let score;
@@ -89,20 +94,21 @@ class engine {
                         console.log("Evaluation of last iteration used")
                     };
                     this.totalNumberOfNodesSearched += this.numberOfNodesSearchedPerIteration;
-                    console.log(this.bestMove, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
+                    console.log(this.principalVariation, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / (100 * this.materialMultiplier));
+                    console.log("Main line: " + this.principalVariation);
                     console.log("Depth: " + searchDepth);
                     console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
                     console.log("Nodes searched: " + this.totalNumberOfNodesSearched);
                     console.log("Positions in transposition table: " + this.transpositionTable.positionsInLookUp / parseInt(this.transpositionTable.size) * 100 + " %");
                     this.numberOfNodesSearchedPerIteration = 0;
-                    this.totalNumberOfNodesSearched = 0;
+                    this.principalVariation = this.principalVariation.split(" ").slice(2).join(" ");
                     return this.bestMove;
                 } else if (alpha < score && score < beta) { // if score was inside alpha and beta
                     this.bestMove = this.bestIterMove;
                     this.bestMoveEval = this.bestIterEvaluation;
                     this.aspirationWindowFailed = false;
-                    console.log(this.bestMove, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
+                    console.log(this.principalVariation, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
                     this.totalNumberOfNodesSearched += this.numberOfNodesSearchedPerIteration;
                     this.numberOfNodesSearchedPerIteration = 0;
                     if (this.bestMoveEval >= this.CHECKMATE - 20) {
@@ -131,6 +137,8 @@ class engine {
         };
         // increment node counter
         this.numberOfNodesSearchedPerIteration++;
+
+        this.pvLength[depthFromRoot] = depthFromRoot;
 
         // look if position exists in the transposition table
         const position = this.transpositionTable.getEntryFromHash(this.board.zobristHash);
@@ -298,7 +306,7 @@ class engine {
                 };
 
                 // update killer moves
-                this.storeKillerMoves(positionBestMove, depthFromRoot);
+                this.storeKillerMoves(move, depthFromRoot);
                 
                 if (depthFromRoot == 0) {
                     this.bestIterMove = positionBestMove;
@@ -312,6 +320,13 @@ class engine {
                 positionBestMove = move;
                 PVNodeFound = true;
                 nodeType = this.EXACT_NODE;
+
+                // update the principal variation
+                this.pvTable[depthFromRoot][depthFromRoot] = move.convertToString();
+                for (let nextDepth = depthFromRoot + 1; nextDepth < this.pvLength[depthFromRoot + 1]; nextDepth++) {
+                    this.pvTable[depthFromRoot][nextDepth] = this.pvTable[depthFromRoot + 1][nextDepth];
+                };
+                this.pvLength[depthFromRoot] = this.pvLength[depthFromRoot + 1];
             };
         };
 
@@ -327,6 +342,7 @@ class engine {
         if (depthFromRoot == 0) {
             this.bestIterMove = positionBestMove;
             this.bestIterEvaluation = alpha;
+            this.principalVariation = this.getPrincipalVariation();
         };
         return alpha;
     };
@@ -571,6 +587,14 @@ class engine {
                 };
         };
         return [false];
+    };
+
+    getPrincipalVariation() {
+        let line = "";
+        for (let i = 0; i < this.pvLength[0]; i++) {
+            line += this.pvTable[0][i] + " ";
+        };
+        return line;
     };
 
     getNumberOfMoves(currentDepth) {
