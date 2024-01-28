@@ -96,7 +96,7 @@ class engine {
                     this.totalNumberOfNodesSearched += this.numberOfNodesSearchedPerIteration;
                     console.log(this.principalVariation, this.bestMoveEval, this.numberOfNodesSearchedPerIteration);
                     console.log("Evaluation: " + perspective * this.bestMoveEval / (100 * this.materialMultiplier));
-                    console.log("Main line: " + this.principalVariation);
+                    console.log("Principal variation: " + this.principalVariation);
                     console.log("Depth: " + searchDepth);
                     console.log("Time taken: " + Math.round(performance.now() - this.searchStartTime));
                     console.log("Nodes searched: " + this.totalNumberOfNodesSearched);
@@ -114,10 +114,12 @@ class engine {
                     if (this.bestMoveEval >= this.CHECKMATE - 20) {
                         const matePly = -this.bestMoveEval + this.CHECKMATE;
                         console.log("Found engine checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
+                        console.log("Principal variation: " + this.principalVariation);
                         return this.bestMove;
                     } else if (this.bestMoveEval <= -this.CHECKMATE + 20) {
                         const matePly = this.bestMoveEval + this.CHECKMATE;
                         console.log("Found player checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
+                        console.log("Principal variation: " + this.principalVariation);
                         return this.bestMove;
                     };
                     break;
