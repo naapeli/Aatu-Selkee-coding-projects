@@ -20,8 +20,7 @@ class engine {
         this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
         this.allowRazoring = true;
-        this.allowDeepRazoring = false; //deep razoring is disabled not because it doesn't work, but it prunes a little too many nodes for my liking. For example it
-        //doesn't find mate in 5 in this position if this feature is enabled: 2rk1br1/p3pppp/5n2/1pp5/1n2P3/BPQPKP1b/P2NB1Pq/R1R5 b - -
+        this.allowDeepRazoring = true;
         this.allowReverseFutilityPruning = true;
         this.aspirationWindows = true;
         this.EXACT_NODE = 0;
@@ -115,11 +114,13 @@ class engine {
                         const matePly = -this.bestMoveEval + this.CHECKMATE;
                         console.log("Found engine checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
                         console.log("Principal variation: " + this.principalVariation);
+                        console.log("Nodes searched: " + this.totalNumberOfNodesSearched);
                         return this.bestMove;
                     } else if (this.bestMoveEval <= -this.CHECKMATE + 20) {
                         const matePly = this.bestMoveEval + this.CHECKMATE;
                         console.log("Found player checkmate in " + Math.ceil(matePly / 2) + " (" + matePly + " ply).");
                         console.log("Principal variation: " + this.principalVariation);
+                        console.log("Nodes searched: " + this.totalNumberOfNodesSearched);
                         return this.bestMove;
                     };
                     break;
@@ -220,13 +221,11 @@ class engine {
                     return Math.max(newNodeValue, nodeValue);
                 };
                 
+                // deep razoring for nodes at depths 2 and 3 (reduce depth by 1 if position seems to be bad)
                 if (this.allowDeepRazoring) {
                     nodeValue += 2 * this.materialMultiplier * pieceValues["P"];
                     if (nodeValue < beta && currentDepth < 4) {
-                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
-                        if (newNodeValue < beta) {
-                            return newNodeValue;
-                        };
+                        currentDepth -= 1;
                     };
                 };
             };
