@@ -221,11 +221,15 @@ class engine {
                     return Math.max(newNodeValue, nodeValue);
                 };
                 
-                // deep razoring for nodes at depths 2 and 3 (reduce depth by 1 if position seems to be bad)
+                // deep razoring for nodes at depths 2 and 3
                 if (this.allowDeepRazoring) {
                     nodeValue += 2 * this.materialMultiplier * pieceValues["P"];
-                    if (nodeValue < beta && currentDepth < 4) {
-                        currentDepth -= 1;
+                    if (nodeValue < beta && currentDepth <= 3) {
+                        //currentDepth -= 1;
+                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                        if (newNodeValue < beta) {
+                            return Math.max(newNodeValue, nodeValue);
+                        };
                     };
                 };
             };
@@ -266,7 +270,7 @@ class engine {
                 const reduction = this.getSearchReduction(extension, move, i, currentDepth);
 
                 // Do the principal variation search with reduced depth for other moves to try to prove that all other moves than
-                // i == 0 are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
+                // first PV node are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
                 // with searching the same position without late move reduction and a full window.
                 if (reduction > 0) {
                     currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
@@ -303,7 +307,7 @@ class engine {
             if (currentEvaluation >= beta) {
                 // store best move as lower bound (since exiting search early)
                 if (this.notCheckMateScore(beta)) {
-                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, move, depthFromRoot);
+                    this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, positionBestMove, depthFromRoot);
                 };
 
                 // update killer moves
@@ -312,7 +316,6 @@ class engine {
                 if (depthFromRoot == 0) {
                     this.bestIterMove = positionBestMove;
                     this.bestIterEvaluation = beta;
-                    return this.bestIterEvaluation;
                 };
                 return beta;
             };
@@ -540,7 +543,7 @@ class engine {
         const lines = [];
         const currentLine = moveLogArray.join(" ");
 
-        if (moveLogArray.length == 0) {
+        if (moveLogArray.length == 0 && this.board.zobristHash == -4488746022743167406n) {
             // select first move
             let randomLine = openingBook[Math.floor(Math.random() * openingBook.length)];
             let firstMove = randomLine.split(" ")[0];
