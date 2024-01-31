@@ -31,6 +31,20 @@ class board {
         this.possibleMoves = this.getPossibleMoves();
         this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
+        this.pieces = {
+            "wK": new Set([60]),
+            "wQ": new Set([59]),
+            "wR": new Set([56, 63]),
+            "wB": new Set([58, 61]),
+            "wN": new Set([57, 62]),
+            "wP": new Set([48, 49, 50, 51, 52, 53, 54, 55]),
+            "bK": new Set([4]),
+            "bQ": new Set([3]),
+            "bR": new Set([0, 7]),
+            "bB": new Set([2, 5]),
+            "bN": new Set([1, 6]),
+            "bP": new Set([8, 9, 10, 11, 12, 13, 14, 15])
+        };
     };
 
     makeMove(move) {
@@ -1166,6 +1180,10 @@ class boardUtils {
 
     squareToIndex(square) {
         return square[0] + 8 * square[1];
+    };
+
+    indexToSquare(index) {
+        return [index % 8, Math.floor(index / 8)];
     };
 
     generateZobristHash(board, enPassant, whiteCanCastle, blackCanCastle, whiteToMove) {

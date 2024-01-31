@@ -185,7 +185,7 @@ class engine {
         };
         if (currentDepth <= 0) {
             // if end of depth, search captures to the end to reduce the horizon effect 
-            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
             return evaluation;
         };
 
@@ -204,7 +204,7 @@ class engine {
         // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
         if (allowNullMovePruningAndRazoring && !this.board.inCheck() && notPvNode) {
             const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
-            if (currentDepth >= 3 && movingPiecesRemaining > 1 && this.allowNullMovePruning) {
+            if (currentDepth >= 3 && staticEvaluation >= beta && movingPiecesRemaining > 1 && this.allowNullMovePruning) {
                 this.board.makeNullMove();
                 const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
                 this.board.undoNullMove();
@@ -217,7 +217,7 @@ class engine {
             let nodeValue = staticEvaluation + this.materialMultiplier * pieceValues["P"];
             if (nodeValue < beta && this.allowRazoring) {
                 if (currentDepth == 1) {
-                    const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                    const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
                     return Math.max(newNodeValue, nodeValue);
                 };
                 
@@ -225,11 +225,12 @@ class engine {
                 if (this.allowDeepRazoring) {
                     nodeValue += 2 * this.materialMultiplier * pieceValues["P"];
                     if (nodeValue < beta && currentDepth <= 3) {
-                        //currentDepth -= 1;
-                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective);
+                        currentDepth -= 1;
+                        /*this implementation makes the engine worse at evaluating sacrifices but search a bit deeper (also makes blunders)
+                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, true, colorPerspective);
                         if (newNodeValue < beta) {
                             return Math.max(newNodeValue, nodeValue);
-                        };
+                        };*/
                     };
                 };
             };
@@ -351,7 +352,7 @@ class engine {
         return alpha;
     };
 
-    quiescenceSearch(depthFromRoot, alpha, beta, colorPerspective) {
+    quiescenceSearch(depthFromRoot, alpha, beta, allowChecks, colorPerspective) {
 
         // increment node counter
         this.numberOfNodesSearchedPerIteration++;
@@ -376,9 +377,9 @@ class engine {
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
-            if (move.isCapture()) { // continue search if move is piece capture
+            if (move.isCapture() || (this.board.inCheck() && allowChecks)) { // continue search if move is piece capture
                 this.board.makeMove(move);
-                const score = -this.quiescenceSearch(depthFromRoot + 1, -beta, -alpha, -colorPerspective);
+                const score = -this.quiescenceSearch(depthFromRoot + 1, -beta, -alpha, allowChecks, -colorPerspective);
                 this.board.undoMove();
 
                 if (this.searchCancelled) {
