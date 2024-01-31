@@ -641,6 +641,7 @@ class engine {
     };
 
     unitTestMoves() {
+        console.log("Tests started")
         const startTime1 = performance.now();
         const test1 = this.getNumberOfMoves(5) == 4865609;
         const endTime1 = performance.now();
@@ -688,6 +689,7 @@ class engine {
         console.log("Position 6 up to depth 4 is " + test6);
         console.log(`Code execution time: ${elapsedTime6} milliseconds`);
         this.board.positionFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        console.log("Total time: ", performance.now() - startTime1);
     };
 };
 
