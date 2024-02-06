@@ -20,7 +20,7 @@ class engine {
         this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
         this.allowRazoring = true;
-        this.allowDeepRazoring = true;
+        this.allowDeepRazoring = false;
         this.allowReverseFutilityPruning = true;
         this.aspirationWindows = true;
         this.EXACT_NODE = 0;
@@ -405,8 +405,8 @@ class engine {
         const endGameWeight = this.getEndGameWeight();
 
         // calculate material
-        evaluation += this.materialMultiplier * (this.board.whiteMaterial - this.board.blackMaterial);
-
+        evaluation += this.materialMultiplier * (this.board.getMaterial("w") - this.board.getMaterial("b"));
+        
         // calculate piece placement factor
         evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
         evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
@@ -425,31 +425,32 @@ class engine {
         // calculate king position bonuses in winning endgames
         evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
 
+
         return colorPerspective * evaluation;
     };
 
     getEndGameWeight() {
-        const numberOfWhitePieces = this.board.whitePieces;
-        const numberOfBlackPieces = this.board.blackPieces;
-        const endGameStart = 4;
+        const whitePieceMaterial = this.board.getPieceMaterial("w");
+        const blackPieceMaterial = this.board.getPieceMaterial("b");
+        const endGameStart = 1025;
         const multiplier = 1 / endGameStart;
         if (this.board.whiteToMove) {
-            return Math.sqrt(1 - Math.min(1, multiplier * numberOfBlackPieces))
+            return Math.sqrt(1 - Math.min(1, multiplier * blackPieceMaterial));
         } else {
-            return Math.sqrt(1 - Math.min(1, multiplier * numberOfWhitePieces))
+            return Math.sqrt(1 - Math.min(1, multiplier * whitePieceMaterial));
         };
     };
 
     getKingSafetyFactor(owncolor) {
         const oppositeColor = owncolor == "w" ? "b" : "w";
-        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
         const kingQueenMoves = this.board.getQueenMoves(ownKingLocation, oppositeColor);
         const ownKingMobilityFactor = Math.min(1 / kingQueenMoves.length, 1);
         return ownKingMobilityFactor;
     };
 
     getKingPawnShieldFactor(owncolor) { // maybe differentiate between rows?
-        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
         const positionKernel = owncolor == "w" ? [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1]] : [[2, -1], [2, 0], [2, 1], [1, -1], [1, 0], [1, 1]];
         let ownPawnShieldCount = 0;
         positionKernel.forEach(position => {
@@ -466,7 +467,7 @@ class engine {
     };
 
     getNotCastlingPenalty(owncolor) {
-        const ownKingLocation = owncolor == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+        const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
         const targetKingLocations = owncolor == "w" ? [[1, 7], [6, 7]] : [[1, 0], [6, 0]];
         const minL1NormFromTargets = Math.min(Math.abs(ownKingLocation[0] - targetKingLocations[0][0]) + Math.abs(ownKingLocation[1] - targetKingLocations[0][1]),
                                      Math.abs(ownKingLocation[0] - targetKingLocations[1][0]) + Math.abs(ownKingLocation[1] - targetKingLocations[1][1]));
@@ -625,6 +626,13 @@ class engine {
             this.board.undoMove();
         });
         return numberOfMoves;
+    };
+
+    timeNumberOfMoves(depth) {
+        const start = performance.now();
+        const numberOfMoves = this.getNumberOfMoves(depth);
+        console.log("Moves: ", numberOfMoves);
+        console.log("Time taken: ", performance.now() - start);
     };
 
     debugNumberOfMoves(depth) {

@@ -10,27 +10,6 @@ class board {
             ["wP", "wP", "wP", "wP", "wP", "wP", "wP", "wP"],
             ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
         ];
-        this.boardUtility = new boardUtils();
-        this.ply = 0;
-        this.whiteToMove = true
-        this.blackKingPosition = [4, 0];
-        this.whiteKingPosition = [4, 7];
-        this.whiteMaterial = this.boardUtility.countMaterial(this.board)[0];
-        this.blackMaterial = this.boardUtility.countMaterial(this.board)[1];
-        this.whitePiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[0];
-        this.blackPiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[1];
-        this.whitePiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[2];
-        this.blackPiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[3];
-        this.whitePieces = 7;
-        this.blackPieces = 7;
-        this.whiteCanCastle = [true, true]; // long, short
-        this.blackCanCastle = [true, true]; // long, short
-        this.currentCheckingPieces = []; // element is in format [Set(possibleBlocks), ...]
-        this.currentPinnedPieces = new Map(); // element is in format {location => directionIndex, ...}
-        this.enPassant = [];
-        this.possibleMoves = this.getPossibleMoves();
-        this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
-        this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
         this.pieces = {
             "wK": new Set([60]),
             "wQ": new Set([59]),
@@ -45,6 +24,21 @@ class board {
             "bN": new Set([1, 6]),
             "bP": new Set([8, 9, 10, 11, 12, 13, 14, 15])
         };
+        this.boardUtility = new boardUtils();
+        this.ply = 0;
+        this.whiteToMove = true
+        this.whitePiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[0];
+        this.blackPiecePositionBonus = this.boardUtility.countPiecePositionBonus(this.board)[1];
+        this.whitePiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[2];
+        this.blackPiecePositionBonusEg = this.boardUtility.countPiecePositionBonus(this.board)[3];
+        this.whiteCanCastle = [true, true]; // long, short
+        this.blackCanCastle = [true, true]; // long, short
+        this.currentCheckingPieces = []; // element is in format [Set(possibleBlocks), ...]
+        this.currentPinnedPieces = new Map(); // element is in format {location => directionIndex, ...}
+        this.enPassant = [];
+        this.possibleMoves = this.getPossibleMoves();
+        this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
+        this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
         this.pieceBitBoards = {
             "wK": 0b0000000000000000000000000000000000000000000000000000000000001000n,
             "wQ": 0b0000000000000000000000000000000000000000000000000000000000010000n,
@@ -76,84 +70,36 @@ class board {
             this.whiteToMove = !this.whiteToMove;
             let squaresToBeUpdated = [];
             let [i, j] = move.startPos;
-            let movingPiece = move.movingPiece;
             let [iNew, jNew] = move.endPos;
             this.ply++;
             this.moveLog.push([move, this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
-            if (movingPiece[1] == "K") {
-                switch(movingPiece[0]) {
-                    case "w":
-                        this.whiteKingPosition = move.endPos;
-                        this.whiteCanCastle = [false, false]
-                        break;
-                    case "b":
-                        this.blackKingPosition = move.endPos;
-                        this.blackCanCastle = [false, false]
-                        break;
-                };
-            };
-            if (movingPiece[1] == "P" && Math.abs(jNew - j) == 2) {
-                this.enPassant = move.endPos;
+
+            this.makeKingCastleRights(move);
+            this.makeEnPassantRights(move);
+
+            const startIndex = this.boardUtility.squareToIndex(move.startPos);
+            const endIndex = this.boardUtility.squareToIndex(move.endPos);
+            this.pieces[move.movingPiece].delete(startIndex);
+            if (!move.promotion) {
+                this.pieces[move.movingPiece].add(endIndex);
             } else {
-                this.enPassant = [];
+                this.pieces[move.promotedPiece].add(endIndex);
             };
+            if (move.isCapture() && !move.enPassant) {
+                this.pieces[move.takenPiece].delete(endIndex);
+            };
+
             if (move.castleKing) {
-                this.board[j][i] = "--";
-                this.board[jNew][iNew] = movingPiece;
-                if (iNew > i) {
-                    this.board[jNew][iNew - 1] = this.board[jNew][iNew + 1];
-                    this.board[jNew][iNew + 1] = "--";
-                    squaresToBeUpdated.push([iNew - 1, jNew], [iNew + 1, jNew]);
-                } else {
-                    this.board[jNew][iNew + 1] = this.board[jNew][iNew - 2];
-                    this.board[jNew][iNew - 2] = "--";
-                    squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
-                };
+                this.makeCastleMove(move).forEach(square => squaresToBeUpdated.push(square));
             } else if (move.promotion) {
-                this.board[j][i] = "--";
-                this.board[jNew][iNew] = move.promotedPiece;
+                this.makePromotion(move);
             } else if (move.enPassant) {
-                this.board[j][i] = "--";
-                this.board[jNew][iNew] = movingPiece;
-                switch(movingPiece[0]) {
-                    case "w":
-                        this.board[jNew + 1][iNew] = "--";
-                        squaresToBeUpdated.push([iNew, jNew + 1]);
-                        break;
-                    case "b":
-                        this.board[jNew - 1][iNew] = "--";
-                        squaresToBeUpdated.push([iNew, jNew - 1]);
-                        break;
-                };
+                squaresToBeUpdated.push(this.makeEnPassant(move));
             } else {
-                this.board[j][i] = "--";
-                this.board[jNew][iNew] = movingPiece;
-                if (movingPiece[1] == "R") {
-                    switch(movingPiece[0]) {
-                        case "w":
-                            this.whiteCanCastle = [this.whiteCanCastle[0] && this.board[7][0] == "wR", this.whiteCanCastle[1] && this.board[7][7] == "wR"];
-                            break;
-                        case "b":
-                            this.blackCanCastle = [this.blackCanCastle[0] && this.board[0][0] == "bR", this.blackCanCastle[1] && this.board[0][7] == "bR"];
-                            break;
-                    };
-                };
+                this.makeNormalMove(move);
             };
 
-            if (pieces.has(move.takenPiece[1])) {
-                switch(move.takenPiece[0]) {
-                    case "w":
-                        this.whitePieces--;
-                        break;
-                    case "b":
-                        this.blackPieces--;
-                        break;
-                };
-            };
-
-            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
-            this.whiteMaterial += whiteMaterialDiff;
-            this.blackMaterial += blackMaterialDiff;
+            let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
             this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
@@ -171,6 +117,112 @@ class board {
         return [false];
     };
 
+    makeKingCastleRights(move) {
+        if (move.movingPiece[1] == "K") {
+            switch(move.movingPiece[0]) {
+                case "w":
+                    this.whiteCanCastle = [false, false]
+                    break;
+                case "b":
+                    this.blackCanCastle = [false, false]
+                    break;
+            };
+        };
+    };
+
+    makeEnPassantRights(move) {
+        const [i, j] = move.startPos;
+        const [iNew, jNew] = move.endPos;
+        if (move.movingPiece[1] == "P" && Math.abs(jNew - j) == 2) {
+            this.enPassant = move.endPos;
+        } else {
+            this.enPassant = [];
+        };
+    };
+
+    makeCastleMove(move) {
+        const squaresToBeUpdated = [];
+        const [i, j] = move.startPos;
+        const [iNew, jNew] = move.endPos;
+
+        this.board[j][i] = "--";
+        this.board[jNew][iNew] = move.movingPiece;
+
+        if (iNew > i) {
+            this.board[jNew][iNew - 1] = this.board[jNew][iNew + 1];
+            this.board[jNew][iNew + 1] = "--";
+            squaresToBeUpdated.push([iNew - 1, jNew], [iNew + 1, jNew]);
+
+            if (move.movingPiece[0] == "w") {
+                this.pieces["wR"].delete(63);
+                this.pieces["wR"].add(61);
+            } else {
+                this.pieces["bR"].delete(7);
+                this.pieces["bR"].add(5);
+            };
+        } else {
+            this.board[jNew][iNew + 1] = this.board[jNew][iNew - 2];
+            this.board[jNew][iNew - 2] = "--";
+            squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
+
+            if (move.movingPiece[0] == "w") {
+                this.pieces["wR"].delete(56);
+                this.pieces["wR"].add(59);
+            } else {
+                this.pieces["bR"].delete(0);
+                this.pieces["bR"].add(3);
+            };
+        };
+        return squaresToBeUpdated;
+    };
+
+    makePromotion(move) {
+        const [i, j] = move.startPos;
+        const [iNew, jNew] = move.endPos;
+        this.board[j][i] = "--";
+        this.board[jNew][iNew] = move.promotedPiece;
+    };
+
+    makeEnPassant(move) {
+        let squareToBeUpdated;
+        const [i, j] = move.startPos;
+        const [iNew, jNew] = move.endPos;
+        this.board[j][i] = "--";
+        this.board[jNew][iNew] = move.movingPiece;
+
+        switch(move.movingPiece[0]) {
+            case "w":
+                this.board[jNew + 1][iNew] = "--";
+                squareToBeUpdated = [iNew, jNew + 1];
+                this.pieces["bP"].delete(this.boardUtility.squareToIndex([iNew, jNew + 1]));
+                break;
+            case "b":
+                this.board[jNew - 1][iNew] = "--";
+                squareToBeUpdated = [iNew, jNew - 1];
+                this.pieces["wP"].delete(this.boardUtility.squareToIndex([iNew, jNew - 1]));
+                break;
+        };
+        return squareToBeUpdated;
+    };
+
+    makeNormalMove(move) {
+        const [i, j] = move.startPos;
+        const [iNew, jNew] = move.endPos;
+        this.board[j][i] = "--";
+        this.board[jNew][iNew] = move.movingPiece;
+        
+        if (move.movingPiece[1] == "R") {
+            switch(move.movingPiece[0]) {
+                case "w":
+                    this.whiteCanCastle = [this.whiteCanCastle[0] && this.board[7][0] == "wR", this.whiteCanCastle[1] && this.board[7][7] == "wR"];
+                    break;
+                case "b":
+                    this.blackCanCastle = [this.blackCanCastle[0] && this.board[0][0] == "bR", this.blackCanCastle[1] && this.board[0][7] == "bR"];
+                    break;
+            };
+        };
+    };
+
     undoMove() {
         if (this.moveLog.length > 0) {
             this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
@@ -185,30 +237,23 @@ class board {
             this.blackCanCastle = blackCanCastle;
             this.enPassant = possibleEnPassant;
             squaresToBeUpdated.push(move.startPos, move.endPos);
-            let iNew = move.endPos[0];
-            let jNew = move.endPos[1];
+
+            const startIndex = this.boardUtility.squareToIndex(move.startPos);
+            const endIndex = this.boardUtility.squareToIndex(move.endPos);
+            this.pieces[move.movingPiece].add(startIndex);
+            if (!move.promotion) {
+                this.pieces[move.movingPiece].delete(endIndex);
+            } else {
+                this.pieces[move.promotedPiece].delete(endIndex);
+            };
+            if (move.isCapture() && !move.enPassant) {
+                this.pieces[move.takenPiece].add(endIndex);
+            };
 
             if (move.castleKing) {
-                if (move.endPos[0] > move.startPos[0]) {
-                    this.board[jNew][iNew + 1] = this.board[jNew][iNew - 1];
-                    this.board[jNew][iNew - 1] = "--";
-                    squaresToBeUpdated.push([iNew + 1, jNew], [iNew - 1, jNew]);
-                } else {
-                    this.board[jNew][iNew - 2] = this.board[jNew][iNew + 1];
-                    this.board[jNew][iNew + 1] = "--";
-                    squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
-                };
+                this.undoCastleMove(move).forEach(square => squaresToBeUpdated.push(square));
             } else if (move.enPassant) {
-                switch(move.movingPiece) {
-                    case "wP":
-                        this.board[jNew + 1][iNew] = "bP";
-                        squaresToBeUpdated.push([iNew, jNew + 1]);
-                        break;
-                    case "bP":
-                        this.board[jNew - 1][iNew] = "wP";
-                        squaresToBeUpdated.push([iNew, jNew - 1]);
-                        break;
-                };
+                squaresToBeUpdated.push(this.undoEnPassant(move));
             } else if (move.promotion) {
                 if (this.whiteToMove) {
                     this.board[move.startPos[1]][move.startPos[0]] = "wP";
@@ -217,31 +262,7 @@ class board {
                 };
             };
 
-            if (move.movingPiece[1] == "K") {
-                switch(move.movingPiece[0]) {
-                    case "w":
-                        this.whiteKingPosition = move.startPos;
-                        break;
-                    case "b":
-                        this.blackKingPosition = move.startPos;
-                        break;
-                };
-            };
-
-            if (pieces.has(move.takenPiece[1])) {
-                switch(move.takenPiece[0]) {
-                    case "w":
-                        this.whitePieces++;
-                        break;
-                    case "b":
-                        this.blackPieces++;
-                        break;
-                };
-            };
-
-            let [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move, true);
-            this.whiteMaterial += whiteMaterialDiff;
-            this.blackMaterial += blackMaterialDiff;
+            let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move, true);
             this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
@@ -251,13 +272,61 @@ class board {
             this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
             this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
             this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, this.whiteToMove, this.enPassant);
-            return squaresToBeUpdated
+            return squaresToBeUpdated;
         };
         return [];
     };
 
+    undoCastleMove(move) {
+        const [iNew, jNew] = move.endPos;
+        const squaresToBeUpdated = [];
+        if (move.endPos[0] > move.startPos[0]) {
+            this.board[jNew][iNew + 1] = this.board[jNew][iNew - 1];
+            this.board[jNew][iNew - 1] = "--";
+            squaresToBeUpdated.push([iNew + 1, jNew], [iNew - 1, jNew]);
+
+            if (move.movingPiece[0] == "w") {
+                this.pieces["wR"].add(63);
+                this.pieces["wR"].delete(61);
+            } else {
+                this.pieces["bR"].add(7);
+                this.pieces["bR"].delete(5);
+            };
+        } else {
+            this.board[jNew][iNew - 2] = this.board[jNew][iNew + 1];
+            this.board[jNew][iNew + 1] = "--";
+            squaresToBeUpdated.push([iNew - 2, jNew], [iNew + 1, jNew]);
+
+            if (move.movingPiece[0] == "w") {
+                this.pieces["wR"].add(56);
+                this.pieces["wR"].delete(59);
+            } else {
+                this.pieces["bR"].add(0);
+                this.pieces["bR"].delete(3);
+            };
+        };
+        return squaresToBeUpdated;
+    };
+
+    undoEnPassant(move) {
+        const [iNew, jNew] = move.endPos;
+        let squareToBeUpdated;
+        switch(move.movingPiece) {
+            case "wP":
+                this.board[jNew + 1][iNew] = "bP";
+                squareToBeUpdated = [iNew, jNew + 1];
+                this.pieces["bP"].add(this.boardUtility.squareToIndex([iNew, jNew + 1]));
+                break;
+            case "bP":
+                this.board[jNew - 1][iNew] = "wP";
+                squareToBeUpdated = [iNew, jNew - 1];
+                this.pieces["wP"].add(this.boardUtility.squareToIndex([iNew, jNew - 1]));
+                break;
+        };
+    };
+
     determineChecksAndPins() {
-        let kingPosition = this.whiteToMove ? this.whiteKingPosition : this.blackKingPosition;
+        let kingPosition = this.whiteToMove ? this.getKingPosition("w") : this.getKingPosition("b");
         let color = this.whiteToMove ? "w" : "b";
         let oppositeColor = this.whiteToMove ? "b" : "w";
         let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
@@ -338,9 +407,11 @@ class board {
 
     getPossibleMoves() {
         let moves = [];
-        for (var j = 0; j < 8; j++) {
-            for (var i = 0; i < 8; i++) {
-                moves = moves.concat(this.getPossibleMovesSquare([i, j]));
+        for (let key in this.pieces) {
+            const pieceSet = this.pieces[key];
+            for (let index of pieceSet) {
+                const square = this.boardUtility.indexToSquare(index);
+                moves = moves.concat(this.getPossibleMovesSquare(square));
             };
         };
         return moves;
@@ -422,10 +493,10 @@ class board {
                         };
                     };
                     if (this.enPassant.length > 0 && j == 3) {
-                        if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.whiteKingPosition, this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
+                        if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
                             moves.push(new Move(pieceLocation, [i - 1, j - 1], "wP", "--", false, false, true));
                         };
-                        if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.whiteKingPosition, this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
+                        if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
                             moves.push(new Move(pieceLocation, [i + 1, j - 1], "wP", "--", false, false, true));
                         };
                     };
@@ -467,10 +538,10 @@ class board {
                         };
                     };
                     if (this.enPassant.length > 0 && j == 4) {
-                        if (this.enPassant[1] == 4 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.blackKingPosition, this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
+                        if (this.enPassant[1] == 4 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
                             moves.push(new Move(pieceLocation, [i - 1, j + 1], "bP", "--", false, false, true));
                         };
-                        if (this.enPassant[1] == 4 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.blackKingPosition, this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
+                        if (this.enPassant[1] == 4 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
                             moves.push(new Move(pieceLocation, [i + 1, j + 1], "bP", "--", false, false, true));
                         };
                     };
@@ -651,6 +722,11 @@ class board {
     positionFromFen(fenString) {
         const [board, playerToMove, castling, enPassant, halfMoveClock, fullMoveClock] = fenString.split(" ");
         const rows = board.split("/");
+
+        for (let key in this.pieces) {
+            this.pieces[key] = new Set();
+        };
+
         for (let row = 0; row < 8; row++) {
             const currentRow = rows[row];
             let column = 0;
@@ -665,15 +741,15 @@ class board {
                     column += emptySquares;
                 } else {
                     if (char === char.toLowerCase()) { // black
-                        if (char.toUpperCase() == "K") {
-                            this.blackKingPosition = [column, row];
-                        };
-                        this.board[row][column] = "b" + char.toUpperCase();
+                        const piece = "b" + char.toUpperCase();
+                        const index = this.boardUtility.squareToIndex([column, row]);
+                        this.board[row][column] = piece;
+                        this.pieces[piece].add(index);
                     } else { // white
-                        if (char.toUpperCase() == "K") {
-                            this.whiteKingPosition = [column, row];
-                        };
-                        this.board[row][column] = "w" + char.toUpperCase();
+                        const piece = "w" + char.toUpperCase();
+                        const index = this.boardUtility.squareToIndex([column, row]);
+                        this.board[row][column] = piece;
+                        this.pieces[piece].add(index);
                     };
                     column++;
                 };
@@ -709,17 +785,11 @@ class board {
             this.enPassant = [column, row];
         };
 
-        const [whiteMaterial, blackMaterial] = this.boardUtility.countMaterial(this.board);
-        this.whiteMaterial = whiteMaterial;
-        this.blackMaterial = blackMaterial;
         const [whitePiecePositionBonus, blackPiecePositionBonus, whitePiecePositionBonusEg, blackPiecePositionBonusEg] = this.boardUtility.countPiecePositionBonus(this.board);
         this.whitePiecePositionBonus = whitePiecePositionBonus;
         this.blackPiecePositionBonus = blackPiecePositionBonus;
         this.whitePiecePositionBonusEg = whitePiecePositionBonusEg;
         this.blackPiecePositionBonusEg = blackPiecePositionBonusEg;
-        const [whitePieces, blackPieces] = this.boardUtility.countPieces(this.board, pieces);
-        this.whitePieces = whitePieces;
-        this.blackPieces = blackPieces;
         this.determineChecksAndPins();
         this.possibleMoves = this.getPossibleMoves();
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
@@ -770,6 +840,35 @@ class board {
 
     inCheck() {
         return this.currentCheckingPieces.length > 0;
+    };
+
+    getKingPosition(color) {
+        let positionIndex;
+        if (color == "w") {
+            positionIndex = Array.from(this.pieces["wK"])[0];
+        } else {
+            positionIndex = Array.from(this.pieces["bK"])[0];
+        };
+        return this.boardUtility.indexToSquare(positionIndex);
+    };
+
+    getMaterial(color) {
+        let material = 0;
+        for (let piece in this.pieces) {
+            if (piece[0] == color) {
+                material += pieceValues[piece[1]] * this.pieces[piece].size;
+            };
+        };
+        return material;
+    };
+
+    getPieceMaterial(color) {
+        let material = 0;
+        for (let piece of pieces) {
+            const coloredPiece = color + piece;
+            material += pieceValues[piece] * this.pieces[coloredPiece].size;
+        };
+        return material;
     };
 
     makeNullMove() {
@@ -903,21 +1002,6 @@ class boardUtils {
         return false;
     };
 
-    countMaterial(board) {
-        let blackMaterial = 0
-        let whiteMaterial = 0
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                if (board[j][i][0] == "w") {
-                    whiteMaterial += pieceValues[board[j][i][1]];
-                } else if (board[j][i][0] == "b") {
-                    blackMaterial += pieceValues[board[j][i][1]];
-                };
-            };
-        };
-        return [whiteMaterial, blackMaterial]
-    };
-
     countPiecePositionBonus(board) {
         let blackPieceBonus = 0
         let whitePieceBonus = 0
@@ -935,25 +1019,6 @@ class boardUtils {
             };
         };
         return [whitePieceBonus, blackPieceBonus, whitePieceBonusEg, blackPieceBonusEg]
-    };
-
-    countPieces(board, pieces) {
-        let whitePieces = 0;
-        let blackPieces = 0;
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                if (board[j][i][0] == "w") {
-                    if (pieces.has(board[j][i][1])) {
-                        whitePieces++;
-                    };
-                } else if (board[j][i][0] == "b") {
-                    if (pieces.has(board[j][i][1])) {
-                        blackPieces++;
-                    };
-                };
-            };
-        };
-        return [whitePieces, blackPieces];
     };
 
     updateZobristHashCastlingRights(zobristHash, whiteCanCastle, blackCanCastle) {
@@ -1041,8 +1106,6 @@ class boardUtils {
 
     getMaterialDiffs(move, undo = false) {
         if (!undo) {
-            let whiteMaterialDiff = 0;
-            let blackMaterialDiff = 0;
             let whitePiecePositionBonusDiff = 0;
             let blackPiecePositionBonusDiff = 0;
             let whitePiecePositionBonusDiffEg = 0;
@@ -1055,17 +1118,14 @@ class boardUtils {
 
             // update taken piece materials and piece position bonuses
             if (move.takenPiece[0] != "--" || move.enPassant) {
-                const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
                 const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 const piecePositionBonusDiffEg = move.enPassant ? endPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : endPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 switch(move.movingPiece[0]) {
                     case "b":
-                        whiteMaterialDiff -= materialDiffValue;
                         whitePiecePositionBonusDiff -= piecePositionBonusDiff;
                         whitePiecePositionBonusDiffEg -= piecePositionBonusDiffEg;
                         break;
                     case "w":
-                        blackMaterialDiff -= materialDiffValue;
                         blackPiecePositionBonusDiff -= piecePositionBonusDiff;
                         blackPiecePositionBonusDiffEg -= piecePositionBonusDiffEg;
                         break;
@@ -1073,9 +1133,6 @@ class boardUtils {
             };
 
             // update moving piece position bonuses and materials if promotion
-            const oldPromotionMaterialDiffValue = move.promotion ? pieceValues[move.movingPiece[1]] : 0;
-            const newPromotionMaterialDiffValue = move.promotion ? pieceValues[move.promotedPiece[1]] : 0;
-            const promotionMaterialDiffValue = newPromotionMaterialDiffValue - oldPromotionMaterialDiffValue;
             const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
             const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
             const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
@@ -1084,12 +1141,10 @@ class boardUtils {
             const piecePositioningBonusDiffEg = newPiecePositioningBonusEg - oldPiecePositioningBonusEg;
             switch(move.movingPiece[0]) {
                 case "w":
-                    whiteMaterialDiff += promotionMaterialDiffValue;
                     whitePiecePositionBonusDiff += piecePositioningBonusDiff;
                     whitePiecePositionBonusDiffEg += piecePositioningBonusDiffEg;
                     break;
                 case "b":
-                    blackMaterialDiff += promotionMaterialDiffValue;
                     blackPiecePositionBonusDiff += piecePositioningBonusDiff;
                     blackPiecePositionBonusDiffEg += piecePositioningBonusDiffEg;
                     break;
@@ -1115,10 +1170,8 @@ class boardUtils {
                 };
             };
 
-            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
+            return [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
         } else {
-            let whiteMaterialDiff = 0;
-            let blackMaterialDiff = 0;
             let whitePiecePositionBonusDiff = 0;
             let blackPiecePositionBonusDiff = 0;
             let whitePiecePositionBonusDiffEg = 0;
@@ -1129,26 +1182,20 @@ class boardUtils {
 
             // update taken piece materials and piece position bonuses
             if (move.takenPiece[0] != "--" || move.enPassant) {
-                const materialDiffValue = move.enPassant ? 1 : pieceValues[move.takenPiece[1]];
                 const piecePositionBonusDiff = move.enPassant ? startPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : startPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 const piecePositionBonusDiffEg = move.enPassant ? endPieceSquareValues[move.takenPiece[1]][jNew + playerDiff][iNew] : endPieceSquareValues[move.takenPiece[1]][jNew][iNew];
                 switch(move.movingPiece[0]) {
                     case "b":
-                        whiteMaterialDiff += materialDiffValue;
                         whitePiecePositionBonusDiff += piecePositionBonusDiff;
                         whitePiecePositionBonusDiffEg += piecePositionBonusDiffEg;
                         break;
                     case "w":
-                        blackMaterialDiff += materialDiffValue;
                         blackPiecePositionBonusDiff += piecePositionBonusDiff;
                         blackPiecePositionBonusDiffEg += piecePositionBonusDiffEg;
                         break;
                 };
             };
             // update moving piece position bonuses and materials if promotion
-            const oldPromotionMaterialDiffValue = move.promotion ? pieceValues[move.movingPiece[1]] : 0;
-            const newPromotionMaterialDiffValue = move.promotion ? pieceValues[move.promotedPiece[1]] : 0;
-            const promotionMaterialDiffValue = newPromotionMaterialDiffValue - oldPromotionMaterialDiffValue;
             const oldPiecePositioningBonus = startPieceSquareValues[move.movingPiece[1]][j][i];
             const newPiecePositioningBonus = move.promotion ? startPieceSquareValues[move.promotedPiece[1]][jNew][iNew] : startPieceSquareValues[move.movingPiece[1]][jNew][iNew];
             const piecePositioningBonusDiff = newPiecePositioningBonus - oldPiecePositioningBonus;
@@ -1157,12 +1204,10 @@ class boardUtils {
             const piecePositioningBonusDiffEg = newPiecePositioningBonusEg - oldPiecePositioningBonusEg;
             switch(move.movingPiece[0]) {
                 case "w":
-                    whiteMaterialDiff -= promotionMaterialDiffValue;
                     whitePiecePositionBonusDiff -= piecePositioningBonusDiff;
                     whitePiecePositionBonusDiffEg -= piecePositioningBonusDiffEg;
                     break;
                 case "b":
-                    blackMaterialDiff -= promotionMaterialDiffValue;
                     blackPiecePositionBonusDiff -= piecePositioningBonusDiff;
                     blackPiecePositionBonusDiffEg -= piecePositioningBonusDiffEg;
                     break;
@@ -1188,7 +1233,7 @@ class boardUtils {
                 };
             };
 
-            return [whiteMaterialDiff, blackMaterialDiff, whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
+            return [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg];
         };
     };
 
