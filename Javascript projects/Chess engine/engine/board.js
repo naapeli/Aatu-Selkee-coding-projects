@@ -581,17 +581,15 @@ class board {
         if (!noCheck) {
             blockLocations = this.currentCheckingPieces[0];
         };
-        if (notDoubleCheck) {
-            if (!inPinnedPieces) {
-                moveDifferences.forEach((xyDiff) => {
-                    let iNew = i + xyDiff[0]
-                    let jNew = j + xyDiff[1]
-                    if (this.boardUtility.positionOnBoard(iNew, jNew) && this.board[jNew][iNew][0] != color && (noCheck || blockLocations.has(10 * iNew + jNew))) {
-                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, this.board[jNew][iNew]);
-                        this.numberOfPossibleMoves++;
-                    };
-                });
-            };
+        if (notDoubleCheck && !inPinnedPieces) {
+            moveDifferences.forEach((xyDiff) => {
+                let iNew = i + xyDiff[0]
+                let jNew = j + xyDiff[1]
+                if (this.boardUtility.positionOnBoard(iNew, jNew) && this.board[jNew][iNew][0] != color && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, this.board[jNew][iNew]);
+                    this.numberOfPossibleMoves++;
+                };
+            });
         };
     };
 
