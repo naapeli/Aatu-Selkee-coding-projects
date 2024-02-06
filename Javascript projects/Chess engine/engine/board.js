@@ -452,125 +452,123 @@ class board {
         let advancePossible = !inPinnedPieces || (direction[0] == 0 && (direction[1] == -1 || direction[1] == 1));
         let rightTakePossible = !inPinnedPieces || (direction[0] == -1 && direction[1] == -1) || (direction[0] == 1 && direction[1] == 1);
         let leftTakePossible = !inPinnedPieces || (direction[0] == 1 && direction[1] == -1) || (direction[0] == -1 && direction[1] == 1);
-        let notDoubleCheck = this.currentCheckingPieces.length < 2;
+        let doubleCheck = this.currentCheckingPieces.length >= 2;
         let noCheck = this.currentCheckingPieces.length == 0;
         let blockLocations;
         if (!noCheck) {
             blockLocations = this.currentCheckingPieces[0];
         };
-        if (notDoubleCheck) {
-            switch(color) {
-                case "w":
-                    if (j - 1 >= 0 && this.board[j - 1][i] == "--" && advancePossible) {
-                        if (noCheck || blockLocations.has(10 * i + j - 1)) {
-                            if (j - 1 != 0) {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 1], "wP", "--");
-                                this.numberOfPossibleMoves++;
-                            } else {
-                                const possiblePromotions = ["wN", "wB", "wR", "wQ"];
-                                possiblePromotions.forEach((piece) => {
-                                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 1], "wP", "--", true, false, false, piece);
-                                    this.numberOfPossibleMoves++;
-                                });
-                            };
-                        };
-                        if (j == 6 && this.board[4][i] == "--" && (noCheck || blockLocations.has(10 * i + j - 2))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 2], "wP", "--");
+        if (doubleCheck) {
+            return;
+        };
+        if (color == "w") {
+            if (j - 1 >= 0 && this.board[j - 1][i] == "--" && advancePossible) {
+                if (noCheck || blockLocations.has(10 * i + j - 1)) {
+                    if (j - 1 != 0) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 1], "wP", "--");
+                        this.numberOfPossibleMoves++;
+                    } else {
+                        const possiblePromotions = ["wN", "wB", "wR", "wQ"];
+                        possiblePromotions.forEach((piece) => {
+                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 1], "wP", "--", true, false, false, piece);
                             this.numberOfPossibleMoves++;
-                        };
+                        });
                     };
-                    if (j - 1 >= 0 && i - 1 >= 0 && this.board[j - 1][i - 1][0] == "b" && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j - 1))) {
-                        if (j - 1 != 0) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", this.board[j - 1][i - 1]);
-                            this.numberOfPossibleMoves++;
-                        } else {
-                            const possiblePromotions = ["wN", "wB", "wR", "wQ"];
-                            possiblePromotions.forEach((piece) => {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", this.board[j - 1][i - 1], true, false, false, piece);
-                                this.numberOfPossibleMoves++;
-                            });
-                        };
-                    };
-                    if (j - 1 >= 0 && i + 1 < 8 && this.board[j - 1][i + 1][0] == "b" && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j - 1))) {
-                        if (j - 1 != 0) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", this.board[j - 1][i + 1]);
-                            this.numberOfPossibleMoves++;
-                        } else {
-                            const possiblePromotions = ["wN", "wB", "wR", "wQ"];
-                            possiblePromotions.forEach((piece) => {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", this.board[j - 1][i + 1], true, false, false, piece);
-                                this.numberOfPossibleMoves++;
-                            });
-                        };
-                    };
-                    if (this.enPassant.length > 0 && j == 3) {
-                        if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", "--", false, false, true);
-                            this.numberOfPossibleMoves++;
-                        };
-                        if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", "--", false, false, true);
-                            this.numberOfPossibleMoves++;
-                        };
-                    };
-                    break;
-                case "b":
-                    if (j + 1 < 8 && this.board[j + 1][i] == "--" && advancePossible) {
-                        if (noCheck || blockLocations.has(10 * i + j + 1)) {
-                            if (j + 1 != 7) {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 1], "bP", "--");
-                                this.numberOfPossibleMoves++;
-                            } else {
-                                const possiblePromotions = ["bN", "bB", "bR", "bQ"];
-                                possiblePromotions.forEach((piece) => {
-                                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 1], "bP", "--", true, false, false, piece);
-                                    this.numberOfPossibleMoves++;
-                                });
-                            };
-                        };
-                        if (j == 1 && this.board[3][i] == "--" && (noCheck || blockLocations.has(10 * i + j + 2))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 2], "bP", "--");
-                            this.numberOfPossibleMoves++;
-                        };
-                    };
-                    if (j + 1 < 8 && i - 1 >= 0 && this.board[j + 1][i - 1][0] == "w" && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j + 1))) {
+                };
+                if (j == 6 && this.board[4][i] == "--" && (noCheck || blockLocations.has(10 * i + j - 2))) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j - 2], "wP", "--");
+                    this.numberOfPossibleMoves++;
+                };
+            };
+            if (j - 1 >= 0 && i - 1 >= 0 && this.board[j - 1][i - 1][0] == "b" && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j - 1))) {
+                if (j - 1 != 0) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", this.board[j - 1][i - 1]);
+                    this.numberOfPossibleMoves++;
+                } else {
+                    const possiblePromotions = ["wN", "wB", "wR", "wQ"];
+                    possiblePromotions.forEach((piece) => {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", this.board[j - 1][i - 1], true, false, false, piece);
+                        this.numberOfPossibleMoves++;
+                    });
+                };
+            };
+            if (j - 1 >= 0 && i + 1 < 8 && this.board[j - 1][i + 1][0] == "b" && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j - 1))) {
+                if (j - 1 != 0) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", this.board[j - 1][i + 1]);
+                    this.numberOfPossibleMoves++;
+                } else {
+                    const possiblePromotions = ["wN", "wB", "wR", "wQ"];
+                    possiblePromotions.forEach((piece) => {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", this.board[j - 1][i + 1], true, false, false, piece);
+                        this.numberOfPossibleMoves++;
+                    });
+                };
+            };
+            if (this.enPassant.length > 0 && j == 3) {
+                if (this.enPassant[1] == 3 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j - 1], "wP", "--", false, false, true);
+                    this.numberOfPossibleMoves++;
+                };
+                if (this.enPassant[1] == 3 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("w"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
+                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j - 1], "wP", "--", false, false, true);
+                    this.numberOfPossibleMoves++;
+                };
+            };
+        } else {
+                if (j + 1 < 8 && this.board[j + 1][i] == "--" && advancePossible) {
+                    if (noCheck || blockLocations.has(10 * i + j + 1)) {
                         if (j + 1 != 7) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", this.board[j + 1][i - 1]);
+                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 1], "bP", "--");
                             this.numberOfPossibleMoves++;
                         } else {
                             const possiblePromotions = ["bN", "bB", "bR", "bQ"];
                             possiblePromotions.forEach((piece) => {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", this.board[j + 1][i - 1], true, false, false, piece);
+                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 1], "bP", "--", true, false, false, piece);
                                 this.numberOfPossibleMoves++;
                             });
                         };
                     };
-                    if (j + 1 < 8 && i + 1 < 8 && this.board[j + 1][i + 1][0] == "w" && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j + 1))) {
-                        if (j + 1 != 7) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", this.board[j + 1][i + 1]);
-                            this.numberOfPossibleMoves++;
-                        } else {
-                            const possiblePromotions = ["bN", "bB", "bR", "bQ"];
-                            possiblePromotions.forEach((piece) => {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", this.board[j + 1][i + 1], true, false, false, piece);
-                                this.numberOfPossibleMoves++;
-                            });
-                        };
+                    if (j == 1 && this.board[3][i] == "--" && (noCheck || blockLocations.has(10 * i + j + 2))) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i, j + 2], "bP", "--");
+                        this.numberOfPossibleMoves++;
                     };
-                    if (this.enPassant.length > 0 && j == 4) {
-                        if (this.enPassant[1] == 4 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", "--", false, false, true);
+                };
+                if (j + 1 < 8 && i - 1 >= 0 && this.board[j + 1][i - 1][0] == "w" && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j + 1))) {
+                    if (j + 1 != 7) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", this.board[j + 1][i - 1]);
+                        this.numberOfPossibleMoves++;
+                    } else {
+                        const possiblePromotions = ["bN", "bB", "bR", "bQ"];
+                        possiblePromotions.forEach((piece) => {
+                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", this.board[j + 1][i - 1], true, false, false, piece);
                             this.numberOfPossibleMoves++;
-                        };
-                        if (this.enPassant[1] == 4 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
-                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", "--", false, false, true);
-                            this.numberOfPossibleMoves++;
-                        };
+                        });
                     };
-                    break;
+                };
+                if (j + 1 < 8 && i + 1 < 8 && this.board[j + 1][i + 1][0] == "w" && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j + 1))) {
+                    if (j + 1 != 7) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", this.board[j + 1][i + 1]);
+                        this.numberOfPossibleMoves++;
+                    } else {
+                        const possiblePromotions = ["bN", "bB", "bR", "bQ"];
+                        possiblePromotions.forEach((piece) => {
+                            this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", this.board[j + 1][i + 1], true, false, false, piece);
+                            this.numberOfPossibleMoves++;
+                        });
+                    };
+                };
+                if (this.enPassant.length > 0 && j == 4) {
+                    if (this.enPassant[1] == 4 && this.enPassant[0] == i - 1 && 0 <= i - 1 && this.boardUtility.enPassantPin([i, j], [i - 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && leftTakePossible && (noCheck || blockLocations.has(10 * (i - 1) + j))) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i - 1, j + 1], "bP", "--", false, false, true);
+                        this.numberOfPossibleMoves++;
+                    };
+                    if (this.enPassant[1] == 4 && this.enPassant[0] == i + 1 && i + 1 < 8 && this.boardUtility.enPassantPin([i, j], [i + 1, j], color, oppositeColor, this.getKingPosition("b"), this.board) && rightTakePossible && (noCheck || blockLocations.has(10 * (i + 1) + j))) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [i + 1, j + 1], "bP", "--", false, false, true);
+                        this.numberOfPossibleMoves++;
+                    };
+                };
             };
         };
-    };
 
     getKnightMoves(pieceLocation, color) {
         let moveDifferences = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]];
