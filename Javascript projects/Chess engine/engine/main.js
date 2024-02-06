@@ -115,7 +115,10 @@ function dragPiece(event) {
     const movingPieceStartElement = event.target.parentNode;
     let parentID = movingPieceStartElement.id;
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
-    const moves = currentBoard.getPossibleMovesSquare(movingStartSquare);
+    const oldIndex = currentBoard.numberOfPossibleMoves;
+    currentBoard.getPossibleMovesSquare(movingStartSquare);
+    const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
+    currentBoard.numberOfPossibleMoves = oldIndex;
     selectedSquare = movingStartSquare;
 
     removeTargetHighlights();
@@ -214,7 +217,10 @@ async function clickPiece(event) {
             return;
         };
         selectedSquare = newSelectedSquare;
-        const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+        const oldIndex = currentBoard.numberOfPossibleMoves;
+        currentBoard.getPossibleMovesSquare(newSelectedSquare);
+        const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
+        currentBoard.numberOfPossibleMoves = oldIndex;
         removeTargetHighlights();
         addTargetHighlight(moves);
     } else if (squaresEqual(selectedSquare, newSelectedSquare)) {
@@ -249,7 +255,10 @@ async function clickPiece(event) {
                     removeTargetHighlights();
                     addMoveToMoveLog(currentMove);
                 } else {
-                    const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                    const oldIndex = currentBoard.numberOfPossibleMoves;
+                    currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                    const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
+                    currentBoard.numberOfPossibleMoves = oldIndex;
                     if (moves.length > 0) {
                         selectedSquare = newSelectedSquare;
                         removeTargetHighlights();
@@ -283,7 +292,10 @@ async function clickPiece(event) {
                 removeTargetHighlights();
                 addMoveToMoveLog(currentMove);
             } else {
-                const moves = currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                const oldIndex = currentBoard.numberOfPossibleMoves;
+                currentBoard.getPossibleMovesSquare(newSelectedSquare);
+                const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
+                currentBoard.numberOfPossibleMoves = oldIndex;
                 if (moves.length > 0) {
                     selectedSquare = newSelectedSquare;
                     removeTargetHighlights();
@@ -323,7 +335,7 @@ function makeMove(move) {
         updateSquares(squaresToBeUpdated, newHighlight);
         currentFen.textContent = currentBoard.getFen();
         selectedSquare = [];
-        const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.possibleMoves, currentBoard.currentCheckingPieces);
+        const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.numberOfPossibleMoves, currentBoard.currentCheckingPieces.length);
 
         if (move.movingPiece[1] == "P" || move.isCapture()) {
             fiftyMoveCounter.push(0);
@@ -336,7 +348,7 @@ function makeMove(move) {
         } else {
             repetitionTable[currentBoard.zobristHash] = 1
         };
-        if (repetitionTable[currentBoard.zobristHash] >= 3 || (currentBoard.possibleMoves.length === 0 && !checkMate) || fiftyMoveCounter[fiftyMoveCounter.length - 1] > 99) {
+        if (repetitionTable[currentBoard.zobristHash] >= 3 || (currentBoard.numberOfPossibleMoves === 0 && !checkMate) || fiftyMoveCounter[fiftyMoveCounter.length - 1] > 99) {
             console.log("---------------DRAW---------------");
             endGameScreen(true, "");
         } else if (checkMate) {

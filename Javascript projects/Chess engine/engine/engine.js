@@ -20,7 +20,7 @@ class engine {
         this.materialMultiplier = 10;
         this.allowNullMovePruning = true;
         this.allowRazoring = true;
-        this.allowDeepRazoring = false;
+        this.allowDeepRazoring = true;
         this.allowReverseFutilityPruning = true;
         this.aspirationWindows = true;
         this.EXACT_NODE = 0;
@@ -68,7 +68,7 @@ class engine {
         // clear historytable from previous search
         currentHistoryTable.clear();
 
-        if (this.board.possibleMoves.length == 0) {
+        if (this.board.numberOfPossibleMoves == 0) {
             return;
         };
         console.log("Search running");
@@ -177,8 +177,8 @@ class engine {
 
 
         // if found a terminal node, return the corresponding evaluation
-        if (this.board.possibleMoves.length === 0) {
-            if (this.board.boardUtility.isCheckMate(this.board.possibleMoves, this.board.currentCheckingPieces)) {
+        if (this.board.numberOfPossibleMoves === 0) {
+            if (this.board.boardUtility.isCheckMate(this.board.numberOfPossibleMoves, this.board.currentCheckingPieces.length)) {
                 return -this.CHECKMATE + depthFromRoot; // checkmate
             };
             return 0; // stalemate
@@ -242,7 +242,7 @@ class engine {
         
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot);
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot, this.board.numberOfPossibleMoves);
         let positionBestMove = moves[0];
         let PVNodeFound = false;
         let nodeType = this.UPPERBOUND_NODE;
@@ -374,7 +374,7 @@ class engine {
         if (alpha < stand_pat) {
             alpha = stand_pat;
         };
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot);
+        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot, this.board.numberOfPossibleMoves);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             if (move.isCapture() || (this.board.inCheck() && allowChecks)) { // continue search if move is piece capture
@@ -444,8 +444,11 @@ class engine {
     getKingSafetyFactor(owncolor) {
         const oppositeColor = owncolor == "w" ? "b" : "w";
         const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
-        const kingQueenMoves = this.board.getQueenMoves(ownKingLocation, oppositeColor);
-        const ownKingMobilityFactor = Math.min(1 / kingQueenMoves.length, 1);
+        const oldIndex = this.board.numberOfPossibleMoves;
+        this.board.getQueenMoves(ownKingLocation, oppositeColor);
+        const amountOfQueenMoves = this.board.numberOfPossibleMoves - oldIndex;
+        this.board.numberOfPossibleMoves = oldIndex;
+        const ownKingMobilityFactor = Math.min(1 / amountOfQueenMoves, 1);
         return ownKingMobilityFactor;
     };
 
@@ -508,7 +511,7 @@ class engine {
             extension = 1;
         } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
             extension = 1;
-        } else if (this.board.possibleMoves.length == 1) { // one reply extension
+        } else if (this.board.numberOfPossibleMoves == 1) { // one reply extension
             extension = 1;
         }
         return extension;
@@ -598,7 +601,7 @@ class engine {
     };
 
     getMoveFromString(move) {
-        for (let i = 0; i < this.board.possibleMoves.length; i++) {
+        for (let i = 0; i < this.board.numberOfPossibleMoves; i++) {
             const currentMove = this.board.possibleMoves[i];
             if (currentMove.convertToString() == move) {
                     return [true, currentMove];
@@ -620,11 +623,12 @@ class engine {
         if (currentDepth === 0) {
             return 1;
         };
-        this.board.possibleMoves.forEach(move => {
+        const originalMoves = this.board.possibleMoves.slice(0, this.board.numberOfPossibleMoves);
+        for (let move of originalMoves) {
             this.board.makeMove(move);
             numberOfMoves += this.getNumberOfMoves(currentDepth - 1);
             this.board.undoMove();
-        });
+        };
         return numberOfMoves;
     };
 
@@ -637,14 +641,15 @@ class engine {
 
     debugNumberOfMoves(depth) {
         let total = 0
-        this.board.possibleMoves.forEach(move => {
+        const originalMoves = this.board.possibleMoves.slice(0, this.board.numberOfPossibleMoves);
+        for (let move of originalMoves) {
             let moveString = boardPositions[move.startPos[0]] + (8 - move.startPos[1]) + boardPositions[move.endPos[0]] + (8 - move.endPos[1]);
             this.board.makeMove(move);
             let moves = this.getNumberOfMoves(depth - 1);
             total += moves
             this.board.undoMove();
             console.log([moveString, moves])
-        });
+        };
         console.log(["Total", total])
     };
 
@@ -702,14 +707,15 @@ class engine {
 };
 
 class moveOrderer {
-    orderMoves(moves, previousBestMove, depthFromRoot) {
-        this.calculateAssumedMoveScores(moves, previousBestMove, depthFromRoot);
-        const sortedMoves = this.sort(moves);
+    orderMoves(moves, previousBestMove, depthFromRoot, numberOfMoves) {
+        const slicedMoves = moves.slice(0, numberOfMoves);
+        this.calculateAssumedMoveScores(slicedMoves, previousBestMove, depthFromRoot);
+        const sortedMoves = this.sort(slicedMoves);
         return sortedMoves;
     };
 
     calculateAssumedMoveScores(moves, previousBestMove, depthFromRoot) {
-        moves.forEach(move => {
+        for (let move of moves) {
             const movingPieceType = move.movingPiece[1];
             const takenPieceType = move.takenPiece[1];
 
@@ -741,7 +747,7 @@ class moveOrderer {
             if (move.castleKing) {
                 move.assumedMoveScore += 10
             };
-        });
+        };
     };
 
     sort(moves) {
