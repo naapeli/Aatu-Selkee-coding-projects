@@ -574,103 +574,104 @@ class board {
         let moveDifferences = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]];
         let [i, j] = pieceLocation;
         let [inPinnedPieces, _] = this.boardUtility.pieceInPinnedPieces(i, j, this.currentPinnedPieces);
-        let notDoubleCheck = this.currentCheckingPieces.length < 2;
+        let doubleCheck = this.currentCheckingPieces.length >= 2;
         let noCheck = this.currentCheckingPieces.length == 0;
         let blockLocations;
         const movingPiece = this.board[j][i];
         if (!noCheck) {
             blockLocations = this.currentCheckingPieces[0];
         };
-        if (notDoubleCheck && !inPinnedPieces) {
-            moveDifferences.forEach((xyDiff) => {
-                let iNew = i + xyDiff[0]
-                let jNew = j + xyDiff[1]
-                if (this.boardUtility.positionOnBoard(iNew, jNew) && this.board[jNew][iNew][0] != color && (noCheck || blockLocations.has(10 * iNew + jNew))) {
-                    this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, this.board[jNew][iNew]);
-                    this.numberOfPossibleMoves++;
-                };
-            });
+        if (doubleCheck || inPinnedPieces) {
+            return;
         };
+        moveDifferences.forEach((xyDiff) => {
+            let iNew = i + xyDiff[0]
+            let jNew = j + xyDiff[1]
+            if (this.boardUtility.positionOnBoard(iNew, jNew) && this.board[jNew][iNew][0] != color && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, this.board[jNew][iNew]);
+                this.numberOfPossibleMoves++;
+            };
+        });
     };
 
     getBishopMoves(pieceLocation, oppositeColor) {
         let directions = [[-1, 1], [1, -1], [-1, -1], [1, 1]]
         let [i, j] = pieceLocation;
         let [inPinnedPieces, pinDirection] = this.boardUtility.pieceInPinnedPieces(i, j, this.currentPinnedPieces);
-        let notDoubleCheck = this.currentCheckingPieces.length < 2;
+        let doubleCheck = this.currentCheckingPieces.length >= 2;
         let noCheck = this.currentCheckingPieces.length == 0;
         let blockLocations;
         const movingPiece = this.board[j][i];
         if (!noCheck) {
             blockLocations = this.currentCheckingPieces[0];
         };
-        if (notDoubleCheck) {
-            directions.forEach(direction => {
-                let n = 1;
-                let directionPossible = !inPinnedPieces || (pinDirection[0] == direction[0] && pinDirection[1] == direction[1]) || (-pinDirection[0] == direction[0] && -pinDirection[1] == direction[1]);
-                if (directionPossible) {
-                    while (this.boardUtility.positionOnBoard(i + n * direction[0], j + n * direction[1])) {
-                        let iNew = i + n * direction[0];
-                        let jNew = j + n * direction[1];
-                        let currentPiece = this.board[jNew][iNew];
-                        if (currentPiece == "--") {
-                            if (noCheck || blockLocations.has(10 * iNew + jNew)) {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
-                                this.numberOfPossibleMoves++;
-                            };
-                            n++;
-                            continue;
-                        } else if (currentPiece[0] == oppositeColor && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+        if (doubleCheck) {
+            return;
+        };
+        directions.forEach(direction => {
+            let n = 1;
+            let directionPossible = !inPinnedPieces || (pinDirection[0] == direction[0] && pinDirection[1] == direction[1]) || (-pinDirection[0] == direction[0] && -pinDirection[1] == direction[1]);
+            if (directionPossible) {
+                while (this.boardUtility.positionOnBoard(i + n * direction[0], j + n * direction[1])) {
+                    let iNew = i + n * direction[0];
+                    let jNew = j + n * direction[1];
+                    let currentPiece = this.board[jNew][iNew];
+                    if (currentPiece == "--") {
+                        if (noCheck || blockLocations.has(10 * iNew + jNew)) {
                             this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
                             this.numberOfPossibleMoves++;
-                            break;
-                        } else {
-                            break;
                         };
+                        n++;
+                        continue;
+                    } else if (currentPiece[0] == oppositeColor && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
+                        this.numberOfPossibleMoves++;
+                        break;
                     };
+                    break;
                 };
-            });
-        };
+            };
+        });
     };
 
     getRookMoves(pieceLocation, oppositeColor) {
         let directions = [[-1, 0], [1, 0], [0, -1], [0, 1]]
         let [i, j] = pieceLocation;
         let [inPinnedPieces, pinDirection] = this.boardUtility.pieceInPinnedPieces(i, j, this.currentPinnedPieces);
-        let notDoubleCheck = this.currentCheckingPieces.length < 2;
+        let doubleCheck = this.currentCheckingPieces.length >= 2;
         let noCheck = this.currentCheckingPieces.length == 0;
         let blockLocations;
         const movingPiece = this.board[j][i];
         if (!noCheck) {
             blockLocations = this.currentCheckingPieces[0];
         };
-        if (notDoubleCheck) {
-            directions.forEach(direction => {
-                let n = 1;
-                let directionPossible = !inPinnedPieces || (pinDirection[0] == direction[0] && pinDirection[1] == direction[1]) || (-pinDirection[0] == direction[0] && -pinDirection[1] == direction[1]);
-                if (directionPossible) {
-                    while (this.boardUtility.positionOnBoard(i + n * direction[0], j + n * direction[1])) {
-                        let iNew = i + n * direction[0];
-                        let jNew = j + n * direction[1];
-                        let currentPiece = this.board[jNew][iNew];
-                        if (currentPiece == "--") {
-                            if (noCheck || blockLocations.has(10 * iNew + jNew)) {
-                                this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
-                                this.numberOfPossibleMoves++;
-                            };
-                            n++;
-                            continue;
-                        } else if (currentPiece[0] == oppositeColor && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+        if (doubleCheck) {
+            return;
+        };
+        directions.forEach(direction => {
+            let n = 1;
+            let directionPossible = !inPinnedPieces || (pinDirection[0] == direction[0] && pinDirection[1] == direction[1]) || (-pinDirection[0] == direction[0] && -pinDirection[1] == direction[1]);
+            if (directionPossible) {
+                while (this.boardUtility.positionOnBoard(i + n * direction[0], j + n * direction[1])) {
+                    let iNew = i + n * direction[0];
+                    let jNew = j + n * direction[1];
+                    let currentPiece = this.board[jNew][iNew];
+                    if (currentPiece == "--") {
+                        if (noCheck || blockLocations.has(10 * iNew + jNew)) {
                             this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
                             this.numberOfPossibleMoves++;
-                            break;
-                        } else {
-                            break;
                         };
+                        n++;
+                        continue;
+                    } else if (currentPiece[0] == oppositeColor && (noCheck || blockLocations.has(10 * iNew + jNew))) {
+                        this.possibleMoves[this.numberOfPossibleMoves] = new Move(pieceLocation, [iNew, jNew], movingPiece, currentPiece);
+                        this.numberOfPossibleMoves++;
+                        break;
                     };
+                    break;
                 };
-            });
-        };
+            };
+        });
     };
 
     getQueenMoves(pieceLocation, oppositeColor) {
