@@ -24,6 +24,20 @@ class board {
             "bN": new Set([1, 6]),
             "bP": new Set([8, 9, 10, 11, 12, 13, 14, 15])
         };
+        this.pieceBitBoards = { // bitBoards that will soon be used for passed pawn, isolated pawn and open file evaluation (and maybe even move generation)
+            "wK": 0b0001000000000000000000000000000000000000000000000000000000000000n,
+            "wQ": 0b0000100000000000000000000000000000000000000000000000000000000000n,
+            "wR": 0b1000000100000000000000000000000000000000000000000000000000000000n,
+            "wB": 0b0010010000000000000000000000000000000000000000000000000000000000n,
+            "wN": 0b0100001000000000000000000000000000000000000000000000000000000000n,
+            "wP": 0b0000000011111111000000000000000000000000000000000000000000000000n,
+            "bK": 0b0000000000000000000000000000000000000000000000000000000000010000n,
+            "bQ": 0b0000000000000000000000000000000000000000000000000000000000001000n,
+            "bR": 0b0000000000000000000000000000000000000000000000000000000010000001n,
+            "bB": 0b0000000000000000000000000000000000000000000000000000000000100100n,
+            "bN": 0b0000000000000000000000000000000000000000000000000000000001000010n,
+            "bP": 0b0000000000000000000000000000000000000000000000001111111100000000n
+        };
         this.boardUtility = new boardUtils();
         this.ply = 0;
         this.whiteToMove = true
@@ -41,20 +55,6 @@ class board {
         this.getPossibleMoves();
         this.moveLog = []; // [[move, whiteCanCastle, blackCanCastle, enPassant], ...]
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
-        this.pieceBitBoards = { // bitBoards that will soon be used for passed pawn, isolated pawn and open file evaluation (and maybe even move generation)
-            "wK": 0b0000000000000000000000000000000000000000000000000000000000001000n,
-            "wQ": 0b0000000000000000000000000000000000000000000000000000000000010000n,
-            "wR": 0b0000000000000000000000000000000000000000000000000000000010000001n,
-            "wB": 0b0000000000000000000000000000000000000000000000000000000000100100n,
-            "wN": 0b0000000000000000000000000000000000000000000000000000000001000010n,
-            "wP": 0b0000000000000000000000000000000000000000000000001111111100000000n,
-            "bK": 0b0000100000000000000000000000000000000000000000000000000000000000n,
-            "bQ": 0b0001000000000000000000000000000000000000000000000000000000000000n,
-            "bR": 0b1000000100000000000000000000000000000000000000000000000000000000n,
-            "bB": 0b0010010000000000000000000000000000000000000000000000000000000000n,
-            "bN": 0b0100001000000000000000000000000000000000000000000000000000000000n,
-            "bP": 0b0000000011111111000000000000000000000000000000000000000000000000n
-        };
         this.makeMoveTime = 0;
         this.undoMoveTime = 0;
         this.moveGenerationTime = 0;
@@ -93,13 +93,17 @@ class board {
             const startIndex = this.boardUtility.squareToIndex(move.startPos);
             const endIndex = this.boardUtility.squareToIndex(move.endPos);
             this.pieces[move.movingPiece].delete(startIndex);
+            this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] & ~(1n << BigInt(startIndex));
             if (!move.promotion) {
                 this.pieces[move.movingPiece].add(endIndex);
+                this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] | (1n << BigInt(endIndex));
             } else {
                 this.pieces[move.promotedPiece].add(endIndex);
+                this.pieceBitBoards[move.promotedPiece] = this.pieceBitBoards[move.promotedPiece] | (1n << BigInt(endIndex));
             };
             if (move.isCapture() && !move.enPassant) {
                 this.pieces[move.takenPiece].delete(endIndex);
+                this.pieceBitBoards[move.takenPiece] = this.pieceBitBoards[move.takenPiece] & ~(1n << BigInt(endIndex));
             };
 
             if (move.castleKing) {
@@ -171,9 +175,13 @@ class board {
             if (move.movingPiece[0] == "w") {
                 this.pieces["wR"].delete(63);
                 this.pieces["wR"].add(61);
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] & ~(1n << BigInt(63));
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] | (1n << BigInt(61));
             } else {
                 this.pieces["bR"].delete(7);
                 this.pieces["bR"].add(5);
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] & ~(1n << BigInt(7));
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] | (1n << BigInt(5));
             };
         } else {
             this.board[jNew][iNew + 1] = this.board[jNew][iNew - 2];
@@ -183,9 +191,13 @@ class board {
             if (move.movingPiece[0] == "w") {
                 this.pieces["wR"].delete(56);
                 this.pieces["wR"].add(59);
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] & ~(1n << BigInt(56));
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] | (1n << BigInt(59));
             } else {
                 this.pieces["bR"].delete(0);
                 this.pieces["bR"].add(3);
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] & ~(1n << BigInt(0));
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] | (1n << BigInt(3));
             };
         };
         return squaresToBeUpdated;
@@ -209,12 +221,16 @@ class board {
             case "w":
                 this.board[jNew + 1][iNew] = "--";
                 squareToBeUpdated = [iNew, jNew + 1];
-                this.pieces["bP"].delete(this.boardUtility.squareToIndex([iNew, jNew + 1]));
+                const indexB = this.boardUtility.squareToIndex([iNew, jNew + 1]);
+                this.pieces["bP"].delete(indexB);
+                this.pieceBitBoards["bP"] = this.pieceBitBoards["bP"] & ~(1n << BigInt(indexB));
                 break;
             case "b":
                 this.board[jNew - 1][iNew] = "--";
                 squareToBeUpdated = [iNew, jNew - 1];
-                this.pieces["wP"].delete(this.boardUtility.squareToIndex([iNew, jNew - 1]));
+                const indexW = this.boardUtility.squareToIndex([iNew, jNew - 1]);
+                this.pieces["wP"].delete(indexW);
+                this.pieceBitBoards["wP"] = this.pieceBitBoards["wP"] & ~(1n << BigInt(indexW));
                 break;
         };
         return squareToBeUpdated;
@@ -257,13 +273,17 @@ class board {
             const startIndex = this.boardUtility.squareToIndex(move.startPos);
             const endIndex = this.boardUtility.squareToIndex(move.endPos);
             this.pieces[move.movingPiece].add(startIndex);
+            this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] | (1n << BigInt(startIndex));
             if (!move.promotion) {
                 this.pieces[move.movingPiece].delete(endIndex);
+                this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] & ~(1n << BigInt(endIndex));
             } else {
                 this.pieces[move.promotedPiece].delete(endIndex);
+                this.pieceBitBoards[move.promotedPiece] = this.pieceBitBoards[move.promotedPiece] & ~(1n << BigInt(endIndex));
             };
             if (move.isCapture() && !move.enPassant) {
                 this.pieces[move.takenPiece].add(endIndex);
+                this.pieceBitBoards[move.takenPiece] = this.pieceBitBoards[move.takenPiece] | (1n << BigInt(endIndex));
             };
 
             if (move.castleKing) {
@@ -309,9 +329,13 @@ class board {
             if (move.movingPiece[0] == "w") {
                 this.pieces["wR"].add(63);
                 this.pieces["wR"].delete(61);
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] & ~(1n << BigInt(61));
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] | (1n << BigInt(63));
             } else {
                 this.pieces["bR"].add(7);
                 this.pieces["bR"].delete(5);
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] & ~(1n << BigInt(5));
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] | (1n << BigInt(7));
             };
         } else {
             this.board[jNew][iNew - 2] = this.board[jNew][iNew + 1];
@@ -321,9 +345,13 @@ class board {
             if (move.movingPiece[0] == "w") {
                 this.pieces["wR"].add(56);
                 this.pieces["wR"].delete(59);
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] & ~(1n << BigInt(59));
+                this.pieceBitBoards["wR"] = this.pieceBitBoards["wR"] | (1n << BigInt(56));
             } else {
                 this.pieces["bR"].add(0);
                 this.pieces["bR"].delete(3);
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] & ~(1n << BigInt(3));
+                this.pieceBitBoards["bR"] = this.pieceBitBoards["bR"] | (1n << BigInt(0));
             };
         };
         return squaresToBeUpdated;
@@ -336,12 +364,16 @@ class board {
             case "wP":
                 this.board[jNew + 1][iNew] = "bP";
                 squareToBeUpdated = [iNew, jNew + 1];
-                this.pieces["bP"].add(this.boardUtility.squareToIndex([iNew, jNew + 1]));
+                const indexB = this.boardUtility.squareToIndex([iNew, jNew + 1]);
+                this.pieces["bP"].add(indexB);
+                this.pieceBitBoards["bP"] = this.pieceBitBoards["bP"] | (1n << BigInt(indexB));
                 break;
             case "bP":
                 this.board[jNew - 1][iNew] = "wP";
                 squareToBeUpdated = [iNew, jNew - 1];
-                this.pieces["wP"].add(this.boardUtility.squareToIndex([iNew, jNew - 1]));
+                const indexW = this.boardUtility.squareToIndex([iNew, jNew - 1]);
+                this.pieces["wP"].add(indexW);
+                this.pieceBitBoards["wP"] = this.pieceBitBoards["wP"] | (1n << BigInt(indexW));
                 break;
         };
     };
