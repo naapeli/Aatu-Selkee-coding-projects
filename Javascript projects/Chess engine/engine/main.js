@@ -127,7 +127,16 @@ function dragPiece(event) {
 
 async function dropPiece(event) {
     let target;
-    let targetIsImage = false;
+    let isCapture = event.target.classList.contains("possible-capture");
+    if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
+        // make a possible move
+        target = event.target.parentNode;
+    } else if (event.target.children.length > 0) {
+        // another possible move
+        target = event.target;
+    } else {
+        return;
+    };
     if (event.target.tagName == "IMG") {
         target = event.target.parentNode;
         targetIsImage = true;
@@ -139,7 +148,7 @@ async function dropPiece(event) {
     let parentID = target.id;
     movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
     const movingPiece = Array.from(movingPieceImageElement.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "");
-    const takenPiece = targetIsImage ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
+    const takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
     let movingPieceIsPawn = movingPiece[1] == "P";
     let movingPieceIsKing = movingPiece[1] == "K";
     let isPromotion = false;
@@ -152,7 +161,7 @@ async function dropPiece(event) {
                       (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
         let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-        isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
+        isAnPassant = (whiteAnPassant || blackAnPassant) && !isCapture;
         if (isPromotion) {
             const promotedPiece = await askForPawnPromotion(playerToMove);
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
@@ -201,21 +210,12 @@ async function dropPiece(event) {
 
 async function clickPiece(event) {
     let target;
-    let targetIsImage = false;
+    let isCapture = event.target.classList.contains("possible-capture");
     if (event.target.tagName == "IMG") {
+        // select a new square
         target = event.target.parentNode;
-        targetIsImage = true;
-    } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
-        target = event.target.parentNode;
-    } else {
-        target = event.target;
-    };
-    let parentID = target.id;
-    const newSelectedSquare = [parentID % 8, Math.floor(parentID / 8)];
-    if (selectedSquare.length == 0) {
-        if (currentBoard.board[newSelectedSquare[1]][newSelectedSquare[0]] == "--") {
-            return;
-        };
+        let parentID = target.id;
+        const newSelectedSquare = [parentID % 8, Math.floor(parentID / 8)];
         selectedSquare = newSelectedSquare;
         const oldIndex = currentBoard.numberOfPossibleMoves;
         currentBoard.getPossibleMovesSquare(newSelectedSquare);
@@ -223,7 +223,23 @@ async function clickPiece(event) {
         currentBoard.numberOfPossibleMoves = oldIndex;
         removeTargetHighlights();
         addTargetHighlight(moves);
-    } else if (squaresEqual(selectedSquare, newSelectedSquare)) {
+        return;
+    } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
+        // make a possible move
+        target = event.target.parentNode;
+    } else if (event.target.children.length > 0) {
+        // another possible move
+        target = event.target;
+    } else {
+        // deselect a square
+        selectedSquare = [];
+        removeTargetHighlights();
+        return;
+    };
+    let parentID = target.id;
+    const newSelectedSquare = [parentID % 8, Math.floor(parentID / 8)];
+    if (squaresEqual(selectedSquare, newSelectedSquare)) {
+        // deselect a square
         selectedSquare = [];
         removeTargetHighlights();
     } else {
@@ -232,7 +248,7 @@ async function clickPiece(event) {
         const movingEndSquare = newSelectedSquare;
         const movingPieceImageElement = document.getElementById(movingStartSquareID).firstChild;
         const movingPiece = Array.from(movingPieceImageElement.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "");
-        const takenPiece = targetIsImage ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
+        const takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
         let movingPieceIsPawn = movingPiece[1] == "P";
         let movingPieceIsKing = movingPiece[1] == "K";
         let isPromotion = false;
@@ -245,7 +261,7 @@ async function clickPiece(event) {
                           (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
             let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
             let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-            isAnPassant = (whiteAnPassant || blackAnPassant) && !targetIsImage;
+            isAnPassant = (whiteAnPassant || blackAnPassant) && !isCapture;
             if (isPromotion) {
                 const promotedPiece = await askForPawnPromotion(playerToMove);
                 let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
