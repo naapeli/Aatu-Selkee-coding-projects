@@ -68,72 +68,56 @@ class board {
     };
 
     makeMove(move) {
-        let currentMovePossible = false
-        for (var i = 0; i < currentBoard.possibleMoves.length; i++) {
-            let currentMove = currentBoard.possibleMoves[i];
-            if (move.equals(currentMove)) {
-                currentMovePossible = true;
-                break;
-            };
+        const start = performance.now();
+        this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
+        this.whiteToMove = !this.whiteToMove;
+        let squaresToBeUpdated = [];
+        let [i, j] = move.startPos;
+        let [iNew, jNew] = move.endPos;
+        this.ply++;
+        this.moveLog.push([move, this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
+
+        this.makeKingCastleRights(move);
+        this.makeEnPassantRights(move);
+
+        const startIndex = this.boardUtility.squareToIndex(move.startPos);
+        const endIndex = this.boardUtility.squareToIndex(move.endPos);
+        this.pieces[move.movingPiece].delete(startIndex);
+        this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] & ~(1n << BigInt(startIndex));
+        if (!move.promotion) {
+            this.pieces[move.movingPiece].add(endIndex);
+            this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] | (1n << BigInt(endIndex));
+        } else {
+            this.pieces[move.promotedPiece].add(endIndex);
+            this.pieceBitBoards[move.promotedPiece] = this.pieceBitBoards[move.promotedPiece] | (1n << BigInt(endIndex));
         };
-        if (currentMovePossible) {
-            const start = performance.now();
-            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
-            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
-            this.whiteToMove = !this.whiteToMove;
-            let squaresToBeUpdated = [];
-            let [i, j] = move.startPos;
-            let [iNew, jNew] = move.endPos;
-            this.ply++;
-            this.moveLog.push([move, this.whiteCanCastle, this.blackCanCastle, this.enPassant]);
-
-            this.makeKingCastleRights(move);
-            this.makeEnPassantRights(move);
-
-            const startIndex = this.boardUtility.squareToIndex(move.startPos);
-            const endIndex = this.boardUtility.squareToIndex(move.endPos);
-            this.pieces[move.movingPiece].delete(startIndex);
-            this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] & ~(1n << BigInt(startIndex));
-            if (!move.promotion) {
-                this.pieces[move.movingPiece].add(endIndex);
-                this.pieceBitBoards[move.movingPiece] = this.pieceBitBoards[move.movingPiece] | (1n << BigInt(endIndex));
-            } else {
-                this.pieces[move.promotedPiece].add(endIndex);
-                this.pieceBitBoards[move.promotedPiece] = this.pieceBitBoards[move.promotedPiece] | (1n << BigInt(endIndex));
-            };
-            if (move.isCapture() && !move.enPassant) {
-                this.pieces[move.takenPiece].delete(endIndex);
-                this.pieceBitBoards[move.takenPiece] = this.pieceBitBoards[move.takenPiece] & ~(1n << BigInt(endIndex));
-            };
-
-            if (move.castleKing) {
-                this.makeCastleMove(move).forEach(square => squaresToBeUpdated.push(square));
-            } else if (move.promotion) {
-                this.makePromotion(move);
-            } else if (move.enPassant) {
-                squaresToBeUpdated.push(this.makeEnPassant(move));
-            } else {
-                this.makeNormalMove(move);
-            };
-
-            let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
-            this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
-            this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
-            this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
-            this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
-            squaresToBeUpdated.push([i, j], [iNew, jNew]);
-            const mid = performance.now()
-            this.determineChecksAndPins();
-            this.getPossibleMoves();
-            this.makeMoveTime -= (performance.now() - mid)
-
-            this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
-            this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
-            this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, !this.whiteToMove, this.enPassant);
-            this.makeMoveTime += (performance.now() - start)
-            return [true, squaresToBeUpdated];
+        if (move.isCapture() && !move.enPassant) {
+            this.pieces[move.takenPiece].delete(endIndex);
+            this.pieceBitBoards[move.takenPiece] = this.pieceBitBoards[move.takenPiece] & ~(1n << BigInt(endIndex));
         };
-        return [false];
+
+        if (move.castleKing) {
+            this.makeCastleMove(move).forEach(square => squaresToBeUpdated.push(square));
+        } else if (move.promotion) {
+            this.makePromotion(move);
+        } else if (move.enPassant) {
+            squaresToBeUpdated.push(this.makeEnPassant(move));
+        } else {
+            this.makeNormalMove(move);
+        };
+
+        let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
+        this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
+        this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
+        this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
+        this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
+        squaresToBeUpdated.push([i, j], [iNew, jNew]);
+        this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
+        this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
+        this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, !this.whiteToMove, this.enPassant);
+        this.makeMoveTime += (performance.now() - start)
+        return squaresToBeUpdated;
     };
 
     makeKingCastleRights(move) {
@@ -303,12 +287,6 @@ class board {
             this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
             this.whitePiecePositionBonusEg += whitePiecePositionBonusDiffEg;
             this.blackPiecePositionBonusEg += blackPiecePositionBonusDiffEg;
-
-            const mid = performance.now()
-            this.determineChecksAndPins();
-            this.getPossibleMoves();
-            this.undoMoveTime -= (performance.now() - mid)
-
             this.zobristHash = this.boardUtility.updateZobristHashCastlingRights(this.zobristHash, this.whiteCanCastle, this.blackCanCastle);
             this.zobristHash = this.boardUtility.updateZobristHashEnPassant(this.zobristHash, this.enPassant);
             this.zobristHash = this.boardUtility.updateZobristHash(this.zobristHash, move, this.whiteToMove, this.enPassant);
@@ -461,6 +439,7 @@ class board {
     };
 
     getPossibleMoves() {
+        this.determineChecksAndPins();
         const start = performance.now()
         this.numberOfPossibleMoves = 0;
         for (let key in this.pieces) {
@@ -471,6 +450,7 @@ class board {
             };
         };
         this.moveGenerationTime += (performance.now() - start)
+        return this.possibleMoves.slice(0, this.numberOfPossibleMoves);
     };
 
     getPossibleMovesSquare(pos) {

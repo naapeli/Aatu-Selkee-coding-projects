@@ -85,7 +85,7 @@ class engine {
                     beta = this.ALPABETA;
                 };
                 // search the current position not allowing null-move-pruning at the first node
-                score = this.search(searchDepth, 0, alpha, beta, perspective, false);
+                score = this.search(searchDepth, 0, alpha, beta, perspective, 0, false);
                 if (this.searchCancelled) { // if search cancelled, store bestIterMove as bestMove if evaluation is inside alpha and beta
                     if (!this.aspirationWindowFailed && alpha < score && score < beta) {
                         this.bestMove = this.bestIterMove;
@@ -133,7 +133,7 @@ class engine {
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, allowNullMovePruningAndRazoring) {
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, totalExtension, allowNullMovePruningAndRazoring) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
@@ -175,18 +175,19 @@ class engine {
             return position.evaluation;
         };
 
-
+        if (currentDepth <= 0) {
+            // if end of depth, search captures to the end to reduce the horizon effect 
+            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
+            return evaluation;
+        };
+        // determine possible moves from current position
+        this.board.getPossibleMoves();
         // if found a terminal node, return the corresponding evaluation
         if (this.board.numberOfPossibleMoves === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.numberOfPossibleMoves, this.board.currentCheckingPieces.length)) {
                 return -this.CHECKMATE + depthFromRoot; // checkmate
             };
             return 0; // stalemate
-        };
-        if (currentDepth <= 0) {
-            // if end of depth, search captures to the end to reduce the horizon effect 
-            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
-            return evaluation;
         };
 
         // static evaluation for pruning purposes
@@ -259,13 +260,13 @@ class engine {
             // update the amount of times a position has been seen in the search
             this.incrementRepetition(move.movingPiece[1] == "P" || move.isCapture());
             
-            // starts from 0 because of the threefold repetition
             let currentEvaluation;
             // calculate search extension before PV logic
-            const extension = this.getSearchExtension(move);
+            const extension = this.getSearchExtension(move, totalExtension);
+            totalExtension += extension;
             // principal variations search
             if (!PVNodeFound) { // do a full search for the first move (previous best move)
-                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
+                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true);
             } else {
                 // calculate late move reduction after making the wanted move.
                 const reduction = this.getSearchReduction(extension, move, i, currentDepth);
@@ -274,7 +275,7 @@ class engine {
                 // first PV node are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
                 // with searching the same position without late move reduction and a full window.
                 if (reduction > 0) {
-                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
+                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true);
                 } else { // if we do not apply reduction to this move, make sure to do a full search
                     currentEvaluation = alpha + 1;
                 };
@@ -282,10 +283,10 @@ class engine {
                 // if we got a better evaluation, need to do a full depth search
                 if (currentEvaluation > alpha) {
                     // do still the principal variation search (null window)
-                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, true);
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true);
                     // if PV search fails to prove the position is bad, do the full search
                     if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
-                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, true);
+                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true);
                     };
                 };
             };
@@ -374,6 +375,9 @@ class engine {
         if (alpha < stand_pat) {
             alpha = stand_pat;
         };
+
+        // determine possible moves
+        this.board.getPossibleMoves();
         const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot, this.board.numberOfPossibleMoves);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
@@ -452,7 +456,7 @@ class engine {
         return ownKingMobilityFactor;
     };
 
-    getKingPawnShieldFactor(owncolor) { // maybe differentiate between rows?
+    getKingPawnShieldFactor(owncolor) {
         const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
         const positionKernel = owncolor == "w" ? [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1]] : [[2, -1], [2, 0], [2, 1], [1, -1], [1, 0], [1, 1]];
         let ownPawnShieldCount = 0;
@@ -478,11 +482,11 @@ class engine {
     };
 
     getKingPositionEndGameFactor(color) {
-        const myMaterial = color == "w" ? this.board.whiteMaterial : this.board.blackMaterial;
-        const opponentMaterial = color == "b" ? this.board.whiteMaterial : this.board.blackMaterial;
+        const myMaterial = color == "w" ? this.board.getMaterial("w") : this.board.getMaterial("b");
+        const opponentMaterial = color == "b" ? this.board.getMaterial("w") : this.board.getMaterial("b");
         if (myMaterial >= opponentMaterial + 2) {
-            const [iFriendly, jFriendly] = color == "w" ? this.board.whiteKingPosition : this.board.blackKingPosition;
-            const [iEnemy, jEnemy] = color == "b" ? this.board.whiteKingPosition : this.board.blackKingPosition;
+            const [iFriendly, jFriendly] = color == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
+            const [iEnemy, jEnemy] = color == "b" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
             const enemyDistFromCenter = Math.abs(iEnemy - 3.5) + Math.abs(jEnemy - 3.5);
             const L1DistBetweenKings = Math.abs(iEnemy - iFriendly) + Math.abs(jEnemy - jFriendly);
             return 5 * enemyDistFromCenter - 10 * L1DistBetweenKings;
@@ -505,8 +509,11 @@ class engine {
         return bonus;
     };
 
-    getSearchExtension(move) {
-        let extension = 0
+    getSearchExtension(move, totalExtension) {
+        if (totalExtension > 32) {
+            return 0;
+        };
+        let extension = 0;
         if (this.board.inCheck()) { // check extension
             extension = 1;
         } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
@@ -623,7 +630,7 @@ class engine {
         if (currentDepth === 0) {
             return 1;
         };
-        const originalMoves = this.board.possibleMoves.slice(0, this.board.numberOfPossibleMoves);
+        const originalMoves = this.board.getPossibleMoves();
         for (let move of originalMoves) {
             this.board.makeMove(move);
             numberOfMoves += this.getNumberOfMoves(currentDepth - 1);
@@ -641,16 +648,16 @@ class engine {
 
     debugNumberOfMoves(depth) {
         let total = 0
-        const originalMoves = this.board.possibleMoves.slice(0, this.board.numberOfPossibleMoves);
+        const originalMoves = this.board.getPossibleMoves();
         for (let move of originalMoves) {
             let moveString = boardPositions[move.startPos[0]] + (8 - move.startPos[1]) + boardPositions[move.endPos[0]] + (8 - move.endPos[1]);
             this.board.makeMove(move);
             let moves = this.getNumberOfMoves(depth - 1);
             total += moves
             this.board.undoMove();
-            console.log([moveString, moves])
+            console.log(moveString, moves)
         };
-        console.log(["Total", total])
+        console.log("Total", total)
     };
 
     unitTestMoves() {

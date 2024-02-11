@@ -116,6 +116,7 @@ function dragPiece(event) {
     let parentID = movingPieceStartElement.id;
     movingStartSquare = [parentID % 8, Math.floor(parentID / 8)];
     const oldIndex = currentBoard.numberOfPossibleMoves;
+    currentBoard.determineChecksAndPins();
     currentBoard.getPossibleMovesSquare(movingStartSquare);
     const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
     currentBoard.numberOfPossibleMoves = oldIndex;
@@ -127,8 +128,8 @@ function dragPiece(event) {
 
 async function dropPiece(event) {
     let target;
-    let isCapture = event.target.classList.contains("possible-capture");
-    if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
+    const isCapture = event.target.classList.contains("possible-capture") || event.target.tagName == "IMG";
+    if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture") || event.target.tagName == "IMG") {
         // make a possible move
         target = event.target.parentNode;
     } else if (event.target.children.length > 0) {
@@ -136,14 +137,6 @@ async function dropPiece(event) {
         target = event.target;
     } else {
         return;
-    };
-    if (event.target.tagName == "IMG") {
-        target = event.target.parentNode;
-        targetIsImage = true;
-    } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
-        target = event.target.parentNode;
-    } else {
-        target = event.target;
     };
     let parentID = target.id;
     movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
@@ -210,20 +203,26 @@ async function dropPiece(event) {
 
 async function clickPiece(event) {
     let target;
-    let isCapture = event.target.classList.contains("possible-capture");
+    const isCapture = event.target.classList.contains("possible-capture") || event.target.tagName == "IMG";
     if (event.target.tagName == "IMG") {
-        // select a new square
-        target = event.target.parentNode;
-        let parentID = target.id;
-        const newSelectedSquare = [parentID % 8, Math.floor(parentID / 8)];
-        selectedSquare = newSelectedSquare;
-        const oldIndex = currentBoard.numberOfPossibleMoves;
-        currentBoard.getPossibleMovesSquare(newSelectedSquare);
-        const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
-        currentBoard.numberOfPossibleMoves = oldIndex;
-        removeTargetHighlights();
-        addTargetHighlight(moves);
-        return;
+        if (selectedSquare.length == 0) {
+            // select a new square
+            target = event.target.parentNode;
+            let parentID = target.id;
+            const newSelectedSquare = [parentID % 8, Math.floor(parentID / 8)];
+            selectedSquare = newSelectedSquare;
+            const oldIndex = currentBoard.numberOfPossibleMoves;
+            currentBoard.determineChecksAndPins();
+            currentBoard.getPossibleMovesSquare(newSelectedSquare);
+            const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
+            currentBoard.numberOfPossibleMoves = oldIndex;
+            removeTargetHighlights();
+            addTargetHighlight(moves);
+            return;
+        } else {
+            // make a capture
+            target = event.target.parentNode;
+        };
     } else if (event.target.classList.contains("possible-target") || event.target.classList.contains("possible-capture")) {
         // make a possible move
         target = event.target.parentNode;
@@ -272,6 +271,7 @@ async function clickPiece(event) {
                     addMoveToMoveLog(currentMove);
                 } else {
                     const oldIndex = currentBoard.numberOfPossibleMoves;
+                    currentBoard.determineChecksAndPins();
                     currentBoard.getPossibleMovesSquare(newSelectedSquare);
                     const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
                     currentBoard.numberOfPossibleMoves = oldIndex;
@@ -309,6 +309,7 @@ async function clickPiece(event) {
                 addMoveToMoveLog(currentMove);
             } else {
                 const oldIndex = currentBoard.numberOfPossibleMoves;
+                currentBoard.determineChecksAndPins();
                 currentBoard.getPossibleMovesSquare(newSelectedSquare);
                 const moves = currentBoard.possibleMoves.slice(oldIndex, currentBoard.numberOfPossibleMoves);
                 currentBoard.numberOfPossibleMoves = oldIndex;
@@ -343,9 +344,22 @@ function squaresEqual(arr1, arr2) {
     return arr1[0] == arr2[0] && arr1[1] == arr2[1];
 };
 
+function movePossible(move) {
+    const moves = currentBoard.getPossibleMoves();
+    let currentMovePossible = false;
+    for (let currentMove of moves) {
+        if (move.equals(currentMove)) {
+            currentMovePossible = true;
+            break;
+        };
+    };
+    return currentMovePossible;
+};
+
 function makeMove(move) {
-    const [moveMade, squaresToBeUpdated] = currentBoard.makeMove(move);
-    if (moveMade) {
+    if (movePossible(move)) {
+        const squaresToBeUpdated = currentBoard.makeMove(move);
+        currentBoard.getPossibleMoves();
         playSound(move.isCapture(), currentBoard.inCheck(), move.promotion);
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
@@ -372,8 +386,9 @@ function makeMove(move) {
             console.log("---------------" + winner + "---------------");
             endGameScreen(false, winner);
         };
+        return true;
     };
-    return moveMade;
+    return false;
 };
 
 function endGameScreen(isDraw, winner) {
