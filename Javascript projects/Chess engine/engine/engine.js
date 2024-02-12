@@ -26,6 +26,7 @@ class engine {
         this.EXACT_NODE = 0;
         this.UPPERBOUND_NODE = 1;
         this.LOWERBOUND_NODE = 2;
+        this.CHECKMATE_NODE = 3;
         this.CHECKMATE = 10000000;
         this.ALPABETA = 100000000;
         this.noHashEntry = Number.MAX_SAFE_INTEGER;
@@ -175,19 +176,20 @@ class engine {
             return position.evaluation;
         };
 
-        if (currentDepth <= 0) {
-            // if end of depth, search captures to the end to reduce the horizon effect 
-            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
-            return evaluation;
-        };
         // determine possible moves from current position
-        this.board.getPossibleMoves();
+        const positionMoves = this.board.getPossibleMoves();
         // if found a terminal node, return the corresponding evaluation
         if (this.board.numberOfPossibleMoves === 0) {
             if (this.board.boardUtility.isCheckMate(this.board.numberOfPossibleMoves, this.board.currentCheckingPieces.length)) {
                 return -this.CHECKMATE + depthFromRoot; // checkmate
             };
             return 0; // stalemate
+        };
+
+        if (currentDepth <= 0) {
+            // if end of depth, search captures to the end to reduce the horizon effect 
+            const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
+            return evaluation;
         };
 
         // static evaluation for pruning purposes
@@ -204,8 +206,8 @@ class engine {
 
         // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
         if (allowNullMovePruningAndRazoring && !this.board.inCheck() && notPvNode) {
-            const movingPiecesRemaining = colorPerspective == 1 ? this.board.whitePieces : this.board.blackPieces;
-            if (currentDepth >= 3 && staticEvaluation >= beta && movingPiecesRemaining > 1 && this.allowNullMovePruning) {
+            const pieceMaterialRemaining = colorPerspective == 1 ? this.board.getPieceMaterial("w") : this.board.getPieceMaterial("b");
+            if (currentDepth >= 3 && staticEvaluation >= beta && pieceMaterialRemaining > 0 && this.allowNullMovePruning) {
                 this.board.makeNullMove();
                 const val = -this.search(currentDepth - 1 - this.R, depthFromRoot + 1, -beta, -beta + 1, -colorPerspective, false);
                 this.board.undoNullMove();
@@ -224,7 +226,7 @@ class engine {
                 
                 // deep razoring for nodes at depths 2 and 3
                 if (this.allowDeepRazoring) {
-                    nodeValue += 2 * this.materialMultiplier * pieceValues["P"];
+                    nodeValue += this.materialMultiplier * pieceValues["P"];
                     if (nodeValue < beta && currentDepth <= 3) {
                         currentDepth -= 1;
                         /*this implementation makes the engine worse at evaluating sacrifices but search a bit deeper (also makes blunders)
@@ -239,20 +241,25 @@ class engine {
 
         
         // extended futility pruning condition
-        const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
+        const futilityPruning = currentDepth < 4 && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
+
         
         // search through all moves and select the best one
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, previousBestMove, depthFromRoot, this.board.numberOfPossibleMoves);
+        const moves = this.moveOrdering.orderMoves(positionMoves, previousBestMove, depthFromRoot);
         let positionBestMove = moves[0];
         let PVNodeFound = false;
         let nodeType = this.UPPERBOUND_NODE;
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
+            const inCheck = this.board.determineInCheck();
 
             // extended futility pruning
-            if (futilityPruning && PVNodeFound && !move.isCapture() && !move.promotion && !this.board.inCheck()) {
+            if (futilityPruning) {
+                console.log(PVNodeFound, !move.isCapture(), !move.promotion, !inCheck)
+            }
+            if (futilityPruning && PVNodeFound && !move.isCapture() && !move.promotion && !inCheck) {
                 this.board.undoMove();
                 continue;
             };
@@ -262,7 +269,7 @@ class engine {
             
             let currentEvaluation;
             // calculate search extension before PV logic
-            const extension = this.getSearchExtension(move, totalExtension);
+            const extension = this.getSearchExtension(move, totalExtension, inCheck);
             totalExtension += extension;
             // principal variations search
             if (!PVNodeFound) { // do a full search for the first move (previous best move)
@@ -310,6 +317,8 @@ class engine {
                 // store best move as lower bound (since exiting search early)
                 if (this.notCheckMateScore(beta)) {
                     this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, positionBestMove, depthFromRoot);
+                } else {
+                    this.transpositionTable.storeEvaluation(this.board.zobristHash, 0, currentDepth, this.CHECKMATE_NODE, positionBestMove, depthFromRoot);
                 };
 
                 // update killer moves
@@ -342,6 +351,8 @@ class engine {
         // store the evaluation of the position to the transposition table
         if (this.notCheckMateScore(alpha)) {
             this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
+        } else {
+            this.transpositionTable.storeEvaluation(this.board.zobristHash, 0, currentDepth, this.CHECKMATE_NODE, positionBestMove, depthFromRoot);
         };
 
         // remember the best moves if the position is the original one, then return the evaluation
@@ -377,8 +388,8 @@ class engine {
         };
 
         // determine possible moves
-        this.board.getPossibleMoves();
-        const moves = this.moveOrdering.orderMoves(this.board.possibleMoves, undefined, depthFromRoot, this.board.numberOfPossibleMoves);
+        const positionMoves = this.board.getPossibleMoves();
+        const moves = this.moveOrdering.orderMoves(positionMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             if (move.isCapture() || (this.board.inCheck() && allowChecks)) { // continue search if move is piece capture
@@ -509,12 +520,12 @@ class engine {
         return bonus;
     };
 
-    getSearchExtension(move, totalExtension) {
-        if (totalExtension > 32) {
+    getSearchExtension(move, totalExtension, inCheck) {
+        if (totalExtension > 64) {
             return 0;
         };
         let extension = 0;
-        if (this.board.inCheck()) { // check extension
+        if (inCheck) { // check extension
             extension = 1;
         } else if (move.movingPiece[1] == "P" && (move.endPos[1] == 1 || move.endPos[1] == 6)) { // seventh rank pawn promotion extension
             extension = 1;
@@ -526,12 +537,12 @@ class engine {
 
     getSearchReduction(extension, move, i, currentDepth) {
         let reduction = 0;
-        // apply reduction, when move is not capture, doesn't cause check, is not promotion, depth is at least 3
+        // apply reduction, when move is not capture, doesn't cause extension (check, seventh rank pawn push, one reply), is not promotion, depth is at least 3
         // and it is not assumed to be in top 3 moves
         if (i < 4 || currentDepth < 3) {
             return reduction;
         };
-        if (!this.board.inCheck() && !move.isCapture() && !move.promotion && extension == 0) {
+        if (extension == 0 && !move.isCapture() && !move.promotion) {
             reduction = 1;
         };
         return reduction;
@@ -714,10 +725,9 @@ class engine {
 };
 
 class moveOrderer {
-    orderMoves(moves, previousBestMove, depthFromRoot, numberOfMoves) {
-        const slicedMoves = moves.slice(0, numberOfMoves);
-        this.calculateAssumedMoveScores(slicedMoves, previousBestMove, depthFromRoot);
-        const sortedMoves = this.sort(slicedMoves);
+    orderMoves(moves, previousBestMove, depthFromRoot) {
+        this.calculateAssumedMoveScores(moves, previousBestMove, depthFromRoot);
+        const sortedMoves = this.sort(moves);
         return sortedMoves;
     };
 
