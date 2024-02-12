@@ -848,6 +848,9 @@ class board {
         for (let key in this.pieces) {
             this.pieces[key] = new Set();
         };
+        for (let key in this.pieceBitBoards) {
+            this.pieceBitBoards[key] = BigInt(0);
+        };
 
         for (let row = 0; row < 8; row++) {
             const currentRow = rows[row];
@@ -867,11 +870,13 @@ class board {
                         const index = this.boardUtility.squareToIndex([column, row]);
                         this.board[row][column] = piece;
                         this.pieces[piece].add(index);
+                        this.pieceBitBoards[piece] = this.pieceBitBoards[piece] | (1n << BigInt(index));
                     } else { // white
                         const piece = "w" + char.toUpperCase();
                         const index = this.boardUtility.squareToIndex([column, row]);
                         this.board[row][column] = piece;
                         this.pieces[piece].add(index);
+                        this.pieceBitBoards[piece] = this.pieceBitBoards[piece] | (1n << BigInt(index))
                     };
                     column++;
                 };
