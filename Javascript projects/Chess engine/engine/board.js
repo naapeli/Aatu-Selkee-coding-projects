@@ -438,6 +438,63 @@ class board {
         this.checkAndPinDetectionTime += (performance.now() - start)
     };
 
+    determineInCheck() {
+        let kingPosition = this.whiteToMove ? this.getKingPosition("w") : this.getKingPosition("b");
+        let color = this.whiteToMove ? "w" : "b";
+        let oppositeColor = this.whiteToMove ? "b" : "w";
+        let directions = [[-1, 1], [1, 1], [-1, -1], [1, -1], [0, 1], [0, -1], [-1, 0], [1, 0]];
+        for (let j = 0; j < directions.length; j++) {
+            const direction = directions[j];
+            let i = 1;
+            let xDiff = direction[0];
+            let yDiff = direction[1];
+            while (this.boardUtility.positionOnBoard(kingPosition[0] + i * xDiff, kingPosition[1] + i * yDiff)) {
+                let currentPiece = this.board[kingPosition[1] + i * yDiff][kingPosition[0] + i * xDiff];
+                if (currentPiece == "--") {
+                    i++;
+                    continue;
+                } else if (currentPiece[0] == color) {
+                    break;
+                } else {
+                    if (j < 4 && (currentPiece[1] == "B" || currentPiece[1] == "Q")) {
+                        return true;
+                    } else if (4 <= j && (currentPiece[1] == "R" || currentPiece[1] == "Q")) {
+                        return true;
+                    } else {
+                        break;
+                    };
+                };
+            };
+        };
+
+        let knightMoves = [[-1, 2], [1, 2], [-1, -2], [1, -2], [-2, 1], [2, 1], [-2, -1], [2, -1]];
+        for (let moveDiff of knightMoves) {
+            if (this.boardUtility.positionOnBoard(kingPosition[0] + moveDiff[0], kingPosition[1] + moveDiff[1])) {
+                let currentPiece = this.board[kingPosition[1] + moveDiff[1]][kingPosition[0] + moveDiff[0]];
+                if (currentPiece[0] == oppositeColor && currentPiece[1] == "N") {
+                    return true;
+                };
+            };
+        };
+
+        let i = kingPosition[0]
+        let j = kingPosition[1]
+        if (oppositeColor == "w") {
+            if (this.boardUtility.positionOnBoard(i - 1, j + 1) && this.board[j + 1][i - 1] == "wP") {
+                return true;
+            } else if (this.boardUtility.positionOnBoard(i + 1, j + 1) && this.board[j + 1][i + 1] == "wP") {
+                return true;
+            };
+        } else {
+            if (this.boardUtility.positionOnBoard(i - 1, j - 1) && this.board[j - 1][i - 1] == "bP") {
+                return true;
+            } else if (this.boardUtility.positionOnBoard(i + 1, j - 1) && this.board[j - 1][i + 1] == "bP") {
+                return true;
+            };
+        };
+        return false;
+    };
+
     getPossibleMoves() {
         this.determineChecksAndPins();
         const start = performance.now()
@@ -946,7 +1003,6 @@ class board {
         this.whiteToMove = !this.whiteToMove;
 
         // get new moves for the other player
-        this.determineChecksAndPins();
         this.getPossibleMoves();
 
         // put the null move into the movelog to get en passant back after undoing the move
@@ -971,10 +1027,6 @@ class board {
 
         // update moving player back
         this.whiteToMove = !this.whiteToMove;
-
-        // get new moves for the other player
-        this.determineChecksAndPins();
-        this.getPossibleMoves();
     };
 };
 
