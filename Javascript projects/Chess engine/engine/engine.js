@@ -229,11 +229,11 @@ class engine {
                     nodeValue += this.materialMultiplier * pieceValues["P"];
                     if (nodeValue < beta && currentDepth <= 3) {
                         currentDepth -= 1;
-                        /*this implementation makes the engine worse at evaluating sacrifices but search a bit deeper (also makes blunders)
-                        const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, true, colorPerspective);
-                        if (newNodeValue < beta) {
-                            return Math.max(newNodeValue, nodeValue);
-                        };*/
+                        //this implementation makes the engine worse at evaluating sacrifices but search a bit deeper
+                        //const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, true, colorPerspective);
+                        //if (newNodeValue < beta) {
+                            //return newNodeValue;
+                        //};
                     };
                 };
             };
@@ -241,7 +241,7 @@ class engine {
 
         
         // extended futility pruning condition
-        const futilityPruning = currentDepth < 4 && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
+        const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
 
         
         // search through all moves and select the best one
