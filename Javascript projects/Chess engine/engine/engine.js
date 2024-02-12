@@ -256,9 +256,6 @@ class engine {
             const inCheck = this.board.determineInCheck();
 
             // extended futility pruning
-            if (futilityPruning) {
-                console.log(PVNodeFound, !move.isCapture(), !move.promotion, !inCheck)
-            }
             if (futilityPruning && PVNodeFound && !move.isCapture() && !move.promotion && !inCheck) {
                 this.board.undoMove();
                 continue;
