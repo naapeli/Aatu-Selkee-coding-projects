@@ -141,7 +141,7 @@ async function dropPiece(event) {
     let parentID = target.id;
     movingEndSquare = [parentID % 8, Math.floor(parentID / 8)];
     const movingPiece = Array.from(movingPieceImageElement.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "");
-    const takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
+    let takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
     let movingPieceIsPawn = movingPiece[1] == "P";
     let movingPieceIsKing = movingPiece[1] == "K";
     let isPromotion = false;
@@ -154,7 +154,7 @@ async function dropPiece(event) {
                       (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
         let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-        isAnPassant = (whiteAnPassant || blackAnPassant) && !isCapture;
+        isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece[1] != "P";
         if (isPromotion) {
             const promotedPiece = await askForPawnPromotion(playerToMove);
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
@@ -181,7 +181,11 @@ async function dropPiece(event) {
         isCastling = isCastleStart && isCastleEnd;
     };
     if (!isPromotion) {
+        if (isAnPassant) {
+            takenPiece = (currentBoard.whiteToMove ? "b" : "w") + "P";
+        };
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
+        console.log(currentMove)
         const playerMoveMade = makeMove(currentMove);
 
         if (playerMoveMade) {
@@ -247,7 +251,7 @@ async function clickPiece(event) {
         const movingEndSquare = newSelectedSquare;
         const movingPieceImageElement = document.getElementById(movingStartSquareID).firstChild;
         const movingPiece = Array.from(movingPieceImageElement.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "");
-        const takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
+        let takenPiece = isCapture ? Array.from(target.firstElementChild.classList).reduce((accumulator, currentValue) => accumulator + currentValue, "") : "--";
         let movingPieceIsPawn = movingPiece[1] == "P";
         let movingPieceIsKing = movingPiece[1] == "K";
         let isPromotion = false;
@@ -260,7 +264,7 @@ async function clickPiece(event) {
                           (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
             let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
             let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-            isAnPassant = (whiteAnPassant || blackAnPassant) && !isCapture;
+            isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece[1] != "P";
             if (isPromotion) {
                 const promotedPiece = await askForPawnPromotion(playerToMove);
                 let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
@@ -301,6 +305,9 @@ async function clickPiece(event) {
             isCastling = isCastleStart && isCastleEnd;
         };
         if (!isPromotion) {
+            if (isAnPassant) {
+                takenPiece = (currentBoard.whiteToMove ? "b" : "w") + "P";
+            };
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
             const playerMoveMade = makeMove(currentMove);
             if (playerMoveMade) {
