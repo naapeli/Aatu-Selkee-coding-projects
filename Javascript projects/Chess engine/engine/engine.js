@@ -418,24 +418,34 @@ class engine {
 
         // calculate material
         evaluation += this.materialMultiplier * (this.board.getMaterial("w") - this.board.getMaterial("b"));
-        
-        // calculate piece placement factor
-        evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
-        evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
 
-        // calculate king mobility factor in middlegames to encourage castling
-        evaluation += 100 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
+        // evaluate different things based on the phase of the game
+        if (endGameWeight == 0) { // early and middle game
+            // calculate piece placement factor
+            evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
 
-        // calculate pawnshield to discourage pushing pawns in front of the king too far
-        evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
+            // calculate a penalty for king being far away from safe positions to encourage castling
+            evaluation += 100 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
 
-        // calculate a penalty for king being far away from safe positions to encourage castling
-        evaluation += 100 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
+            // calculate pawnshield to discourage pushing pawns in front of the king too far
+            evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
 
-        evaluation += 25 * (1 - endGameWeight) * this.getCenterPawnBonus();
+            // calculate king mobility factor in middlegames to encourage castling
+            evaluation += 100 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
 
-        // calculate king position bonuses in winning endgames
-        evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
+            evaluation += 25 * (1 - endGameWeight) * this.getCenterPawnBonus();
+
+            evaluation += (this.getDoubledAndIsolatedPawnPenalty("w") - this.getDoubledAndIsolatedPawnPenalty("b"));
+        } else { // endgame
+            // calculate piece placement factor
+            evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
+
+            // calculate king position bonuses in winning endgames
+            evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
+        };
+
+        // calculate bonus for passed pawns
+        evaluation += this.materialMultiplier / 8000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
 
 
         return colorPerspective * evaluation;
@@ -527,10 +537,33 @@ class engine {
             const passedPawnMask = color == "w" ? whitePassedPawnMask[index] : blackPassedPawnMask[index];
             const isPassedPawn = (enemyPawnMask & passedPawnMask) == BigInt(0);
             if (isPassedPawn) {
-                bonus += color == "w" ? (7 - j) * 20 : 20 * j;
+                bonus += color == "w" ? ((7 - j) * 20) ** 3 : (20 * j) ** 3;
             };
         };
         return bonus;
+    };
+
+    getDoubledAndIsolatedPawnPenalty(color) {
+        const pawnSquares = this.board.pieces[color + "P"];
+        const pawnMask = this.board.pieceBitBoards[color + "P"];
+        let penalty = 0;
+        for (let index of pawnSquares) {
+            const [i, j] = this.board.boardUtility.indexToSquare(index);
+            const isIsolatedPawn = (pawnMask & isolatedPawnMask[i]) == BigInt(0);
+            const isDoubledPawn = (pawnMask & doubledPawnMask[index]) != BigInt(0);
+            if (isIsolatedPawn && isDoubledPawn) {
+                console.log("doubled and isolated", [i, j])
+                penalty += this.materialMultiplier * 15;
+            } else if (isIsolatedPawn) {
+                console.log("isolated", [i, j])
+                penalty += this.materialMultiplier * 10;
+            } else if (isDoubledPawn) {
+                console.log("doubled", [i, j])
+                // penalty half of isolated pawns, since it will be counted twice
+                penalty += this.materialMultiplier * 5;
+            }
+        };
+        return penalty;
     };
 
     getSearchExtension(move, totalExtension, inCheck) {
