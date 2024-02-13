@@ -421,7 +421,7 @@ class engine {
         // evaluate different things based on the phase of the game
         if (endGameWeight == 0) { // early and middle game
             // calculate piece placement factor
-            evaluation += (1/4) * (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
+            evaluation += (1 - endGameWeight) * (this.board.whitePiecePositionBonus - this.board.blackPiecePositionBonus);
 
             // calculate a penalty for king being far away from safe positions to encourage castling
             evaluation += 100 * (1 - Math.sqrt(endGameWeight)) * (this.getNotCastlingPenalty("b") - this.getNotCastlingPenalty("w"));
@@ -430,21 +430,23 @@ class engine {
             evaluation += 200 * (1 - endGameWeight) * (this.getKingPawnShieldFactor("w") - this.getKingPawnShieldFactor("b"));
 
             // calculate king mobility factor in middlegames to encourage castling
-            evaluation += 100 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
+            evaluation += 120 * (1 - endGameWeight) * (this.getKingSafetyFactor("w") - this.getKingSafetyFactor("b"));
 
-            evaluation += 25 * (1 - endGameWeight) * this.getCenterPawnBonus();
+            // calculate pawn and rook bonuses
+            evaluation += (1 - endGameWeight) * (this.getCenterPawnBonus("w") - this.getCenterPawnBonus("b"));
+            evaluation += (1 - endGameWeight) * (this.getDoubledAndIsolatedPawnPenalty("b") - this.getDoubledAndIsolatedPawnPenalty("w"));
+            evaluation += (1 - endGameWeight) * (this.getOpenFileBonus("w") - this.getOpenFileBonus("b"));
 
-            evaluation += (this.getDoubledAndIsolatedPawnPenalty("b") - this.getDoubledAndIsolatedPawnPenalty("w"));
         } else { // endgame
             // calculate piece placement factor
-            evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
+            evaluation += (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
 
             // calculate king position bonuses in winning endgames
             evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
         };
 
         // calculate bonus for passed pawns
-        evaluation += this.materialMultiplier / 8000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
+        evaluation += this.materialMultiplier / 10000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
 
 
         return colorPerspective * evaluation;
@@ -453,7 +455,7 @@ class engine {
     getEndGameWeight() {
         const whitePieceMaterial = this.board.getPieceMaterial("w");
         const blackPieceMaterial = this.board.getPieceMaterial("b");
-        const endGameStart = 1025;
+        const endGameStart = 1100;
         const multiplier = 1 / endGameStart;
         if (this.board.whiteToMove) {
             return Math.sqrt(1 - Math.min(1, multiplier * blackPieceMaterial));
@@ -473,21 +475,22 @@ class engine {
         return ownKingMobilityFactor;
     };
 
-    getKingPawnShieldFactor(owncolor) {
-        const ownKingLocation = owncolor == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
-        const positionKernel = owncolor == "w" ? [[-2, -1], [-2, 0], [-2, 1], [-1, -1], [-1, 0], [-1, 1]] : [[2, -1], [2, 0], [2, 1], [1, -1], [1, 0], [1, 1]];
+    getKingPawnShieldFactor(color) {
+        const kingLocation = color == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
+        const kingIndex = this.board.boardUtility.squareToIndex(kingLocation);
+        const kingShieldMask = color == "w" ? whiteKingPawnShield[kingIndex] : blackKingPawnShield[kingIndex];
+        const pawnMask = this.board.pieceBitBoards[color + "P"];
+        const shieldPawnMask = kingShieldMask & pawnMask;
         let ownPawnShieldCount = 0;
-        positionKernel.forEach(position => {
-            const [j, i] = position;
-            const possiblePawnPosition = [ownKingLocation[0] + i, ownKingLocation[1] + j];
-            if (this.board.boardUtility.positionOnBoard(possiblePawnPosition[1], possiblePawnPosition[0])) {
-                const possiblePawn = this.board.board[possiblePawnPosition[0]][possiblePawnPosition[1]];
-                if (possiblePawn[1] == "P" && possiblePawn[0] == owncolor) {
+        if (shieldPawnMask != BigInt(0)) {
+            for (let index = 0; index < 64; index++) {
+                const isPawn = ((shieldPawnMask >> BigInt(index)) & 0x1n) != BigInt(0);
+                if (isPawn) {
                     ownPawnShieldCount++;
                 };
             };
-        });
-        return Math.sqrt(ownPawnShieldCount / 3);
+        };
+        return ownPawnShieldCount / 3;
     };
 
     getNotCastlingPenalty(owncolor) {
@@ -511,19 +514,28 @@ class engine {
         return 0;
     };
 
-    getCenterPawnBonus() {
-        const centerSquares = [[2, 3], [3, 3], [4, 3], [5, 3], [2, 4], [3, 4], [4, 4], [5, 4]];
-        let bonus = 0;
-        for (let index = 0; index < centerSquares.length; index++) {
-            const [i, j] = centerSquares[index];
-            const piece = this.board.board[j][i];
-            if (piece == "wP") {
-                bonus++;
-            } else if (piece == "bP") {
-                bonus--;
+    getCenterPawnBonus(color) {
+        const pawnMask = this.board.pieceBitBoards[color + "P"];
+        const centerMask = 0x0000003C3C000000n;
+        const centerPawns = pawnMask & centerMask;
+        let numberOfpawns = 0;
+        if (centerPawns != BigInt(0)) {
+            // first row
+            for (let index = 26; index < 30; index++) {
+                const isPawn = ((centerPawns >> BigInt(index)) & 0x1n) != BigInt(0);
+                if (isPawn) {
+                    numberOfpawns++;
+                };
+            };
+            // second row
+            for (let index = 34; index < 38; index++) {
+                const isPawn = ((centerPawns >> BigInt(index)) & 0x1n) != BigInt(0);
+                if (isPawn) {
+                    numberOfpawns++;
+                };
             };
         };
-        return bonus;
+        return this.materialMultiplier * numberOfpawns * 20;
     };
 
     getPassedPawnBonus(color) {
@@ -560,6 +572,19 @@ class engine {
             }
         };
         return penalty;
+    };
+
+    getOpenFileBonus(color) {
+        const rookSquares = this.board.pieces[color + "R"];
+        const pawnMask = this.board.pieceBitBoards[color + "P"];
+        let bonus = 0;
+        for (let index of rookSquares) {
+            const rookOnOpenFile = (doubledPawnMask[index] & pawnMask) == BigInt(0);
+            if (rookOnOpenFile) {
+                bonus += this.materialMultiplier * 20;
+            }
+        };
+        return bonus;
     };
 
     getSearchExtension(move, totalExtension, inCheck) {
