@@ -86,7 +86,7 @@ class engine {
                     beta = this.ALPABETA;
                 };
                 // search the current position not allowing null-move-pruning at the first node
-                score = this.search(searchDepth, 0, alpha, beta, perspective, 0, false);
+                score = this.search(searchDepth, 0, alpha, beta, perspective, 0, false, true);
                 if (this.searchCancelled) { // if search cancelled, store bestIterMove as bestMove if evaluation is inside alpha and beta
                     if (!this.aspirationWindowFailed && alpha < score && score < beta) {
                         this.bestMove = this.bestIterMove;
@@ -134,7 +134,7 @@ class engine {
         };
     };
 
-    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, totalExtension, allowNullMovePruningAndRazoring) {
+    search(currentDepth, depthFromRoot, alpha, beta, colorPerspective, totalExtension, allowNullMovePruningAndRazoring, positionInCheck) {
         this.searchCancelled = (performance.now() - this.searchStartTime) > this.maxAllowedTime;
         if (this.searchCancelled) {
             return;
@@ -176,16 +176,6 @@ class engine {
             return position.evaluation;
         };
 
-        // determine possible moves from current position
-        const positionMoves = this.board.getPossibleMoves();
-        // if found a terminal node, return the corresponding evaluation
-        if (this.board.numberOfPossibleMoves === 0) {
-            if (this.board.boardUtility.isCheckMate(this.board.numberOfPossibleMoves, this.board.currentCheckingPieces.length)) {
-                return -this.CHECKMATE + depthFromRoot; // checkmate
-            };
-            return 0; // stalemate
-        };
-
         if (currentDepth <= 0) {
             // if end of depth, search captures to the end to reduce the horizon effect 
             const evaluation = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
@@ -195,7 +185,7 @@ class engine {
         // static evaluation for pruning purposes
         const staticEvaluation = this.evaluatePosition(colorPerspective);
         const notPvNode = beta == alpha + 1;
-        if (!this.board.inCheck() && notPvNode && currentDepth < 3 && this.notCheckMateScore(beta) && this.allowReverseFutilityPruning) {
+        if (!positionInCheck && notPvNode && currentDepth < 3 && this.notCheckMateScore(beta) && this.allowReverseFutilityPruning) {
             // reverse futility pruning if we are at the end of search at a non PV node and we do not have possibility for checkmate
             // prune node if we are winning so much that the opponent won't select this line
             let delta = this.materialMultiplier * pieceValues["P"] * currentDepth;
@@ -205,7 +195,7 @@ class engine {
         };
 
         // null-move pruning (give opponent extra move and search resulting position with reduced depth), and razoring
-        if (allowNullMovePruningAndRazoring && !this.board.inCheck() && notPvNode) {
+        if (allowNullMovePruningAndRazoring && !positionInCheck && notPvNode) {
             const pieceMaterialRemaining = colorPerspective == 1 ? this.board.getPieceMaterial("w") : this.board.getPieceMaterial("b");
             if (currentDepth >= 3 && staticEvaluation >= beta && pieceMaterialRemaining > 0 && this.allowNullMovePruning) {
                 this.board.makeNullMove();
@@ -229,8 +219,8 @@ class engine {
                     nodeValue += this.materialMultiplier * pieceValues["P"];
                     if (nodeValue < beta && currentDepth <= 3) {
                         currentDepth -= 1;
-                        //this implementation makes the engine worse at evaluating sacrifices but search a bit deeper
-                        //const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, true, colorPerspective);
+                        //this implementation makes the engine worse at evaluating sacrifices but search a bit deeper??? (quiescence search takes surprisingly long in many positions)
+                        //const newNodeValue = this.quiescenceSearch(depthFromRoot, alpha, beta, false, colorPerspective);
                         //if (newNodeValue < beta) {
                             //return newNodeValue;
                         //};
@@ -245,6 +235,7 @@ class engine {
 
         
         // search through all moves and select the best one
+        const positionMoves = this.board.getPossibleMoves();
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
         const moves = this.moveOrdering.orderMoves(positionMoves, previousBestMove, depthFromRoot);
         let positionBestMove = moves[0];
@@ -270,7 +261,7 @@ class engine {
             totalExtension += extension;
             // principal variations search
             if (!PVNodeFound) { // do a full search for the first move (previous best move)
-                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true);
+                currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true, inCheck);
             } else {
                 // calculate late move reduction after making the wanted move.
                 const reduction = this.getSearchReduction(extension, move, i, currentDepth);
@@ -279,7 +270,7 @@ class engine {
                 // first PV node are bad. If this hypothesis turns out to be wrong, we need to spend more time to search the same nodes again
                 // with searching the same position without late move reduction and a full window.
                 if (reduction > 0) {
-                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true);
+                    currentEvaluation = -this.search(currentDepth - 1 + extension - reduction, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true, inCheck);
                 } else { // if we do not apply reduction to this move, make sure to do a full search
                     currentEvaluation = alpha + 1;
                 };
@@ -287,10 +278,10 @@ class engine {
                 // if we got a better evaluation, need to do a full depth search
                 if (currentEvaluation > alpha) {
                     // do still the principal variation search (null window)
-                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true);
+                    currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -(alpha + 1), -alpha, -colorPerspective, totalExtension, true, inCheck);
                     // if PV search fails to prove the position is bad, do the full search
                     if ((currentEvaluation > alpha) && (currentEvaluation < beta)) {
-                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true);
+                        currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true, inCheck);
                     };
                 };
             };
@@ -340,6 +331,14 @@ class engine {
                 };
                 this.pvLength[depthFromRoot] = this.pvLength[depthFromRoot + 1];
             };
+        };
+
+        // if found a terminal node, return the corresponding evaluation
+        if (positionMoves.length === 0) {
+            if (positionInCheck) {
+                return -this.CHECKMATE + depthFromRoot; // checkmate
+            };
+            return 0; // stalemate
         };
 
         // store the best move into the history table (to help with move ordering)
@@ -435,7 +434,7 @@ class engine {
 
             evaluation += 25 * (1 - endGameWeight) * this.getCenterPawnBonus();
 
-            evaluation += (this.getDoubledAndIsolatedPawnPenalty("w") - this.getDoubledAndIsolatedPawnPenalty("b"));
+            evaluation += (this.getDoubledAndIsolatedPawnPenalty("b") - this.getDoubledAndIsolatedPawnPenalty("w"));
         } else { // endgame
             // calculate piece placement factor
             evaluation += (1/4) * (endGameWeight) * (this.board.whitePiecePositionBonusEg - this.board.blackPiecePositionBonusEg);
