@@ -552,13 +552,10 @@ class engine {
             const isIsolatedPawn = (pawnMask & isolatedPawnMask[i]) == BigInt(0);
             const isDoubledPawn = (pawnMask & doubledPawnMask[index]) != BigInt(0);
             if (isIsolatedPawn && isDoubledPawn) {
-                console.log("doubled and isolated", [i, j])
                 penalty += this.materialMultiplier * 15;
             } else if (isIsolatedPawn) {
-                console.log("isolated", [i, j])
                 penalty += this.materialMultiplier * 10;
             } else if (isDoubledPawn) {
-                console.log("doubled", [i, j])
                 // penalty half of isolated pawns, since it will be counted twice
                 penalty += this.materialMultiplier * 5;
             }
