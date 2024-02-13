@@ -12,6 +12,7 @@ r3kb1r/p1qb1ppp/4pn2/6N1/1nBQ4/2N1B2P/1PP2PP1/3RR1K1 b - -
 4k3/8/P6p/5p2/R7/8/1P6/5K1r w - -
 r1q1kbnr/p4ppp/bp2p3/n7/2PP4/2NB4/P2N1PPP/R1BQ1RK1 b kq - -
 1k3b2/pp6/q1n3Qp/3rp3/2pPN3/P1P3P1/1P4r1/KR4NR w - - only move e4c5
+r1b2rk1/pp2b1p1/1qn1p3/3p1pN1/3P3P/P1N5/1PP1QPP1/2KR3R b - - threat, which must be stopped is Qh5 (best move is Qc7)
 
 Checkmates:
 https://chess.stackexchange.com/questions/19633/chess-problem-database-with-pgn-or-fen
