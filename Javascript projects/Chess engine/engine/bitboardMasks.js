@@ -11,6 +11,10 @@ const isolatedPawnMask = new Array(8);
 const whiteKingPawnShield = new Array(64);
 const blackKingPawnShield = new Array(64);
 
+const tripleFile = new Array(64);
+const whiteRookOpenFileMask = new Array(64);
+const blackRookOpenFileMask = new Array(64);
+
 function initBitboards() {
     for (let index = 0; index < 64; index++) {
         const [i, j] = [index % 8, Math.floor(index / 8)];
@@ -26,10 +30,14 @@ function initBitboards() {
             isolatedPawnMask[i] = rightMask | leftmask;
         };
         const tripleFileMask = fileMask | rightMask | leftmask;
+        tripleFile[index] = tripleFileMask;
         const whiteFrontMask = (cutMask >> BigInt(8 * (8 - j))) & cutMask;
         const blackFrontMask = (cutMask << BigInt(8 * (j + 1))) & cutMask;
         whitePassedPawnMask[index] = whiteFrontMask & tripleFileMask;
         blackPassedPawnMask[index] = blackFrontMask & tripleFileMask;
+
+        whiteRookOpenFileMask[index] = whiteFrontMask & fileMask;
+        blackRookOpenFileMask[index] = blackFrontMask & fileMask;
 
         const whiteKingFrontMask = ((singleRankMask << BigInt(8 * (j - 1))) | (singleRankMask << BigInt(8 * (j - 2)))) & cutMask;
         const blackKingFrontMask = ((singleRankMask << BigInt(8 * (j + 1))) | (singleRankMask << BigInt(8 * (j + 2)))) & cutMask;
