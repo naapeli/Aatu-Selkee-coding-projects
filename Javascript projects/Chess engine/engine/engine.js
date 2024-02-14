@@ -385,6 +385,7 @@ class engine {
 
         // determine possible moves
         const positionMoves = this.board.getPossibleMoves();
+        const inCheck = this.board.inCheck();
         const moves = this.moveOrdering.orderMoves(positionMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
@@ -406,6 +407,15 @@ class engine {
                 };
             };
         };
+
+        // if found a terminal node, return the corresponding evaluation
+        if (positionMoves.length === 0) {
+            if (inCheck) {
+                return -this.CHECKMATE + 1000; // checkmate
+            };
+            return 0; // stalemate
+        };
+
         return alpha;
     };
 
@@ -577,12 +587,18 @@ class engine {
     getOpenFileBonus(color) {
         const rookSquares = this.board.pieces[color + "R"];
         const pawnMask = this.board.pieceBitBoards[color + "P"];
+        const kingLocation = color == "w" ? this.board.getKingPosition("b") : this.board.getKingPosition("w");
+        const kingIndex = this.board.boardUtility.squareToIndex(kingLocation);
         let bonus = 0;
         for (let index of rookSquares) {
-            const rookOnOpenFile = (doubledPawnMask[index] & pawnMask) == BigInt(0);
-            if (rookOnOpenFile) {
+            const openFileMask = color == "w" ? whiteRookOpenFileMask[index] : blackRookOpenFileMask[index];
+            const rookOnOpenFile = (openFileMask & pawnMask) == BigInt(0);
+            const rookPointsAtKing = (tripleFile[index] & (0x1n << BigInt(kingIndex))) != BigInt(0);
+            if (rookOnOpenFile && rookPointsAtKing) {
                 bonus += this.materialMultiplier * 20;
-            }
+            } else if (rookOnOpenFile) {
+                bonus += this.materialMultiplier * 10;
+            };
         };
         return bonus;
     };
@@ -824,13 +840,8 @@ class moveOrderer {
             if (move.promotion) {
                 move.assumedMoveScore += 100000 * pieceValues[move.promotedPiece[1]];
             };
-
             // order rest of the quiet moves based on the history of other positions
             move.assumedMoveScore += 100 * currentHistoryTable.get(move);
-
-            if (move.castleKing) {
-                move.assumedMoveScore += 10
-            };
         };
     };
 
