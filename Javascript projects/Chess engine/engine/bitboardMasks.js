@@ -15,8 +15,7 @@ const tripleFile = new Array(64);
 const whiteRookOpenFileMask = new Array(64);
 const blackRookOpenFileMask = new Array(64);
 
-const whiteBishopOpenLineMask = new Array(64);
-const blackBishopOpenLineMask = new Array(64);
+const bishopOpenLineMask = new Array(64);
 
 function initBitboards() {
     for (let index = 0; index < 64; index++) {
@@ -58,8 +57,7 @@ function initBitboards() {
                 currentPosition = [currentPosition[0] + x, currentPosition[1] + y];
             };
         };
-        whiteBishopOpenLineMask[index] = bishopMask & whiteFrontMask;
-        blackBishopOpenLineMask[index] = bishopMask & blackFrontMask;
+        bishopOpenLineMask[index] = bishopMask;
     };
 };
 
