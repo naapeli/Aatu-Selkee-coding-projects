@@ -185,7 +185,6 @@ async function dropPiece(event) {
             takenPiece = (currentBoard.whiteToMove ? "b" : "w") + "P";
         };
         let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
-        console.log(currentMove)
         const playerMoveMade = makeMove(currentMove);
 
         if (playerMoveMade) {
