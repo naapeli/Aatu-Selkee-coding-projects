@@ -514,7 +514,7 @@ class engine {
     getKingPositionEndGameFactor(color) {
         const myMaterial = color == "w" ? this.board.getMaterial("w") : this.board.getMaterial("b");
         const opponentMaterial = color == "b" ? this.board.getMaterial("w") : this.board.getMaterial("b");
-        if (myMaterial >= opponentMaterial + 2) {
+        if (myMaterial >= opponentMaterial + 200) {
             const [iFriendly, jFriendly] = color == "w" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
             const [iEnemy, jEnemy] = color == "b" ? this.board.getKingPosition("w") : this.board.getKingPosition("b");
             const enemyDistFromCenter = Math.abs(iEnemy - 3.5) + Math.abs(jEnemy - 3.5);
