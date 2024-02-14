@@ -3,6 +3,7 @@ Endgames:
 8/3K4/4P3/8/8/8/6k1/7q w - - engine finally wins this as white!!!
 3K4/4P3/8/8/8/3q4/6k1/8 w - - engine finally wins this as white!!!
 8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - engine finally wins this as white!!!
+https://www.chess.com/forum/view/endgames/endgame-fen-list-and-computer-player
 
 Tricky positions:
 r3kb1r/p1qb1ppp/4pn2/6N1/1nBQ4/2N1B2P/1PP2PP1/3RR1K1 b - -
