@@ -15,6 +15,9 @@ const tripleFile = new Array(64);
 const whiteRookOpenFileMask = new Array(64);
 const blackRookOpenFileMask = new Array(64);
 
+const whiteBishopOpenLineMask = new Array(64);
+const blackBishopOpenLineMask = new Array(64);
+
 function initBitboards() {
     for (let index = 0; index < 64; index++) {
         const [i, j] = [index % 8, Math.floor(index / 8)];
@@ -43,6 +46,20 @@ function initBitboards() {
         const blackKingFrontMask = ((singleRankMask << BigInt(8 * (j + 1))) | (singleRankMask << BigInt(8 * (j + 2)))) & cutMask;
         whiteKingPawnShield[index] = whiteKingFrontMask & tripleFileMask;
         blackKingPawnShield[index] = blackKingFrontMask & tripleFileMask;
+
+        let bishopMask = 0x0n;
+        const offSets = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+        for (let offset of offSets) {
+            let [x, y] = offset;
+            let currentPosition = [i + x, j + y];
+            while ((0 <= currentPosition[0] && currentPosition[0] < 8 && 0 <= currentPosition[1] && currentPosition[1] < 8)) {
+                const currentIndex = currentPosition[0] + 8 * currentPosition[1];
+                bishopMask = bishopMask | (0x1n << BigInt(currentIndex));
+                currentPosition = [currentPosition[0] + x, currentPosition[1] + y];
+            };
+        };
+        whiteBishopOpenLineMask[index] = bishopMask & whiteFrontMask;
+        blackBishopOpenLineMask[index] = bishopMask & blackFrontMask;
     };
 };
 
