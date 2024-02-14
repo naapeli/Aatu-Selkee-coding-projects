@@ -456,7 +456,7 @@ class engine {
         };
 
         // calculate bonus for passed pawns
-        evaluation += this.materialMultiplier / 10000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
+        evaluation += this.materialMultiplier / 11000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
 
 
         return colorPerspective * evaluation;
