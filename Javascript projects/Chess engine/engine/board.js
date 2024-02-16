@@ -107,6 +107,12 @@ class board {
             this.makeNormalMove(move);
         };
 
+        if (move.movingPiece[1] == "P" || move.isCapture()) {
+            fiftyMoveCounter.push(0);
+        } else {
+            fiftyMoveCounter.push(fiftyMoveCounter[fiftyMoveCounter.length - 1] + 1);
+        };
+
         let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move);
         this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
         this.blackPiecePositionBonus += blackPiecePositionBonusDiff;
@@ -281,6 +287,8 @@ class board {
                     this.board[move.startPos[1]][move.startPos[0]] = "bP";
                 };
             };
+
+            fiftyMoveCounter.pop();
 
             let [whitePiecePositionBonusDiff, blackPiecePositionBonusDiff, whitePiecePositionBonusDiffEg, blackPiecePositionBonusDiffEg] = this.boardUtility.getMaterialDiffs(move, true);
             this.whitePiecePositionBonus += whitePiecePositionBonusDiff;
@@ -912,13 +920,14 @@ class board {
             this.enPassant = [column, row];
         };
 
+        fiftyMoveCounter = [parseInt(halfMoveClock)];
+        this.ply = (fullMoveClock - 1) * 2 + (this.whiteToMove ? 0 : 1);
+
         const [whitePiecePositionBonus, blackPiecePositionBonus, whitePiecePositionBonusEg, blackPiecePositionBonusEg] = this.boardUtility.countPiecePositionBonus(this.board);
         this.whitePiecePositionBonus = whitePiecePositionBonus;
         this.blackPiecePositionBonus = blackPiecePositionBonus;
         this.whitePiecePositionBonusEg = whitePiecePositionBonusEg;
         this.blackPiecePositionBonusEg = blackPiecePositionBonusEg;
-        this.determineChecksAndPins();
-        this.getPossibleMoves();
         this.zobristHash = this.boardUtility.generateZobristHash(this.board, this.enPassant, this.whiteCanCastle, this.blackCanCastle, this.whiteToMove);
     };
 
@@ -960,7 +969,7 @@ class board {
             fen = fen + " -";
         };
 
-        fen = fen + " - -";
+        fen = fen + " " + fiftyMoveCounter[fiftyMoveCounter.length - 1] + " " + (Math.floor(this.ply / 2) + 1);
 
         return fen;
     };

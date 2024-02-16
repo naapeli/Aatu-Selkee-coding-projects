@@ -18,12 +18,12 @@ let movingStartSquare;
 let movingEndSquare;
 let gameEnded = false;
 
-let currentBoard = new board();
-currentFen.textContent = currentBoard.getFen();
-let gameEngine = new engine(currentBoard);
 let currentHistoryTable = new historyTable();
 const maxKillerMovePly = 64;
 let fiftyMoveCounter = [0];
+let currentBoard = new board();
+let gameEngine = new engine(currentBoard);
+currentFen.textContent = currentBoard.getFen();
 let killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
@@ -366,18 +366,12 @@ function makeMove(move) {
     if (movePossible(move)) {
         const squaresToBeUpdated = currentBoard.makeMove(move);
         currentBoard.getPossibleMoves();
+        currentFen.textContent = currentBoard.getFen();
         playSound(move.isCapture(), currentBoard.inCheck(), move.promotion);
         newHighlight = [move.startPos, move.endPos];
         updateSquares(squaresToBeUpdated, newHighlight);
-        currentFen.textContent = currentBoard.getFen();
         selectedSquare = [];
         const checkMate = currentBoard.boardUtility.isCheckMate(currentBoard.numberOfPossibleMoves, currentBoard.currentCheckingPieces.length);
-
-        if (move.movingPiece[1] == "P" || move.isCapture()) {
-            fiftyMoveCounter.push(0);
-        } else {
-            fiftyMoveCounter.push(fiftyMoveCounter[fiftyMoveCounter.length - 1] + 1);
-        };
 
         if (repetitionTable[currentBoard.zobristHash] != 0 && repetitionTable[currentBoard.zobristHash] != undefined) {
             repetitionTable[currentBoard.zobristHash] += 1
@@ -416,11 +410,11 @@ function endGameScreen(isDraw, winner) {
         movingEndSquare = undefined;
         gameEnded = false;
         moveLog.textContent = "";
-        currentBoard = new board();
-        currentFen.textContent = currentBoard.getFen();
-        gameEngine = new engine(currentBoard);
         currentHistoryTable = new historyTable();
         fiftyMoveCounter = [0];
+        currentBoard = new board();
+        gameEngine = new engine(currentBoard);
+        currentFen.textContent = currentBoard.getFen();
         killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
         repetitionTable = {};
         repetitionTable[currentBoard.zobristHash] = 1;
