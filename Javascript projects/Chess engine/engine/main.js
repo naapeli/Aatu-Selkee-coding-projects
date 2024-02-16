@@ -18,13 +18,13 @@ let movingStartSquare;
 let movingEndSquare;
 let gameEnded = false;
 
-const currentBoard = new board();
+let currentBoard = new board();
 currentFen.textContent = currentBoard.getFen();
-const gameEngine = new engine(currentBoard);
-const currentHistoryTable = new historyTable();
+let gameEngine = new engine(currentBoard);
+let currentHistoryTable = new historyTable();
 const maxKillerMovePly = 64;
 let fiftyMoveCounter = [0];
-const killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
+let killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
 let repetitionTable = {};
 repetitionTable[currentBoard.zobristHash] = 1;
 const moveAudio = new Audio("./sounds/move-self.mp3");
@@ -403,6 +403,35 @@ function endGameScreen(isDraw, winner) {
     gameBoard.appendChild(endGameDiv);
     endGameDiv.textContent = isDraw ? "Draw" : winner;
     gameEnded = true;
+
+    const replayButton = document.createElement("button");
+    replayButton.classList.add("button");
+    replayButton.textContent = "Play again";
+    replayButton.addEventListener("click", () => {
+        fullMoveLogString = "";
+        moveLogArray = [];
+        const currentFen = document.querySelector("#current-fen");
+        movingPieceImageElement = undefined;
+        movingStartSquare = undefined;
+        movingEndSquare = undefined;
+        gameEnded = false;
+        moveLog.textContent = "";
+        currentBoard = new board();
+        currentFen.textContent = currentBoard.getFen();
+        gameEngine = new engine(currentBoard);
+        currentHistoryTable = new historyTable();
+        fiftyMoveCounter = [0];
+        killerMoves = [new Array(maxKillerMovePly), new Array(maxKillerMovePly)];
+        repetitionTable = {};
+        repetitionTable[currentBoard.zobristHash] = 1;
+        selectedSquare = [];
+        possibleMoveSquareHighlight = [];
+        removeTargetHighlights();
+        updateAllSquares();
+        gameBoard.removeChild(endGameDiv);
+    });
+
+    endGameDiv.appendChild(replayButton);
 };
 
 function removeTargetHighlights() {
@@ -525,6 +554,14 @@ function updateAllSquares() {
         };
     };
     updateSquares(squares, []);
+    // update old highlight
+    lastMoveHighlight.forEach((pos) => {
+        let [i, j] = pos;
+        let id = i + j * 8;
+        let squareToBeUppdated = document.querySelector(`[id="${id}"]`);
+        squareToBeUppdated.classList.remove("highLight");
+    });
+    lastMoveHighlight = [];
 };
 
 async function askForPawnPromotion(color) {
