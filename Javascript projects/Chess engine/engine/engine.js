@@ -626,7 +626,13 @@ class engine {
             return reduction;
         };
         if (extension == 0 && !move.isCapture() && !move.promotion) {
-            reduction = 1;
+            if (i > 10) {
+                reduction = 2;
+            } else if (i > 20) {
+                reduction = 3;
+            } else {
+                reduction = 1;
+            };
         };
         return reduction;
     };
