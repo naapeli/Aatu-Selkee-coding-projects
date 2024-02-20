@@ -233,14 +233,40 @@ class engine {
         // extended futility pruning condition
         const futilityPruning = currentDepth < 4 && this.notCheckMateScore(alpha) && staticEvaluation + this.futilityMargins[currentDepth] <= alpha && notPvNode;
 
-        
-        // search through all moves and select the best one
+        // get and order all possible moves from current position
         const positionMoves = this.board.getPossibleMoves();
         const previousBestMove = (position != undefined && position.zobristHash == this.board.zobristHash) ? position.bestMove : undefined;
         const moves = this.moveOrdering.orderMoves(positionMoves, previousBestMove, depthFromRoot);
         let positionBestMove = moves[0];
-        let PVNodeFound = false;
+        let PVNodeFound = 0;
         let nodeType = this.UPPERBOUND_NODE;
+
+        // multi-cut
+        /* disabled due to not testing the feature enough
+        let highFails = 0;
+        if (moves.length > 10 && notPvNode) {
+            for (let i = 0; i < 7; i++) {
+                const move = moves[i];
+                this.board.makeMove(move);
+                const inCheck = this.board.determineInCheck();
+                this.incrementRepetition(move.movingPiece[1] == "P" || move.isCapture());
+
+                // search position to 2 less depth to determine if position is a fail high node
+                const val = -this.search(currentDepth - 3, depthFromRoot + 1, -(beta + 1), -beta, -colorPerspective, totalExtension, true, inCheck);
+                if (val > beta) {
+                    highFails++;
+                };
+
+                this.decrementRepetition();
+                this.board.undoMove();
+            };
+        };
+        // if position is an expected fail-high node, prune position
+        if (highFails >= 3) {
+            return beta;
+        };*/
+
+        // search through all moves and select the best one
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
             this.board.makeMove(move);
@@ -260,7 +286,7 @@ class engine {
             const extension = this.getSearchExtension(move, totalExtension, inCheck);
             totalExtension += extension;
             // principal variations search
-            if (!PVNodeFound) { // do a full search for the first move (previous best move)
+            if (PVNodeFound === 0) { // do a full search for the first move (previous best move)
                 currentEvaluation = -this.search(currentDepth - 1 + extension, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true, inCheck);
             } else {
                 // calculate late move reduction after making the wanted move.
@@ -321,7 +347,7 @@ class engine {
             if (currentEvaluation > alpha) {
                 alpha = currentEvaluation;
                 positionBestMove = move;
-                PVNodeFound = true;
+                PVNodeFound++;
                 nodeType = this.EXACT_NODE;
 
                 // update the principal variation
@@ -332,6 +358,20 @@ class engine {
                 this.pvLength[depthFromRoot] = this.pvLength[depthFromRoot + 1];
             };
         };
+
+        // singular extension if found 1 good move and we are at a PV node
+        /* disabled due to not enough testing done
+        if (!notPvNode && PVNodeFound === 1 && currentDepth > 3) {
+            this.board.makeMove(positionBestMove);
+            const inCheck = this.board.determineInCheck();
+            this.incrementRepetition(positionBestMove.movingPiece[1] == "P" || positionBestMove.isCapture());
+            const extension = this.getSearchExtension(positionBestMove, totalExtension, inCheck);
+
+            alpha = -this.search(currentDepth - 1 + extension + 1, depthFromRoot + 1, -beta, -alpha, -colorPerspective, totalExtension, true, inCheck);
+
+            this.decrementRepetition();
+            this.board.undoMove();
+        };*/
 
         // if found a terminal node, return the corresponding evaluation
         if (positionMoves.length === 0) {
