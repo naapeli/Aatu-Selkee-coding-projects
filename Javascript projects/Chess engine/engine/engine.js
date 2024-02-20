@@ -239,6 +239,7 @@ class engine {
         const moves = this.moveOrdering.orderMoves(positionMoves, previousBestMove, depthFromRoot);
         let positionBestMove = moves[0];
         let PVNodeFound = 0;
+        // starts from ALL-node and if we find a PV move, transforms into a PV node
         let nodeType = this.UPPERBOUND_NODE;
 
         // multi-cut
