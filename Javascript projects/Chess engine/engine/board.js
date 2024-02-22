@@ -254,7 +254,11 @@ class board {
             this.ply--;
             let [move, whiteCanCastle, blackCanCastle, possibleEnPassant] = this.moveLog.pop();
             this.board[move.startPos[1]][move.startPos[0]] = move.movingPiece;
-            this.board[move.endPos[1]][move.endPos[0]] = move.takenPiece;
+            if (!move.enPassant) {
+                this.board[move.endPos[1]][move.endPos[0]] = move.takenPiece;
+            } else {
+                this.board[move.endPos[1]][move.endPos[0]] = "--";
+            };
             this.whiteCanCastle = whiteCanCastle;
             this.blackCanCastle = blackCanCastle;
             this.enPassant = possibleEnPassant;
@@ -345,7 +349,7 @@ class board {
 
     undoEnPassant(move) {
         const [iNew, jNew] = move.endPos;
-        let squareToBeUpdated;
+        let squareToBeUpdated = [];
         switch(move.movingPiece) {
             case "wP":
                 this.board[jNew + 1][iNew] = "bP";
@@ -353,14 +357,14 @@ class board {
                 const indexB = this.boardUtility.squareToIndex([iNew, jNew + 1]);
                 this.pieces["bP"].add(indexB);
                 this.pieceBitBoards["bP"] = this.pieceBitBoards["bP"] | (1n << BigInt(indexB));
-                break;
+                return squareToBeUpdated;
             case "bP":
                 this.board[jNew - 1][iNew] = "wP";
                 squareToBeUpdated = [iNew, jNew - 1];
                 const indexW = this.boardUtility.squareToIndex([iNew, jNew - 1]);
                 this.pieces["wP"].add(indexW);
                 this.pieceBitBoards["wP"] = this.pieceBitBoards["wP"] | (1n << BigInt(indexW));
-                break;
+                return squareToBeUpdated;
         };
     };
 
