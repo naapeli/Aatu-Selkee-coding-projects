@@ -485,7 +485,6 @@ class engine {
 
             // calculate pawn and rook bonuses
             evaluation += (1 - endGameWeight) * (this.getCenterPawnBonus("w") - this.getCenterPawnBonus("b"));
-            evaluation += (1 - endGameWeight) * (this.getDoubledAndIsolatedPawnPenalty("b") - this.getDoubledAndIsolatedPawnPenalty("w"));
             evaluation += (1 - endGameWeight) * (this.getOpenFileBonus("w") - this.getOpenFileBonus("b"));
 
         } else { // endgame
@@ -496,8 +495,9 @@ class engine {
             evaluation += endGameWeight * (this.getKingPositionEndGameFactor("w") - this.getKingPositionEndGameFactor("b"));
         };
 
-        // calculate bonus for passed pawns
+        // calculate bonus for passed, doubled and isolated pawns
         evaluation += this.materialMultiplier / 11000 * (this.getPassedPawnBonus("w") - this.getPassedPawnBonus("b"));
+        evaluation += (1 - endGameWeight) * (this.getDoubledAndIsolatedPawnPenalty("b") - this.getDoubledAndIsolatedPawnPenalty("w"));
 
 
         return colorPerspective * evaluation;
