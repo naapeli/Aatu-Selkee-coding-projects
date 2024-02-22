@@ -430,7 +430,7 @@ class engine {
         const moves = this.moveOrdering.orderMoves(positionMoves, undefined, depthFromRoot);
         for (let i = 0; i < moves.length; i++) {
             const move = moves[i];
-            if (move.isCapture() || (this.board.inCheck() && allowChecks)) { // continue search if move is piece capture
+            if (move.isCapture() || (inCheck && allowChecks)) { // continue search if move is piece capture
                 this.board.makeMove(move);
                 const score = -this.quiescenceSearch(depthFromRoot + 1, -beta, -alpha, allowChecks, -colorPerspective);
                 this.board.undoMove();
