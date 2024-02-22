@@ -154,7 +154,7 @@ async function dropPiece(event) {
                       (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
         let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
         let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-        isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece[1] != "P";
+        isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece == "possible-capture";
         if (isPromotion) {
             const promotedPiece = await askForPawnPromotion(playerToMove);
             let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
@@ -263,7 +263,7 @@ async function clickPiece(event) {
                           (Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1 || Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 0);
             let whiteAnPassant = (movingStartSquare[1] == 3 && movingEndSquare[1] == 2 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
             let blackAnPassant = (movingStartSquare[1] == 4 && movingEndSquare[1] == 5 && Math.abs(movingEndSquare[0] - movingStartSquare[0]) == 1);
-            isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece[1] != "P";
+            isAnPassant = (whiteAnPassant || blackAnPassant) && takenPiece == "possible-capture";
             if (isPromotion) {
                 const promotedPiece = await askForPawnPromotion(playerToMove);
                 let currentMove = new Move(movingStartSquare, movingEndSquare, movingPiece, takenPiece, isPromotion, isCastling, isAnPassant, promotedPiece);
