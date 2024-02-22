@@ -964,6 +964,9 @@ class board {
         fen = fen + (this.whiteCanCastle[1] ? "Q" : "");
         fen = fen + (this.blackCanCastle[0] ? "k" : "");
         fen = fen + (this.blackCanCastle[1] ? "q" : "");
+        if (!(this.whiteCanCastle[0] || this.whiteCanCastle[1] || this.blackCanCastle[0] || this.blackCanCastle[1])) {
+            fen = fen + "-";
+        };
 
         if (this.enPassant.length > 0 && this.whiteToMove) {
             fen = fen + " " + boardPositions[this.enPassant[0]] + (8 - (this.enPassant[1] - 1));
