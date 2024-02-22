@@ -20,3 +20,4 @@ https://chess.stackexchange.com/questions/19633/chess-problem-database-with-pgn-
 2rk1br1/p3pppp/5n2/1pp5/1n2P3/BPQPKP1b/P2NB1Pq/R1R5 b - - 0 1 mate in 9 ply
 8/1b3r1k/7p/p6p/5p2/1p1R1P2/3RK3/1q6 b - - 0 1 mate in 9 ply
 8/1b3r1k/7p/p3Q1rp/1p3p2/3R1P2/qP3K2/4R3 b - - 0 1 mate in 17 ply (according to stockfish not my engine)
+4r1k1/pp3p1p/8/3p2p1/P2P4/1P5q/6R1/3r1BK1 b - - 0 1 mate in 7 ply (engine finds mate in 11 ply)
