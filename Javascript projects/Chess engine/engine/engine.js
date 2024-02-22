@@ -333,6 +333,7 @@ class engine {
                 if (this.notCheckMateScore(beta)) {
                     this.transpositionTable.storeEvaluation(this.board.zobristHash, beta, currentDepth, this.LOWERBOUND_NODE, positionBestMove, depthFromRoot);
                 } else {
+                    // store checkmate for the bestmove but not evaluation
                     this.transpositionTable.storeEvaluation(this.board.zobristHash, 0, currentDepth, this.CHECKMATE_NODE, positionBestMove, depthFromRoot);
                 };
 
@@ -389,6 +390,7 @@ class engine {
         if (this.notCheckMateScore(alpha)) {
             this.transpositionTable.storeEvaluation(this.board.zobristHash, alpha, currentDepth, nodeType, positionBestMove, depthFromRoot);
         } else {
+            // store checkmate for the bestmove but not evaluation
             this.transpositionTable.storeEvaluation(this.board.zobristHash, 0, currentDepth, this.CHECKMATE_NODE, positionBestMove, depthFromRoot);
         };
 
@@ -645,7 +647,7 @@ class engine {
     };
 
     getSearchExtension(move, totalExtension, inCheck) {
-        if (totalExtension > 64) {
+        if (totalExtension > 16) {
             return 0;
         };
         let extension = 0;
