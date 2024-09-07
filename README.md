@@ -1,17 +1,14 @@
 # Coding portfolio
-This will be used to sort and save my projects that I use to practise my Python- and Javascript-skills.
+This repository is used to sort and save my projects for practicing Python and JavaScript skills. Larger projects, apart from the chess engine, are stored in their own public repositories, so be sure to check out my [GitHub profile](https://github.com/naapeli) for more details.
 
-If you want to learn a little more from me, please check out the small chatbot project in python projects folder!
 
-A few of my projects include:
-1. Chess engine (Javascript, HTML, CSS) (work in progress)
+
+## Notable Projects:
+1. Chess engine (Javascript, HTML, CSS)
 2. 3D path-finding visualisation tool
 3. Solving the wave equation for a guitar string and recreating a song with the notes
 4. Flappy bird played by an artificial intelligence
 5. Buffon's needle problem tool
-6. Digit recognition program (neural network) (work in progress, pretty bad accuracy so far due to different image formats)
-7. A chatbot that tells a little more about me
-8. Climate data visualisation tool
 
 
 Here are some pictures from the projects that I have done:
@@ -31,3 +28,5 @@ flappy bird AI:
 
 Buffon's needle problem tool:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/f99f7d29-e51d-4096-95af-70cee8fd75e4)
+
+Feel free to explore these projects and learn more about my work!
