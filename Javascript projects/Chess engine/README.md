@@ -1,28 +1,37 @@
-This is an attempt of beating my friend at chess who is a lot better than me. Since my ability to play chess is not as good as their's, I still wanted to challenge them. Therefore my only option was to utilise my knowledge of coding to evaluate many more positions than they can. It turned out to be way more challenging than I thought, however I learned a lot during studying for this project. I ended up including the following techniques:
+# JavaScript Chess Engine
 
-1. Self-made movegenerator that achieves around 370 kN/s (kilo nodes per second)
-2. Negamax with iterative deepening and alpha-beta pruning
-3. Quiescence search with delta pruning
-4. Transposition table with zobrist hashing to store already evaluated positions and remember positions for threefold repetition
-5. Late-move-reductions and search extensions
-6. Aspiration windows
-7. History heuristic for quiet move ordering
-8. Killer moves for move ordering
-9. Null-move pruning
-10. Principal variations search
-11. Razoring and deep razoring
-12. Futility- and reverse futility pruning
-13. Self made evaluation function that takes into account:
-    1. Material
-    2. Piece positioning (different for middle and endgames)
-    3. King safety with not castling penalty, pawn shield and king mobility
-    4. Doubled, isolated and passed pawns
-    5. Rook open file bonus
+This project was my attempt to challenge a highly skilled friend at chess. Recognizing my limitations in chess skills, I aimed to leverage my coding knowledge to create an engine capable of evaluating many more positions than a human could. Despite the challenges, I gained invaluable experience and learned a lot during this project.
 
-I estimate my bot to be 1600-1800 elo. It is good at recognizing tactics, however lacks abit of knowledge in positional play. At the moment I usually lose to it due to a tactical oversight on my part. I cannot really win against it anymore and draw very rarely.
+## Key techniques implemented
+### Move generation
+- Self-made movegenerator that achieves around 370 kN/s (kilo nodes per second)
+### Search algorithms:
+- Negamax with iterative deepening and alpha-beta pruning
+- Quiescence search with delta pruning
+- Late-move-reductions and search extensions
+- Aspiration windows
+- Null-move pruning
+- Principal variations search
+- Razoring and deep razoring
+- Futility- and reverse futility pruning
+### Move ordering
+- History heuristic for quiet move ordering
+- Killer moves for move ordering
+### Transposition table
+- Transposition table with zobrist hashing to store already evaluated positions and remember positions for threefold repetition
+### Evaluation function
+- Material balance
+- Piece positioning (different for middle and endgames)
+- King safety with not castling penalty, pawn shield and king mobility
+- Doubled, isolated and passed pawns
+- Rook open file bonus
 
-In the beginning I wanted to use this project to learn Javascript while making a fun project, however I found out that it probably would've been better to make this project in for example C# or Scala (from the languages I know). This would've allowed me to use unsigned 64-bit numbers for representing the board. This would've allowed me to use bit operations for move creation, which would've made my engine way faster. That being said, I'm satisfied with my learning outcome from this project and overall I managed to make a pretty compenent bot using an unusual programming language for this type of project.
+## Performance and insights
+I estimate the bot's strength to be around 1600-1800 Elo. It excels at tactical recognition but is still developing in positional play. Currently, I often lose due to tactical oversights, and drawing is rare.
 
-Here are some pictures from the project:
+Initially, I intended to use this project to learn JavaScript while creating a fun project. However, I realized that using a language like C# or Scala might have been more suitable for this type of project. Bit operations for move creation using unsigned 64-bit numbers could have significantly improved performance. Nonetheless, I’m satisfied with the learning outcomes and the competence of the engine I developed using JavaScript.
+
+
+## Project images:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/60d64af9-78b2-40db-be9e-3967bcc40826)
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/5ce5f4ab-7473-4a6a-b1ff-bdd4c48c5086)
