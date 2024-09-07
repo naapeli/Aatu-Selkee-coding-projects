@@ -11,7 +11,7 @@ This repository is used to sort and save my projects for practicing Python and J
 5. [Buffon's needle problem tool](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/Python%20projects/Buffon's%20needle%20problem)
 
 
-## PProject images:
+## Project images:
 
 Chess engine:
 ![image](https://github.com/naapeli/Aatu-Selkee-coding-projects/assets/130310206/9a7a7d72-7faa-4223-84bc-88859cf3c753)
