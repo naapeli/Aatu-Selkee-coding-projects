@@ -4,9 +4,9 @@ This repository is used to sort and save my earliest projects for practicing Pyt
 
 
 ## Notable Projects:
-1. [3D path-finding visualisation tool](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/Python%20projects/3D%20path-finding%20visualisation)
-2. [Flappy bird](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/Python%20projects/flappy%20bird%20machine%20learning) played by an artificial intelligence
-3. [Buffon's needle problem tool](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/Python%20projects/Buffon's%20needle%20problem)
+1. [3D path-finding visualisation tool](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/3D%20path-finding%20visualisation)
+2. [Flappy bird](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/flappy%20bird%20machine%20learning) played by an artificial intelligence
+3. [Buffon's needle problem tool](https://github.com/naapeli/Aatu-Selkee-coding-projects/tree/main/Buffon's%20needle%20problem)
 
 
 ## Project images:
